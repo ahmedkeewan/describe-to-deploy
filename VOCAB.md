@@ -49,6 +49,7 @@ Sources read: Anthropic (long-running harnesses), LangChain (Improving Deep Agen
 | **Feedback flywheel** | Capture successes and failures from agent sessions and fold them back into the harness so future sessions are more predictable. | |
 | **Topology template** | Commit to a fixed service topology to narrow the solution space and make full harnessing tractable. | |
 | **Drift monitoring** | Continuous sensors run outside the change cycle: dead code, coverage decay, SLO degradation. | |
+| **Gate (enforcing sensor)** | A sensor that blocks instead of just reporting: the action cannot proceed until the check passes. Distinct from an ordinary sensor, which surfaces feedback for the agent to act on voluntarily. | No direct push to main, mandatory PR approval before merge, role-based reviewer routing (security auditor for security-sensitive diffs, migration reviewer for schema changes) — [ApexYard](https://apexyard.ai/) |
 
 Rule of thumb: prefer computational over inferential wherever a deterministic check exists. Markdown is a guide of last resort, not first.
 
