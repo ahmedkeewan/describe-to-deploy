@@ -99,6 +99,7 @@ Awesome lists (pick two, skim both):
 - [InfoQ coverage of OpenAI post](https://www.infoq.com/news/2026/02/openai-harness-engineering-codex/), [Addy Osmani: Long-running Agents](https://addyosmani.com/blog/long-running-agents/), [HN thread on Anthropic post](https://news.ycombinator.com/item?id=46081704).
 - [Winder.ai: Comparison of AI Agent Harnesses 2026](https://winder.ai/ai-agent-harness-comparison/).
 - [Thoughtworks podcast: What is harness engineering?](https://www.thoughtworks.com/en-es/insights/podcasts/technology-podcasts/what-harness-engineering) (May 2026).
+- [ApexYard: AI-Governed Software Development Framework](https://apexyard.ai/) — org-level governance layer on top of a coding agent: mandatory PR gates (no direct push to main), role-based reviewer routing (20 roles / 6 departments), ~51 hooks enforcing secret-scanning and ticket linkage. Useful mainly for the **gate** concept (a sensor that blocks rather than just reports — see VOCAB.md §3); not a technique for improving a single agent loop's benchmark score.
 - [Simon Willison on Hashimoto's post](https://simonwillison.net/2026/Feb/5/ai-adoption-journey/).
 - Prior hackathons for idea mining: [Harness Engineering Hack (SF, Jun 2026)](https://harness-hack.devpost.com/), [TrueForge Agent Harness Hackathon (Aug 2026)](https://www.wemakedevs.org/hackathons/trueforge).
 
