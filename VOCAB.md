@@ -93,14 +93,16 @@ Numbers: ~1M lines, ~1,500 merged PRs, 3 engineers growing to 7, zero hand-writt
 | Term | Definition |
 |---|---|
 | **Agent-first** | Humans design environments, specify intent, give structured feedback. Agents write the code. |
-| **AGENTS.md** | Short repo-root file that points the agent at the docs; the entry point, not the encyclopedia. |
+| **AGENTS.md** | Short repo-root file (~100 lines) that points the agent at the docs; a table of contents, not the encyclopedia. A monolithic file can't be mechanically checked for coverage, freshness, or ownership, so drift is inevitable — the fix is to keep it small and push the real content into `docs/`. |
 | **Repository as system of record** | If it isn't in the repo, it doesn't exist to the agent. Design docs, specs, and plans live in `docs/` as cross-linked markdown. |
-| **Architectural constraints** | Mechanically enforced dependency layering (Types → Config → Repo → Service → Runtime → UI). |
+| **Architectural constraints** | Mechanically enforced dependency layering per business domain (Types → Config → Repo → Service → Runtime → UI). Cross-cutting concerns (auth, connectors, telemetry, feature flags) enter through a single explicit interface, **Providers**, rather than through the layer chain. |
 | **Structural tests / custom linters** | Deterministic checks that fail the build when the agent violates layering or conventions. |
 | **Browser validation** | Agents drive the app in a browser to verify their own changes end to end. |
 | **Agent-readable telemetry** | Logs, metrics, spans exposed so the agent can reproduce bugs and check performance itself. |
 | **Declarative prompts** | Intent as specification, not step-by-step scripts. |
 | **Garbage collection / entropy** | Agent-generated code accumulates drift; scheduled cleanup passes (dead code, doc rot) keep the repo legible to future agents. |
+| **"Enforce boundaries centrally, allow autonomy locally"** | OpenAI's stated philosophy on where to spend constraint-authoring effort — be explicit about where constraints matter and where they don't, the way a platform org leads many teams. |
+| **"Agents aren't hard; the Harness is hard."** | Ryan Lopopolo's summary of the project. Good verbatim quote for a demo slide. |
 
 ## 5b. Top-of-leaderboard techniques (KIRA, Meta-Harness, AHE, LemonHarness, Anthropic Mar 2026)
 
@@ -202,6 +204,21 @@ From [aihero.dev/ai-coding-dictionary](https://www.aihero.dev/ai-coding-dictiona
 | **Context pointer** | A reference a secondary source keeps back to its primary source, so detail lost in summarizing can be recovered by re-reading the original. Sharpens this repo's progress-file / handoff-artifact pattern (§4 Anthropic): the progress file should point back at the commits/files it summarizes, not just describe them. | AI Coding Dictionary |
 | **AX (Agent Experience)** | Counterpart to DX (developer experience): how well the environment is set up to support agent work, not human work. The reason environment-bootstrapping and agent-readable telemetry are worth building. | AI Coding Dictionary |
 
-## 10. Ten words to say out loud on Saturday
+## 10. Fowler additions: sequencing, codebase readiness, and the human role
+
+Re-read of the Fowler/Thoughtworks article (source of §3) turned up concepts the original distillation compressed away. Fills a gap this repo otherwise lacks: an explicit pushback on "more automation is strictly better," and the theory behind why topology templates work.
+
+| Term | Definition |
+|---|---|
+| **"Keep Quality Left"** | Sequence checks by cost, speed, and criticality: run cheap, fast controls before integration; reserve expensive ones (mutation testing, broad code review) for post-integration pipeline stages. A concrete ordering principle for building a sensor pack, not just a list of sensors. |
+| **Harnessability** | The codebase's own amenability to being harnessed — strong typing and clear module boundaries increase it, technical debt and unclear architecture reduce it. Distinct from harness quality: a great harness on a low-harnessability codebase still struggles. Worth weighing when picking Saturday's target repo. |
+| **Ambient affordances** | Structural properties of the environment itself (not the harness) that make it legible, navigable, and tractable to an agent operating within it. The environment-side counterpart to harness design. |
+| **Ashby's Law of Requisite Variety** | A regulator must have at least as much variety as the system it governs. The theoretical reason **topology templates** (§3) work: committing to a fixed service topology shrinks what the agent can produce, which is what makes comprehensive harnessing tractable at all. |
+| **Cybernetic governor model** | Framing the harness as a self-regulating system combining feedforward (guides) and feedback (sensors) to steer the codebase toward a desired state — the systems-theory grounding for the guides/sensors taxonomy. |
+| **The steering loop** | Humans iteratively improve the harness itself by analyzing recurring agent failures and strengthening guides/sensors so they don't recur — the harness-authoring analog of Hashimoto's mistake-log loop (§7), but aimed at the harness rather than AGENTS.md. |
+| **The human role / load-bearing conventions** | Developers bring implicit harnessing agents lack: absorbed conventions, aesthetic judgment, organizational context, accountability. Effective harnesses should **externalize and codify** this implicit expertise rather than try to eliminate the human — direct pushback on treating full automation as the end goal. Distinguishing which conventions are load-bearing versus merely habitual is itself a human judgment call. |
+| **Open challenges (named explicitly)** | No metric for harness coverage/quality analogous to code coverage; ambiguity of **sensor silence** (does no signal mean high quality, or inadequate detection?); coherence decay as a harness grows (contradictory guides and sensors accumulate); versioning a harness that includes non-deterministic (inferential) controls. Honest material for a "known limitations" slide rather than a pure win narrative. |
+
+## 11. Ten words to say out loud on Saturday
 
 harness · guide · sensor · computational · inferential · self-verification · doom loop · context injection · handoff · trace
