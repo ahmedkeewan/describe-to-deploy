@@ -128,6 +128,14 @@ Numbers: ~1M lines, ~1,500 merged PRs, 3 engineers growing to 7, zero hand-writt
 | **Session / harness / sandbox** | Managed Agents' three swappable interfaces: append-only log, the loop, and the execution environment. | Anthropic Apr 2026 |
 | **Harness-level cheating** | Leaking task answers or test files into the agent's environment or prompt. Detected by trace clustering. | DebugML |
 
+## 5c. Event-sourced harness composition (Tardigrade)
+
+| Term | Definition | Source |
+|---|---|---|
+| **`behavior = f(log)`** | Agent behavior derived entirely from an immutable event log rather than mutated state; each behavior defined as a Moore machine (state machine) over that log. | Tardigrade |
+| **Component-based harness composition** | Typed state-machine components combine the way UI components do, so a cross-cutting concern (their example: compaction) becomes one composable unit instead of scattered special-case code. Compare **Compaction** (§2) and **Session/harness/sandbox** (§5b). | Tardigrade |
+| **"Let it crash"** | Durability property of an event-sourced harness: since state is fully reconstructable by replaying the log, a crashed agent process resumes from the log instead of needing custom checkpointing. | Tardigrade |
+
 ## 6b. Sandbox and permissions (Agent Sandbox Taxonomy, Fahmy)
 
 The "bundled infrastructure" and permissions slice of the harness, scored as a **7-7-3** grid.

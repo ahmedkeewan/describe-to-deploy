@@ -80,6 +80,7 @@ Reference harnesses (small enough to read in an hour):
 - `openai/codex` — the open Apache-2 Codex harness. Read with [Codex as a platform](https://developers.openai.com/blog/codex-as-a-platform) (Aug 2026) and the App Server post.
 - `openai/symphony` — daemon that polls Linear, spawns isolated Codex per issue, delivers PRs. `SPEC.md` is language-agnostic; community ports in Go (Baton), Rust (`kumanday/OpenSymphony`), OpenCode (`skorokithakis/symphony`). Guide: https://betterstack.com/community/guides/ai/openai-symphony/
 - `humanlayer/advanced-context-engineering-for-coding-agents` — ACE-FCA and the Research/Plan/Implement method; `humanlayer/12-factor-agents` (own your context window, stateless reducer).
+- `clavia-labs/tardigrade` ([docs](https://tardigrade.sh/docs/why), `bunx tardie init`) — TypeScript framework for agents built on an immutable event log + Effect TS. Core claim: `behavior = f(log)`, each behavior a composable state machine. A concrete small implementation of the session-as-append-only-log idea that Anthropic's Managed Agents post (Tier 1b) argues for abstractly — worth skimming as a working example.
 - Ralph Wiggum loop (Geoff Huntley): `while :; do cat PROMPT.md | claude ; done` — fresh context each iteration, git as state. See [A Brief History of Ralph](https://www.humanlayer.dev/blog/brief-history-of-ralph) and [AI That Works: Ralph under the hood](https://boundaryml.com/podcast/2025-10-28-ralph-wiggum-coding-agent-power-tools).
 
 Sandbox and permissions layer:
