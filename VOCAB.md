@@ -165,6 +165,22 @@ The "bundled infrastructure" and permissions slice of the harness, scored as a *
 | **Stacking** | Combining complementary tools because no single product covers every layer. |
 | **Containment ≠ alignment** | Sandboxing stops harmful actions from executing; guides and sensors are what stop the agent from choosing them. |
 
+## 6c. Cross-harness gate portability (ApexYard `harness-adapters`)
+
+From [me2resh/apexyard](https://github.com/me2resh/apexyard)'s `harness-adapters/` (pi, opencode, Codex, Cursor) and `docs/harnesses/`. Extends the **Gate** entry (§3) and **action governance** (§6b) with a worked answer to: once you've built gates for one harness, how do you carry them to another without forking the logic? Directly useful if a hackathon project targets more than one coding-agent CLI.
+
+| Term | Definition |
+|---|---|
+| **Adapter-over-bash** | A thin per-harness extension that invokes an existing, unmodified bash gate script rather than reimplementing the gate's decision logic natively in the new harness's language. |
+| **"Bash owns the decision; the adapter is the wire, never the judge"** | The core safety property: a bug in an adapter can fail to *invoke* a gate, but cannot silently *change* what the gate decides, because the decision logic lives in one place. |
+| **Declarative-generate adapter** | Shape for harnesses that read a static hook-config file (e.g. Codex's `.codex/hooks.json`). A generator reads the canonical config and emits the harness's native config, each entry still exec'ing the same unmodified hook script. The generator and its tests are the durable artifact; the generated tree is regenerable output. |
+| **Live-extension adapter** | Shape for harnesses with an imperative plugin/event API (pi's `tool_call`, opencode's `tool.execute.before`). One dispatcher extension reconstructs the exact stdin shape the bash hook expects, spawns it, and maps its exit code to the harness's own block/allow contract. |
+| **Derive-from-settings.json** | Building the gate table by parsing the canonical hook-wiring config at runtime/generation time instead of hand-maintaining a second, parallel table per harness — the fix converges "zero drift by construction": a new hook wired once is picked up everywhere automatically. |
+| **Dispatcher** | A single extension/plugin that checks each tool call against a table of gate definitions (data rows), instead of one plugin per gate — adding a gate becomes a table entry, not a new file. |
+| **Proven live vs. proven by construction** | Verification hierarchy for a gate adapter: *by construction* means a mock built to match the documented/typed contract passed; *live* means a real, credentialed agent turn under the real harness was actually stopped by the real hook. Same discipline as **harness-level cheating** (§5b) and DebugML's trace-reading caution — don't claim a control works until you've watched it fire on a real turn. |
+| **Ops-root resolution / session-pin gap** | A portable gate needs to find its "home" config regardless of the harness's current working directory (env var override, then directory walk-up to a marker file). Noted risk: without an equivalent to a session-start pin, the adapter can resolve to an unrelated, similarly-shaped directory tree — a portability convenience traded against a narrow false-negative surface. |
+| **Rebrand trigger** | A pre-committed, numeric bar ("≥2 adapters with live end-to-end proof") that must be met before a project's public claim changes (here: dropping a single-harness tagline for a harness-neutral one). Meeting the bar doesn't auto-flip the claim — the change itself stays a separate, deliberate decision. A transferable pattern for not overclaiming harness-portability work in a demo. |
+
 ## 7. Personal practice (Hashimoto)
 
 | Term | Definition |
