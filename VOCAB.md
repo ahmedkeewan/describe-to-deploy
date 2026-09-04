@@ -186,6 +186,22 @@ The "bundled infrastructure" and permissions slice of the harness, scored as a *
 | Retries forever or quits early | Loop | Stop rules, loop detection, bounded retries |
 | Declares done without proof | Loop / sensor | Pre-completion checklist, verification gate |
 
-## 9. Ten words to say out loud on Saturday
+## 9. Context degradation and knowledge sourcing (AI Coding Dictionary, Matt Pocock)
+
+From [aihero.dev/ai-coding-dictionary](https://www.aihero.dev/ai-coding-dictionary) ([source repo](https://github.com/mattpocock/dictionary-of-ai-coding)). Fills a gap: your doom-loop and compaction entries (§2, §5) describe context rot qualitatively; these give it a mechanism, a number, and a sharper handoff vocabulary.
+
+| Term | Definition | Source |
+|---|---|---|
+| **Attention budget** | Each token has a fixed amount of influence to distribute across the rest of the context; it doesn't grow as the context does. | AI Coding Dictionary |
+| **Attention degradation** | As a session grows, each token's attention budget is spread across more competitors — signal on the relationship that matters shrinks, noise from irrelevant context crowds in. The mechanism behind the smart/dumb zone effect. | AI Coding Dictionary |
+| **Smart zone / dumb zone** | Smart zone: early in a session, the agent is sharp and recall is good. Dumb zone: the degraded state a long session drifts into. **On frontier models the dumb zone commonly begins around 125K-150K tokens** — a concrete, testable threshold, not currently in this repo elsewhere. Candidate as an actual measurement on your TB2.0 slice (quality before/after the threshold), and a principled trigger for a context-reset fix instead of an arbitrary one. | AI Coding Dictionary |
+| **Hallucination — factuality flavor** | Confidently invented facts. Fixed by *loading* contextual knowledge (give the model the source it's missing). | AI Coding Dictionary |
+| **Hallucination — faithfulness flavor** | Confidently wrong output that drifts *away* from knowledge already in context. Fixed by *removing* context (prune, don't add). Opposite intervention from the factuality flavor — worth distinguishing when reading failure traces. | AI Coding Dictionary |
+| **Parametric vs. contextual knowledge** | Parametric: frozen at training, compressed, blurry on rare topics — the fabrication source. Contextual: read directly from the session (files, tool results, AGENTS.md). Which one a failure traces back to determines which hallucination flavor and fix applies. | AI Coding Dictionary |
+| **Primary vs. secondary source** | Primary: the thing itself (code, transcript, log, API response). Secondary: an account of it, one step removed (a doc describing code, a summary describing a transcript) — cheaper to load, lossy by construction. | AI Coding Dictionary |
+| **Context pointer** | A reference a secondary source keeps back to its primary source, so detail lost in summarizing can be recovered by re-reading the original. Sharpens this repo's progress-file / handoff-artifact pattern (§4 Anthropic): the progress file should point back at the commits/files it summarizes, not just describe them. | AI Coding Dictionary |
+| **AX (Agent Experience)** | Counterpart to DX (developer experience): how well the environment is set up to support agent work, not human work. The reason environment-bootstrapping and agent-readable telemetry are worth building. | AI Coding Dictionary |
+
+## 10. Ten words to say out loud on Saturday
 
 harness · guide · sensor · computational · inferential · self-verification · doom loop · context injection · handoff · trace
