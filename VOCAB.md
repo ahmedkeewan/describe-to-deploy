@@ -136,6 +136,16 @@ Numbers: ~1M lines, ~1,500 merged PRs, 3 engineers growing to 7, zero hand-writt
 | **Component-based harness composition** | Typed state-machine components combine the way UI components do, so a cross-cutting concern (their example: compaction) becomes one composable unit instead of scattered special-case code. Compare **Compaction** (§2) and **Session/harness/sandbox** (§5b). | Tardigrade |
 | **"Let it crash"** | Durability property of an event-sourced harness: since state is fully reconstructable by replaying the log, a crashed agent process resumes from the log instead of needing custom checkpointing. | Tardigrade |
 
+## 5d. Harness as decomposed responsibilities, not a framework (Piccolo, iii.dev)
+
+From ["How to Build Your Own Agent Harness"](https://iii.dev/blog/how-to-build-your-own-agent-harness/) — independent corroboration of Tardigrade's component-based composition (§5c) and Anthropic's session/harness/sandbox split (§5b), pushed further into ~15 separately swappable concerns. Implementation is product-specific (a proprietary worker/WebSocket bus); the checklist and two rules below are the transferable part.
+
+| Term | Definition | Source |
+|---|---|---|
+| **Harness responsibility checklist** | A production harness's jobs, broken finer than the LangChain anatomy (§2): accept/persist turn requests, resolve provider credentials, look up model capabilities, drive the per-turn state machine, serve skill/tool metadata, assemble the system prompt in layers, stream tokens, enforce tool-call policy, route human approvals, track spend against budget, run pre/post-tool hooks, persist branching session history, compact on context fill, emit an event stream, trace every step. | Piccolo |
+| **Fail-closed policy semantics** | If the policy/approval check is unavailable or times out, default to deny (or trigger a corrective intervention), never silently proceed. | Piccolo |
+| **Thin vs. thick harness as configuration** | A minimal harness (orchestrator + model provider + auth) and a fully-loaded one (+ approvals + budgets + policy) are the same system with components toggled, not two different codebases. Useful framing for a demo: each hackathon fix is a component flipped on. | Piccolo |
+
 ## 6b. Sandbox and permissions (Agent Sandbox Taxonomy, Fahmy)
 
 The "bundled infrastructure" and permissions slice of the harness, scored as a **7-7-3** grid.
