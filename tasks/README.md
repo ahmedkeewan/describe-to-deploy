@@ -5,6 +5,14 @@ artifact — see [task-set.json](task-set.json) for the exact wording and succes
 Written before touching the harness, per the same discipline as [KICKOFF_PROMPT.md](../KICKOFF_PROMPT.md):
 don't let this get quietly adjusted later to flatter a fix.
 
+## Test data hygiene
+
+Never let a trial agent use a real person's email address, phone number, or other real PII as
+test data (e.g. for an SES/email capability trial) — use `test@example.com` or similar, even
+though Floci's emulators are local-only and don't actually deliver anywhere. A trial run on
+2026-09-05 used a real address as sample data; harmless here since nothing left the local
+emulator, but avoid it going forward.
+
 ## Ground rule
 
 Feed `request_text` to the agent under test **verbatim**, exactly as a non-technical founder
