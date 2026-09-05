@@ -26,6 +26,8 @@ Stretch (only if all five are measured by mid-afternoon): a one-iteration **evol
 
 **Scoring**: 10-task Terminal-Bench 2.0 slice through Harbor, 2 trials each, same model throughout. Pick tasks where the baseline fails on timeouts or premature completion, since fixes 3 and 4 target exactly those. Record pass rate, mean turns, and mean wall-clock per config.
 
+**Watch for infrastructure noise before crediting a fix.** Anthropic's ["Quantifying infrastructure noise in agentic coding evals"](https://www.anthropic.com/engineering/infrastructure-noise) found runtime/sandbox configuration alone can move a benchmark score by more than many leaderboard gaps between harnesses. Keep sandbox/container config, network conditions, and trial count identical across every row of the results table — a 2-trial slice makes this worse, not better, since a single flaky run swings the pass rate a lot. If a fix's number moves by less than the run-to-run variance you'd expect from re-running the *unmodified* baseline twice, don't claim it as the fix's effect on stage.
+
 **Demo (5 minutes)**:
 1. One slide: Agent = Model + Harness, and the baseline number.
 2. Live run of one task on the final harness with the trace viewer open. Point at the bootstrap block, the time counter, and the completion checklist firing.

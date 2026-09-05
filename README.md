@@ -89,7 +89,7 @@ Sandbox and permissions layer:
 Awesome lists (pick two, skim both):
 - https://github.com/ai-boost/awesome-harness-engineering — most recently updated, broadest.
 - https://github.com/Picrew/awesome-agent-harness — implementation-first, project tables.
-- Also: `walkinglabs/awesome-harness-engineering`, `Jiaaqiliu/Awesome-Harness-Engineering`, `AutoJunjie/awesome-agent-harness`, `mahonzhan/awesome-agent-harness`, `RyanAlberts/best-of-Agent-Harnesses`, `bradagi/awesome-cli-coding-agents`.
+- Also: `walkinglabs/awesome-harness-engineering` (unusually rich — five picks distilled into VOCAB.md §6f: infrastructure noise as a measurement confound, a working evolution-loop plugin, distributed-retry vocabulary, ClawBench's interception-layer eval sandboxing, and OpenHands' trained-critic alternative to LLM-judge scoring), `Jiaaqiliu/Awesome-Harness-Engineering`, `AutoJunjie/awesome-agent-harness`, `mahonzhan/awesome-agent-harness`, `RyanAlberts/best-of-Agent-Harnesses`, `bradagi/awesome-cli-coding-agents`.
 
 ## Tier 6 — Secondary explainers (skim if time)
 
@@ -142,3 +142,5 @@ Awesome lists (pick two, skim both):
 ## Caveats
 
 Links were gathered from search results and not every page was fetched to confirm it resolves. Terminal-Bench numbers shift between snapshots, so check the official leaderboard before quoting them.
+
+[medium.com/@victorzion1's "how I built an AI agent that learns from its own mistakes"](https://medium.com/@victorzion1/harness-engineering-how-i-built-an-ai-agent-that-learns-from-its-own-mistakes-32ebdd2df13c) is Cloudflare-blocked from every fetch method tried (WebFetch, direct curl with a browser UA) — unassessed, not confirmed useless.

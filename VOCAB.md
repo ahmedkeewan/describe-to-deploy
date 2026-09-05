@@ -209,6 +209,18 @@ From `docs/eval-agents/` + `.claude/skills/eval-agents/` — ApexYard's harness 
 | **Eval-harness contamination sandbox** | Sanitize identifying references (PR/issue numbers, URLs) out of the diff before handing it to the agent-under-test; snapshot the filesystem immediately before the spawn and diff it after — a mechanical check the agent's own narration can't talk around — backed by a secondary text-scan for read-only leaks the snapshot can't see. Discard (don't silently score) any run that trips either check. |
 | **Manual, human-adjudicated corpus growth** | An eval corpus's schema is machine-validated but its *truth* is never machine-generated — a fabricated ground-truth defect produces a confidently wrong score, worse than a smaller corpus. Every entry must trace to real evidence (independent review or a confirmed fix); entries without it are left out rather than invented. |
 
+## 6f. Miscellany from `awesome-harness-engineering` (walkinglabs)
+
+Cherry-picked from [walkinglabs/awesome-harness-engineering](https://github.com/walkinglabs/awesome-harness-engineering), a much richer curated list than a typical awesome-list. Most entries there restate what's already in this pack; these four don't.
+
+| Term | Definition | Source |
+|---|---|---|
+| **Infrastructure noise** | Runtime/sandbox configuration alone (container setup, network conditions, resource limits) can move a benchmark score by more than many of the leaderboard gaps between harnesses. Before crediting a score change to a harness fix, control for this — see the caution added to GAME_PLAN.md's Scoring section. | Anthropic, ["Quantifying infrastructure noise in agentic coding evals"](https://www.anthropic.com/engineering/infrastructure-noise) |
+| **Harness Evolver** | A working Claude Code plugin implementing this repo's own stretch goal (§ GAME_PLAN.md): an evolution loop with multi-agent proposers, LangSmith-backed evaluation, and git-worktree isolation, built directly on Meta-Harness (§5b). A fork base instead of building the stretch goal from scratch. | [`raphaelchristi/harness-evolver`](https://github.com/raphaelchristi/harness-evolver) |
+| **Distributed retry patterns** | Concurrency bounds, decorrelated backoff, circuit breakers, and idempotency — the fleet-scale vocabulary for "don't retry forever," one level more concrete than **doom loop** (§5) when a fix needs to bound repeated failed actions rather than just detect them. | [Loop & Retry, "bounding blast radius across a fleet"](https://loopandretry.github.io/posts/fleet-retry-patterns/) |
+| **Interception-layer eval sandboxing** | Capture and block only the *final submission/side-effecting* request so an agent can be scored end-to-end against real, live systems with no real-world side effects. Independently corroborates ApexYard's **eval-harness contamination sandbox** (§6e) from a completely different domain (browser agents scored against 144 live production sites, not code review). | ClawBench |
+| **Trained trajectory critic** | An alternative fix for **self-evaluation bias** (§5b) and **LLM-judge-on-prose is at-chance** (§6e): instead of freezing a human-curated ground-truth corpus and scoring by set-overlap, train a critic model on production traces for reranking, early-stopping, and review-time quality control. Different cost/reproducibility trade-off than ApexYard's frozen-corpus approach — worth knowing both exist. | OpenHands, ["Learning to Verify AI-Generated Code"](https://openhands.dev/blog/20260305-learning-to-verify-ai-generated-code) |
+
 ## 7. Personal practice (Hashimoto)
 
 | Term | Definition |
