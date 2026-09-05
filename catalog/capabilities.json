@@ -48,8 +48,9 @@
         "state_fields": ["bucketName"]
       },
       "verify": {
-        "cli": "aws s3 ls s3://<bucketName>",
-        "success_criteria": "call returns without error (empty listing is fine)"
+        "cli": "K=__gate_check__/$(date +%s%N); echo gate-check-$K > /tmp/__gate_check__.txt && aws s3 cp /tmp/__gate_check__.txt s3://<bucketName>/$K && aws s3 cp s3://<bucketName>/$K /tmp/__gate_check_out__.txt && cmp -s /tmp/__gate_check__.txt /tmp/__gate_check_out__.txt && aws s3 rm s3://<bucketName>/$K",
+        "success_criteria": "a real write, read-back with matching content, and cleanup delete all succeed -- not just that the bucket exists",
+        "hardened_note": "Upgraded 2026-09-05 after fix-4 testing showed the original `aws s3 ls` check would NOT have caught the S3 Object Lock collision found in tasks/task-set.json t6 -- listing a bucket succeeds even when every write/delete in it is blocked. The delete step here is specifically what would have caught it."
       },
       "wiring": {
         "env_vars": ["S3_BUCKET_NAME", "AWS_ENDPOINT_URL"]
