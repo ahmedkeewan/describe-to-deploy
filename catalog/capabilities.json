@@ -1,0 +1,320 @@
+{
+  "$schema_note": "Product-capability catalog for the Floci control-plane harness. Keys off plain-language founder phrases, not AWS service names. See catalog/README.md for the fallback rule and how this maps to GAME_PLAN.md's task set.",
+  "cloud": "aws",
+  "verified_against": "floci/floci server v2.0.1, 2026-09-05, via `aws --endpoint-url=http://localhost:4566` with dummy test/test credentials",
+  "capabilities": [
+    {
+      "id": "user-accounts",
+      "phrases": [
+        "users can sign up and log in",
+        "user accounts",
+        "authentication",
+        "let people create an account",
+        "login and signup"
+      ],
+      "founder_description": "Lets people create an account, log in, and reset their password securely.",
+      "aws_service": "cognito-idp",
+      "floci_services_flag": "cognito-idp",
+      "provision": {
+        "steps": [
+          "create-user-pool",
+          "create-user-pool-client (no secret, for a web/mobile app)"
+        ],
+        "state_fields": ["userPoolId", "clientId"]
+      },
+      "verify": {
+        "cli": "aws cognito-idp list-user-pools --max-results 1",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["COGNITO_USER_POOL_ID", "COGNITO_CLIENT_ID", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same Cognito User Pool concept in real AWS — no redesign needed to retarget after PMF."
+    },
+    {
+      "id": "file-storage",
+      "phrases": [
+        "users can upload a file",
+        "upload a profile photo",
+        "store images",
+        "file storage",
+        "let people upload photos"
+      ],
+      "founder_description": "Lets people upload and store files (like photos), and get them back later.",
+      "aws_service": "s3",
+      "floci_services_flag": "s3",
+      "provision": {
+        "steps": ["create bucket named after the app, e.g. <app-slug>-uploads"],
+        "state_fields": ["bucketName"]
+      },
+      "verify": {
+        "cli": "aws s3 ls s3://<bucketName>",
+        "success_criteria": "call returns without error (empty listing is fine)"
+      },
+      "wiring": {
+        "env_vars": ["S3_BUCKET_NAME", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same S3 bucket concept in real AWS."
+    },
+    {
+      "id": "structured-data",
+      "phrases": [
+        "save user data",
+        "a database for users",
+        "store information about users",
+        "a table of orders",
+        "keep track of records"
+      ],
+      "founder_description": "A place to save and look up structured information, like user profiles or orders.",
+      "aws_service": "dynamodb",
+      "floci_services_flag": "dynamodb",
+      "provision": {
+        "steps": ["create-table with a partition key inferred from the request, e.g. 'id'"],
+        "state_fields": ["tableName"]
+      },
+      "verify": {
+        "cli": "aws dynamodb describe-table --table-name <tableName>",
+        "success_criteria": "table status is ACTIVE"
+      },
+      "wiring": {
+        "env_vars": ["DYNAMODB_TABLE_NAME", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same DynamoDB table concept in real AWS."
+    },
+    {
+      "id": "background-job",
+      "phrases": [
+        "resize a photo after upload",
+        "do something automatically when a file is uploaded",
+        "run a background task",
+        "process something without the user waiting"
+      ],
+      "founder_description": "Runs a small piece of work in the background (like resizing a photo) without making the user wait.",
+      "aws_service": "lambda",
+      "floci_services_flag": "lambda",
+      "depends_on": ["file-storage"],
+      "provision": {
+        "steps": [
+          "create-function from a small starter handler",
+          "wire an S3 event notification (ObjectCreated) to invoke it"
+        ],
+        "state_fields": ["functionName"]
+      },
+      "verify": {
+        "cli": "aws lambda get-function --function-name <functionName>",
+        "success_criteria": "function state is Active"
+      },
+      "wiring": {
+        "env_vars": ["AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same Lambda + S3 event-notification pattern in real AWS."
+    },
+    {
+      "id": "send-email",
+      "phrases": [
+        "email a confirmation",
+        "send users an email",
+        "email notifications",
+        "welcome email"
+      ],
+      "founder_description": "Sends an email to a user, like a confirmation or welcome message.",
+      "aws_service": "ses",
+      "floci_service_name": "email",
+      "floci_services_flag": "email",
+      "provision": {
+        "steps": ["verify-email-identity for a sender address"],
+        "state_fields": ["senderIdentity"]
+      },
+      "verify": {
+        "cli": "aws ses list-identities",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["SES_SENDER_ADDRESS", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same SES identity concept in real AWS."
+    },
+    {
+      "id": "scheduled-task",
+      "phrases": [
+        "run something every day",
+        "a weekly email",
+        "a recurring job",
+        "cron job",
+        "do something on a schedule"
+      ],
+      "founder_description": "Runs something automatically on a schedule, like a weekly digest email.",
+      "aws_service": "scheduler",
+      "floci_services_flag": "scheduler",
+      "depends_on": ["background-job"],
+      "provision": {
+        "steps": ["create-schedule targeting an existing Lambda function"],
+        "state_fields": ["scheduleName"]
+      },
+      "verify": {
+        "cli": "aws scheduler get-schedule --name <scheduleName>",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same EventBridge Scheduler concept in real AWS."
+    },
+    {
+      "id": "background-queue",
+      "phrases": [
+        "queue up work",
+        "process things one at a time in the background",
+        "don't make the user wait for a slow task",
+        "a job queue"
+      ],
+      "founder_description": "Lines up work to be done in the background so nothing gets lost or slows the app down.",
+      "aws_service": "sqs",
+      "floci_services_flag": "sqs",
+      "provision": {
+        "steps": ["create-queue"],
+        "state_fields": ["queueUrl"]
+      },
+      "verify": {
+        "cli": "aws sqs get-queue-attributes --queue-url <queueUrl> --attribute-names All",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["SQS_QUEUE_URL", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same SQS queue concept in real AWS."
+    },
+    {
+      "id": "push-notifications",
+      "phrases": [
+        "notify users",
+        "push notifications",
+        "alert people when something happens",
+        "send an alert"
+      ],
+      "founder_description": "Sends an alert or notification out to users or to other parts of the app when something happens.",
+      "aws_service": "sns",
+      "floci_services_flag": "sns",
+      "provision": {
+        "steps": ["create-topic"],
+        "state_fields": ["topicArn"]
+      },
+      "verify": {
+        "cli": "aws sns get-topic-attributes --topic-arn <topicArn>",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["SNS_TOPIC_ARN", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same SNS topic concept in real AWS."
+    },
+    {
+      "id": "app-secrets",
+      "phrases": [
+        "store an API key safely",
+        "keep a password secret",
+        "store secrets",
+        "hide sensitive settings"
+      ],
+      "founder_description": "Stores sensitive values (like a third-party API key) safely instead of hardcoding them in the app.",
+      "aws_service": "secretsmanager",
+      "floci_services_flag": "secretsmanager",
+      "provision": {
+        "steps": ["create-secret with the value provided by the founder"],
+        "state_fields": ["secretName"]
+      },
+      "verify": {
+        "cli": "aws secretsmanager describe-secret --secret-id <secretName>",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same Secrets Manager concept in real AWS."
+    },
+    {
+      "id": "app-settings",
+      "phrases": [
+        "a settings screen the app can read",
+        "store simple configuration values",
+        "feature flags",
+        "app-wide settings"
+      ],
+      "founder_description": "Stores small configuration values the app can read, like feature flags or simple settings.",
+      "aws_service": "ssm",
+      "floci_services_flag": "ssm",
+      "provision": {
+        "steps": ["put-parameter for each setting"],
+        "state_fields": ["parameterPrefix"]
+      },
+      "verify": {
+        "cli": "aws ssm describe-parameters",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same Parameter Store concept in real AWS."
+    },
+    {
+      "id": "backend-api",
+      "phrases": [
+        "a backend for my app",
+        "an API my frontend can call",
+        "server logic",
+        "a way for the app to talk to a server"
+      ],
+      "founder_description": "Gives your app a backend it can call over the internet to do server-side logic.",
+      "aws_service": "apigateway",
+      "floci_services_flag": "apigateway,lambda",
+      "depends_on": ["background-job"],
+      "provision": {
+        "steps": [
+          "create-rest-api",
+          "wire routes to Lambda functions created for this app"
+        ],
+        "state_fields": ["apiId"]
+      },
+      "verify": {
+        "cli": "aws apigateway get-rest-api --rest-api-id <apiId>",
+        "success_criteria": "call returns without error"
+      },
+      "wiring": {
+        "env_vars": ["API_BASE_URL", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same API Gateway + Lambda concept in real AWS."
+    },
+    {
+      "id": "search",
+      "phrases": [
+        "let users search",
+        "full text search",
+        "search bar"
+      ],
+      "founder_description": "Lets users search through content in your app.",
+      "aws_service": "es",
+      "floci_services_flag": "es",
+      "provision": {
+        "steps": ["create-elasticsearch-domain (small, single-node)"],
+        "state_fields": ["domainName"]
+      },
+      "verify": {
+        "cli": "aws es describe-elasticsearch-domain --domain-name <domainName>",
+        "success_criteria": "domain processing is false and endpoint is set"
+      },
+      "wiring": {
+        "env_vars": ["SEARCH_ENDPOINT", "AWS_ENDPOINT_URL"]
+      },
+      "cloud_equivalent_note": "Same OpenSearch/Elasticsearch concept in real AWS."
+    }
+  ],
+  "explicitly_not_covered": {
+    "note": "Requests matching these (or anything else outside the list above) must hit the conservative fallback rule in catalog/README.md — never a free-form floci-cli guess.",
+    "examples": [
+      "real-time chat / websockets (no managed WebSocket emulation verified yet)",
+      "video encoding/transcoding",
+      "machine learning / AI inference beyond bedrock-runtime passthrough",
+      "payments processing (out of scope for local infra entirely — always a real, hosted provider)"
+    ]
+  }
+}
