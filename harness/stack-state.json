@@ -73,5 +73,75 @@
         "last_gate_result": "PASS"
       }
     }
+  },
+  "ChatBoxTest": {
+    "created": "2026-09-05T13:12:01.085871+00:00",
+    "capabilities": {
+      "structured-data": {
+        "resource_name": "chatboxtest-records",
+        "last_verified": "2026-09-05T13:12:01.085871+00:00",
+        "last_gate_result": "PASS"
+      }
+    }
+  },
+  "CurlChatTest": {
+    "created": "2026-09-05T13:14:56.061497+00:00",
+    "capabilities": {
+      "user-accounts": {
+        "resource_name": "us-east-1_337904f67",
+        "last_verified": "2026-09-05T13:14:56.061497+00:00",
+        "last_gate_result": "PASS"
+      },
+      "file-storage": {
+        "resource_name": "curlchattest-photos",
+        "last_verified": "2026-09-05T13:31:36.714035+00:00",
+        "last_gate_result": "PASS"
+      }
+    }
+  },
+  "BenchmarkApp": {
+    "created": "2026-09-05T13:31:55.586494+00:00",
+    "capabilities": {
+      "file-storage": {
+        "resource_name": "benchmarkapp-uploads",
+        "last_verified": "2026-09-05T13:31:55.586494+00:00",
+        "last_gate_result": "PASS"
+      },
+      "user-accounts": {
+        "resource_name": "us-east-1_aca509270",
+        "last_verified": "2026-09-05T13:32:42.299281+00:00",
+        "last_gate_result": "PASS"
+      },
+      "structured-data": {
+        "resource_name": "benchmarkapp-profiles",
+        "last_verified": "2026-09-05T13:33:00.517711+00:00",
+        "last_gate_result": "PASS"
+      },
+      "send-email": {
+        "resource_name": "hello@benchmarkapp.test",
+        "last_verified": "2026-09-05T13:33:14.770343+00:00",
+        "last_gate_result": "PASS"
+      }
+    }
+  },
+  "sample": {
+    "created": "2026-09-05T13:39:40.183816+00:00",
+    "capabilities": {
+      "send-email": {
+        "resource_name": "sample",
+        "last_verified": "2026-09-05T13:39:40.183816+00:00",
+        "last_gate_result": "PASS"
+      },
+      "file-storage": {
+        "resource_name": "sample-attachments",
+        "last_verified": "2026-09-05T13:40:50.424639+00:00",
+        "last_gate_result": "PASS"
+      },
+      "background-job": {
+        "resource_name": "sample-scheduled-message-sender",
+        "last_verified": "2026-09-05T13:42:36.300446+00:00",
+        "last_gate_result": "PASS"
+      }
+    }
   }
 }
