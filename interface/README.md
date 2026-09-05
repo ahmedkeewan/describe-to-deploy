@@ -315,6 +315,71 @@ Rules:
 - **Rows are not clickable.** The proof sentence is the whole disclosure. Anything needing more
   explanation is a catalog-writing failure, not a missing affordance.
 
+## Where the board's state lives
+
+The board renders `stack-state.json`, so that file needs a home that works when there is no
+project — which is the default path.
+
+**One Floci per machine, therefore one stack, therefore one state file.**
+
+```
+~/.floci-agent/stack-state.json     machine-level, always findable
+```
+
+All of Floci's emulated services live in a single instance sharing one set of ports and
+namespaces, so two independent stacks cannot coexist regardless of where their state is filed.
+The location follows the substrate.
+
+Deliberately **not** the launch directory. In the default path `cwd` is arbitrary — a founder may
+launch from anywhere — so writing there scatters files into folders unrelated to the product, and
+relaunching from a different directory would silently lose everything they built.
+
+A project, when present, does not change where the truth lives. It is recorded as a field:
+
+```json
+{
+  "project": null,
+  "floci_version": "2.0.1",
+  "capabilities": {
+    "file-storage": {
+      "status": "working",
+      "last_verified": "2026-09-06T10:07:44Z",
+      "bucketName": "photoapp-uploads"
+    }
+  }
+}
+```
+
+`project` tells the wiring step where to write and lets the board name what it is working on. The
+board reads the same file either way.
+
+### The state file is never trusted on startup
+
+A file describing running services is a claim, and claims go stale — someone tears Floci down, or
+reboots, and the file still says three things are working.
+
+**Every row must be reconciled against live Floci before it renders green.**
+
+```
+on start
+  read stack-state.json
+  for each capability:
+    re-run its check against live Floci
+      passes  → ● working, "last checked just now"
+      fails   → ○ not working yet
+      missing → drop the row
+```
+
+This is [VOCAB.md](../VOCAB.md) §6d — reconcile tracked state against actual state before acting
+on it — and it is the same principle as the [trust vocabulary](#trust-vocabulary) below: a row is
+green because a check just passed, never because a file said so.
+
+It is also why the default path writes **no founder-facing config file**. Such a file would be a
+second claim on disk, with no reader (there is no app in this path) and no reconciliation — the
+file equivalent of the "started but unverified" status this design deliberately has no room for.
+The rule: *write config only where you can verify it is being used*, which is the project path
+and only the project path.
+
 ## Trust vocabulary
 
 Five states the founder can ever see:
@@ -529,6 +594,11 @@ them.
   Round-trip sentences are drafted in [founder-copy.md](founder-copy.md).
 - **The UI is outside the measurement path.** That is deliberate — it keeps the scored CLI clean
   — but it means the jargon-leak metric is measured on agent responses, not on rendered pixels.
-- **Open question.** In the no-project default, does anything need to be written to disk, or is
-  the green board with its proof sentences the whole deliverable? Every scored task judges
-  success by querying Floci directly, so nothing currently depends on a written artifact.
+- **One machine, one stack.** Because Floci runs a single instance per machine, a founder with
+  two products would have them share infrastructure and overwrite each other's state. Acceptable
+  at this stage — Floci has the same constraint — but it is a real ceiling, not an oversight.
+- **`stack-state.json` is not built yet.** It is fix #5 in the build order. Until it exists the
+  board has no durable source and can only render a single run. The recorded baseline showed a
+  capable model already handles incremental requests correctly by re-querying live state
+  ([tasks/README.md](../tasks/README.md)), so the file's value is a stable render source and
+  fewer round trips — not correctness.
