@@ -49,7 +49,7 @@ order). Fill in `t1`-`t6` as pass/fail/partial; the last three columns aggregate
 | Config | t1 | t2 | t3 | t4 | t5 | t6 | Success rate | Avg time | Avg tool calls | Jargon leaks |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 0 — baseline (bare agent) | pass | pass | pass | pass | **overreach** | pass* | 5/6 functional | ~100s median | 2-36 (t3/t5 much higher) | 5/6 (t3,t5 heaviest) |
-| 1 — + capability catalog | | | | | | | | | | |
+| 1 — + capability catalog | pass | pass | pass | pass | **pass (fixed)** | pass | 6/6, correct outcome type on all 6 | ~52s median (~310s total vs. ~1040s baseline) | 1-11 (21 total vs. ~87 baseline) | **0/6** |
 | 2 — + planner tool | | | | | | | | | | |
 | 3 — + executor tool | | | | | | | | | | |
 | 4 — + verification gate | | | | | | | | | | |
@@ -125,3 +125,48 @@ consistent translation away from jargon (5 of 6 responses leaked infra terms) an
 efficiency (t3's 32 tool calls vs. a templated path that shouldn't need to rediscover a Pillow
 architecture mismatch). Frame the demo around scope discipline and translation, not "the baseline
 is incompetent" — it isn't, and overstating that gap would be its own credibility risk on stage.
+
+## Fix-1 run (capability catalog + conservative fallback rule) — recorded 2026-09-05
+
+Harness = [harness/build_prompt.py](../harness/build_prompt.py), generated directly from
+[catalog/capabilities.json](../catalog/capabilities.json) so the prompt can never drift from the
+catalog file. Same model, same task set, verbatim `request_text`, every result independently
+re-checked against live Floci state exactly as in the baseline run. Floci reset to a clean
+instance before this run (baseline's resources are preserved above, not lost).
+
+- **t1** — Real Cognito pool, verified live. **Pass, zero jargon leak** ("account creation and
+  login," no "Cognito"/"User Pool"/"JWT" anywhere). 2 tool calls / 25s vs. baseline's 7 / 70s.
+- **t2** — Real S3 bucket (`profile-photos-t2`), verified via live upload. **Pass, zero jargon
+  leak.** 1 tool call / 13s vs. baseline's 5 / 58s.
+- **t3** — Full storage→background-job→email chain, verified three ways (job's own log, a real
+  queued email addressed to `test@example.com` naming the exact photo, zero delivery failures).
+  **Pass, zero jargon leak** ("storage," "background job," "email system" throughout — no
+  "S3"/"Lambda"/"SES"/"Pillow"). **11 tool calls / 146s vs. baseline's 32 / 326s** — the catalog's
+  prescribed steps meant no rediscovering the Lambda architecture mismatch baseline hit.
+- **t4** — Correctly recognized the existing capability already supported multiple files per
+  person (no key-convention change needed, unlike baseline which had to redesign the key scheme
+  live) and proved it with two real uploads. **Pass, zero jargon leak.** 1 tool call / 16s.
+- **t5 — the fix this task was built to test.** Refused to freelance: matched nothing in the
+  catalog, offered the closest capability (`structured-data`, phrased as "a place to store and
+  look up messages") as an explicit plain-language question, and logged the unmatched request to
+  the fallback file — verified present with the exact request text. **Zero infrastructure was
+  provisioned** (confirmed against a fresh Floci instance: no APIs, no functions, no tables).
+  **1 tool call / 12.6s**, vs. baseline's 36 tool calls / 463s building a full undebuggable
+  WebSocket/Lambda/DynamoDB stack. This is the fix landing exactly as designed.
+- **t6** — Same real collision as the hardened baseline version (S3 Object Lock with a
+  bucket-level default COMPLIANCE retention, re-verified to genuinely block both the pre-existing
+  locked object and any fresh write to that bucket). Diagnosed the exact same root cause, applied
+  the same correct partial fix, and disclosed the same unfixable limitation — but in **entirely
+  jargon-free language** ("a protection setting that locked every photo... in a mode that cannot
+  be undone," never "Object Lock" or "COMPLIANCE" or "bucket"). Every claim independently
+  re-verified against live Floci state. **Pass, zero jargon leak.** 5 tool calls / 96.5s.
+
+**What changed vs. baseline, in one line each.** Jargon leaks: 5/6 → 0/6. Tool calls: ~87 total
+→ 21 total (~4x fewer). Wall-clock: ~1040s → ~310s total (~3x faster). Outcome correctness: t5
+went from "confident overreach" to "exactly the intended fallback behavior." Nothing regressed —
+every task that passed in baseline still passes, with the same underlying infrastructure quality
+(t6's diagnosis and fix were verified byte-for-byte identical in substance to the baseline run,
+just re-expressed in founder-safe language). This is the cleanest single-fix result in the build
+order: catalog + fallback rule buys speed, cost, and the one correctness fix (t5) baseline
+couldn't get right on its own — for a model this capable, translation and scope discipline turn
+out to be the harness's actual value-add, not raw task competence.
