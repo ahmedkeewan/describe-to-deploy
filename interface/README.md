@@ -1,18 +1,85 @@
-# Founder Interface Design — Floci Infra-Invisible Agent
+# Founder Interface — Design Spec
 
-Design spec for the founder-facing interface described in [GAME_PLAN.md](../GAME_PLAN.md).
-Written 2026-09-05, the evening before the hackathon. Companion to
-[catalog/README.md](../catalog/README.md) (what the agent can provision) and
-[tasks/README.md](../tasks/README.md) (how it is scored).
+The founder-facing surface of the infra-invisible agent in [GAME_PLAN.md](../GAME_PLAN.md).
+Part of a harness-engineering hackathon submission ([README.md](../README.md)); this document
+covers the interface layer only.
 
-## The product in one sentence
+---
 
-**A founder writes what they need in plain English — "I need users to be able to upload photos" —
-and the services that makes possible are set up on Floci, verified for real, and reported back in
-words they understand.**
+## In one sentence
 
-No codebase required. No account, no cloud, no deploy. The founder describes a product need; the
-infrastructure to support it exists a minute later, and its status is honest.
+**A non-technical founder writes what they need in plain English — "I need users to be able to
+upload photos" — and the infrastructure that makes it possible is set up on Floci, verified for
+real, and reported back in words they understand.**
+
+No codebase. No cloud account. No deploy. A founder describes a product need; the infrastructure
+exists a minute later, and its status is honest.
+
+## Why an interface layer is the harness work
+
+The measured fix-0 baseline ([tasks/README.md](../tasks/README.md)) already passes 5 of 6 tasks.
+A capable model provisions real infrastructure without any harness at all. **So the harness's
+value is not "it works vs. it doesn't"** — and claiming otherwise would be its own credibility
+risk.
+
+The baseline's two actual failures are both failures of what the user *sees*:
+
+| Baseline failure | Measured | What the interface does |
+|---|---|---|
+| **Jargon leak** — Cognito, JWTs, CORS, presigned URL, `USER_PASSWORD_AUTH` surfaced to a founder who cannot parse them | 5 of 6 responses | The [two-channel event contract](#jargon-leak-prevention-is-structural-not-behavioural) makes founder-facing jargon **unrepresentable**, not merely discouraged |
+| **Scope overreach** — asked for uncataloged "real-time chat," it silently built a WebSocket API Gateway v2 stack, 3 Lambdas, a DynamoDB table, and an undocumented `Host`-header workaround | t5 | The [confirmation checklist](#step-2--the-confirmation-checklist) states scope in founder language *before* provisioning. Three Lambdas cannot appear silently next to a plain-English list |
+
+Both are now moving in the scored table:
+
+```
+                    fix 0        fix 1 (+ catalog)
+  success rate      5/6          6/6
+  jargon leaks      5/6          0/6
+  t5 overreach      fail         fixed
+  wall clock       ~1040s        ~310s
+  tool calls        ~87           21
+```
+
+The interface is where those two properties are *enforced* rather than hoped for.
+
+## What is novel here
+
+**A failure mode made unrepresentable instead of instructed against.** The shipped fix-1 harness
+([harness/build_prompt.py](../harness/build_prompt.py)) enforces the language rule by telling the
+model to obey it:
+
+> "This is the single most important rule in this prompt: a jargon leak in your final report is a
+> failure even if the infrastructure itself works perfectly."
+
+That works — 0 of 6 leaks, measured. But it is a behaviour under instruction: it holds because
+the model complied, and one prompt edit, model swap, or unusual request away, it may not. The
+interface removes the possibility instead. Founder-facing text is drawn only from reviewed
+plain-English strings; **the model's own prose never reaches the founder pane at all.** A leak
+would require committing a service name into a catalog field — a code review away, not a sampling
+accident.
+
+That is Hashimoto's rule ([README.md](../README.md) Tier 1) — *engineer the harness so the agent
+can never make that mistake again* — applied to the presentation layer, which is not where it is
+usually applied. It is also the same move the existing harness already makes elsewhere:
+`build_prompt.py` generates the prompt *from* `capabilities.json` precisely so the two cannot
+drift. This extends that principle from the prompt to the output.
+
+**A trust vocabulary with a deliberate hole in it.** There is no status meaning "started but
+unverified" ([Trust vocabulary](#trust-vocabulary)). Something created but unproven stays
+`setting up…`. The verification gate cannot be quietly downgraded later because there is nowhere
+in the UI to put a half-truth.
+
+## How it maps to harness engineering
+
+| Interface mechanism | Harness concept ([VOCAB.md](../VOCAB.md)) |
+|---|---|
+| UI reads `stack-state.json` / `events.jsonl`, never shared memory | External state as the handoff between components (§4) |
+| Confirmation checklist blocks provisioning until scope is confirmed | Gate — a sensor that blocks rather than reports (§3, §6d) |
+| No status for "started but unverified" | Completion gate; evidence-based terminal states (§5b) |
+| Proof sentence on every row, sourced from the check that ran | Computational sensor surfaced to the human (§3) |
+| `founder` / `dev` channels on every event | Guide/AX separation (§9) — the same event, two audiences |
+| Fallback rule renders as a question, never an expanded plan | Advisory-vs-hard-gate distinction (§6d) |
+| Append-only `events.jsonl` as the render source | Session as append-only log (Tier 1b, Managed Agents) |
 
 ## Scope
 
@@ -22,8 +89,8 @@ failure are expressed, and what the harness must write for the UI to render.
 **Out of scope**: hosting, deployment, cloud retargeting, accounts, multi-user, anything
 persisted off the founder's machine. Local-only, deliberately, at this stage.
 
-**Explicitly not required**: an existing project. If the founder happens to have one in the
-directory they launched from, the agent can do more (see [Optional: an existing
+**Explicitly not required**: an existing project. If one happens to be in the directory the
+harness was launched from, the agent can do more ([Optional: an existing
 project](#optional-an-existing-project)). Everything essential works without it.
 
 ## Who this is for, and the one fact that shapes everything
@@ -36,21 +103,20 @@ services they cannot name.
 a working setup from a broken one. So the interface has one job beyond being usable: never let
 them believe something works when it doesn't.
 
-## What the baseline run says the interface is actually for
+Every decision below follows from that sentence.
 
-The fix-0 baseline recorded in [tasks/README.md](../tasks/README.md) on 2026-09-05 passed
-5 of 6 tasks. A capable model provisions and verifies real infrastructure without any harness at
-all, and its honesty under genuine failure (t6) was accurate down to the error string.
+## What's in this folder
 
-Two gaps remained, and **both are interface problems**:
-
-| Baseline failure | What the interface does about it |
+| | |
 |---|---|
-| **Jargon leak, 5 of 6 responses** — Cognito, JWTs, CORS, presigned URL, `USER_PASSWORD_AUTH` surfaced to the founder | The two-channel event contract makes founder-facing jargon *unrepresentable*, not merely discouraged. See [Jargon leak prevention](#jargon-leak-prevention-is-structural-not-behavioural). |
-| **t5 overreach** — asked for uncataloged "real-time chat," it silently built a WebSocket API Gateway v2 stack, 3 Lambdas, a DynamoDB table, and an undocumented `Host`-header workaround | The confirmation checklist makes scope *visible in founder language* before anything is provisioned. Three Lambdas cannot appear silently when the founder is looking at a list of plain-English capabilities. |
+| [README.md](README.md) — this file | The design: language rule, platform, coupling, the three-step journey, trust vocabulary, event contract |
+| [founder-copy.md](founder-copy.md) | Every word the founder can read, in one place — status words, proof sentences for all 12 capabilities, screen text, translation reference |
 
-This is the honest framing for the demo: the baseline is not incompetent, and overstating that
-gap is a credibility risk. The interface is where scope discipline and translation are enforced.
+Read in ~3 minutes: [In one sentence](#in-one-sentence) → [Why an interface layer is the harness
+work](#why-an-interface-layer-is-the-harness-work) → [What is novel](#what-is-novel-here) →
+[The journey](#the-journey) → [Trust vocabulary](#trust-vocabulary).
+
+---
 
 ## The language rule
 
@@ -384,6 +450,33 @@ still passes.
 Build the default path first. The project path is a bonus and stays cuttable; auto-wiring
 remains late in the build order, where the game plan already has it.
 
+## How this sits on the harness as it exists today
+
+Read from [harness/build_prompt.py](../harness/build_prompt.py) at fix 1, so the sequencing below
+is what the code actually supports, not an assumption.
+
+**What already lines up:**
+
+| Already true at fix 1 | What the interface does with it |
+|---|---|
+| The prompt is *generated from* `capabilities.json`, so the two cannot drift | Founder-facing strings live in the same file and inherit the same guarantee — add a capability, and its plain-English wording flows through automatically |
+| The fallback rule appends unmatched requests to a durable log rather than dropping them | Renders as *"I've made a note of what you asked for"* ([founder-copy.md](founder-copy.md)) — nothing new is required |
+| The prompt already forbids naming services in the final report | Same intent; the interface makes it structural instead of instructed |
+| `verify.cli` is run for real before anything is claimed | Becomes the proof sentence under each row — the check that ran *is* what the founder reads |
+
+**What the interface needs that does not exist yet:**
+
+| Needed | Depends on |
+|---|---|
+| `events.jsonl` with `founder` / `dev` channels | The **executor tool (fix 3)**. At fix 1 the agent is Bash-only and produces a single final prose report, so there is no event stream to render |
+| Live board updates during a run | Same. Until fix 3, a UI could only render the end state |
+| `verify.founder_proof` in the catalog | A ~15-minute catalog change; sentences already drafted in [founder-copy.md](founder-copy.md) |
+
+**Honest sequencing.** The interface is not buildable before fix 3, and it is most valuable after
+fix 4 (the verification gate), which is what gives the proof sentences something real to say. If
+the day runs short, the fallback is to render the final report through the founder vocabulary and
+skip live updates — the trust vocabulary and language rule still hold; only the liveness is lost.
+
 ## Implementation
 
 ```
@@ -398,6 +491,19 @@ ui       ONE static HTML file. No build step, no framework.
 The UI is a renderer, so a single file is genuinely sufficient — and it stays cuttable if the day
 runs short.
 
+## What this looks like in the 5-minute demo
+
+The interface carries three of the demo beats in [GAME_PLAN.md](../GAME_PLAN.md#demo-5-minutes):
+
+| Beat | What the audience sees | What it proves |
+|---|---|---|
+| **The ask** | A plain-English sentence typed in, and a checklist of plain-English capabilities coming back | Translation works, and scope is stated before anything runs |
+| **The board filling in** | Rows moving `setting up…` → `working`, each with the sentence describing what was actually checked | Claims are backed by real checks, not the agent's say-so |
+| **The failure case (t6)** | A row that says `not working yet` and stays there | The strongest moment: it declines to claim success it cannot back up |
+
+The demo screen never shows a service name, a port, or an error code. That is checkable live —
+and it is the 5/6 → 0/6 jargon result made visible rather than asserted from a table.
+
 ## What this implies for GAME_PLAN.md
 
 1. **The demo's framing should follow the baseline data.** Lead with scope discipline (t5) and
@@ -409,9 +515,20 @@ runs short.
 3. **Auto-wiring (fix #7) stays optional and late.** It applies only when a project happens to be
    present, and none of `t1`–`t6` require it.
 
-## Open question
+## Known limitations
 
-- Does the "no project" path need to leave anything behind on disk — a config file in the launch
-  directory — or is the green board with its proof sentences the whole deliverable? Every scored
-  task in `t1`–`t6` judges success by querying Floci directly, so nothing currently depends on a
-  written artifact.
+Stated plainly, because a submission that hides these is easier to catch out than one that names
+them.
+
+- **Launching is a terminal command.** There is exactly one technical step, and the pitch should
+  not claim zero. In a real product this is a downloadable app; the browser UI is unchanged.
+- **Verification is only as strong as the catalog's checks.** As of 2026-09-05 all 12 are
+  existence checks, which honestly earn only the weaker proof sentence. The recorded fix-0
+  baseline was *stronger* — it verified photo storage with a byte-identical round trip — so
+  existence-only checks would regress on proof strength against the baseline being compared to.
+  Round-trip sentences are drafted in [founder-copy.md](founder-copy.md).
+- **The UI is outside the measurement path.** That is deliberate — it keeps the scored CLI clean
+  — but it means the jargon-leak metric is measured on agent responses, not on rendered pixels.
+- **Open question.** In the no-project default, does anything need to be written to disk, or is
+  the green board with its proof sentences the whole deliverable? Every scored task judges
+  success by querying Floci directly, so nothing currently depends on a written artifact.
