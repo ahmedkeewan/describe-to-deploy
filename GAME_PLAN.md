@@ -99,8 +99,14 @@ executor, verification gate, and one incremental request — that's the whole st
 
 ## Before Saturday (prep, ~1-2 hrs)
 
-- [ ] Install `floci-cli` / `floci-ui` locally, confirm `floci start` and one emulator
-      (e.g. S3) come up and respond to a real AWS CLI call against the local endpoint
+- [x] Install `floci-cli` / `floci-ui` locally, confirm `floci start` and one emulator
+      (e.g. S3) come up and respond to a real AWS CLI call against the local endpoint —
+      done 2026-09-05. Note for Saturday: on Colima (not Docker Desktop), floci needs
+      `/var/run/docker.sock` symlinked to Colima's socket (`sudo ln -sf
+      ~/.colima/default/docker.sock /var/run/docker.sock`) before `floci start` works —
+      Colima's own forwarded socket path isn't visible inside its VM for the bind-mount
+      floci needs for its Lambda emulation. `AWS_ENDPOINT_URL` and `~/.aws/config`
+      `s3.addressing_style = path` are now persisted in `~/.zshrc` / `~/.aws/config`.
 - [ ] Pull the full Floci service list (AWS/Azure/GCP/OCI) to seed the catalog — don't build
       this live on Saturday
 - [ ] Draft the 6-10 request task set (above) so baseline can be measured in the first hour,
