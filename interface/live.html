@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Your product</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f7f6f3; --panel: #ffffff; --border: #e6e3dc; --text: #1c1b19; --muted: #6b6862;
+    --working: #2f8f4e; --failed: #b23b2e; --waiting: #a4762b; --setting-up: #6b6862;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--panel);
+    display: flex; align-items: center; gap: 10px; font-weight: 600;
+  }
+  header .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--working); }
+  main { flex: 1; display: flex; overflow: hidden; }
+  .activity { flex: 1; padding: 20px; overflow-y: auto; }
+  .activity h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 14px; }
+  .activity-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .activity-item .t { color: var(--muted); font-size: 12px; }
+  .sidebar {
+    width: 380px; border-left: 1px solid var(--border); background: var(--panel);
+    padding: 20px; overflow-y: auto;
+  }
+  .sidebar h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 14px; }
+  .row { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .row .head { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .row .status-icon { font-size: 14px; }
+  .row .status-icon.working { color: var(--working); }
+  .row .status-icon.failed { color: var(--failed); }
+  .row .status-icon.waiting { color: var(--waiting); }
+  .row .status-icon.setting-up { color: var(--setting-up); }
+  .row .status-word { font-size: 12px; color: var(--muted); margin-left: auto; }
+  .row .proof { font-size: 13px; color: var(--muted); margin-top: 4px; padding-left: 22px; }
+  .row .checked { font-size: 11px; color: var(--muted); margin-top: 2px; padding-left: 22px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
+  details.dev-panel { margin-top: 20px; font-size: 12px; }
+  details.dev-panel summary { cursor: pointer; color: var(--muted); }
+  details.dev-panel pre { background: #f0efe9; padding: 10px; border-radius: 6px; overflow-x: auto; }
+</style>
+</head>
+<body>
+  <header><span class="dot"></span> Your product — live board</header>
+  <main>
+    <div class="activity">
+      <h2>Activity</h2>
+      <div id="activity-list"><div class="empty">Nothing yet — ask for something through your assistant to see it appear here.</div></div>
+    </div>
+    <div class="sidebar">
+      <h2 id="product-name">Your product</h2>
+      <div id="capability-list"><div class="empty">Nothing set up yet.</div></div>
+      <details class="dev-panel">
+        <summary>Details for a developer</summary>
+        <p style="color:var(--muted)">You don't need to read this. If you have someone technical, send it to them.</p>
+        <pre id="dev-raw">—</pre>
+      </details>
+    </div>
+  </main>
+<script>
+const STATUS_ICON = {
+  "working": "●", "not working yet": "○",
+  "stopped — needs a person": "⊘", "waiting on your answer": "?", "setting up…": "◐",
+};
+const STATUS_CLASS = {
+  "working": "working", "not working yet": "failed",
+  "stopped — needs a person": "failed", "waiting on your answer": "waiting", "setting up…": "setting-up",
+};
+
+function renderCapabilities(state) {
+  const list = document.getElementById("capability-list");
+  const nameEl = document.getElementById("product-name");
+  const apps = Object.keys(state);
+  if (apps.length === 0) { list.innerHTML = '<div class="empty">Nothing set up yet.</div>'; return; }
+  nameEl.textContent = apps[apps.length - 1];
+  const app = state[apps[apps.length - 1]];
+  const caps = Object.values(app.capabilities || {});
+  if (caps.length === 0) { list.innerHTML = '<div class="empty">Nothing set up yet.</div>'; return; }
+  list.innerHTML = caps.map(c => `
+    <div class="row">
+      <div class="head">
+        <span class="status-icon ${STATUS_CLASS[c.status] || ''}">${STATUS_ICON[c.status] || '•'}</span>
+        <span>${c.label}</span>
+        <span class="status-word">${c.status}</span>
+      </div>
+      ${c.proof ? `<div class="proof">${c.proof}</div>` : ''}
+      <div class="checked">last checked ${c.last_checked || 'a moment ago'}</div>
+    </div>
+  `).join("");
+}
+
+function renderActivity(events) {
+  const list = document.getElementById("activity-list");
+  if (events.length === 0) return;
+  list.innerHTML = events.slice().reverse().map(e => `
+    <div class="activity-item">
+      <div class="t">${new Date(e.t).toLocaleTimeString()}</div>
+      <div>${e.founder.label}</div>
+    </div>
+  `).join("");
+  document.getElementById("dev-raw").textContent = JSON.stringify(events[events.length - 1].dev, null, 2);
+}
+
+async function refreshState() {
+  try {
+    const res = await fetch("/state");
+    renderCapabilities(await res.json());
+  } catch (e) { /* server not up yet */ }
+}
+
+let allEvents = [];
+const source = new EventSource("/events");
+source.onmessage = (msg) => {
+  allEvents.push(JSON.parse(msg.data));
+  renderActivity(allEvents);
+  refreshState();
+};
+
+refreshState();
+</script>
+</body>
+</html>

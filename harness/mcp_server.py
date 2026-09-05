@@ -31,6 +31,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import events as events_log
+
 from mcp.server.mcpserver import MCPServer
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -149,6 +152,12 @@ def get_provisioning_recipe(capability_id: str, resource_name: str) -> dict:
     verify_cli = cap["verify"]["cli"]
     for placeholder in ("bucketName", "tableName", "functionName", "userPoolId", "topicArn", "queueUrl", "secretName", "domainName"):
         verify_cli = verify_cli.replace(f"<{placeholder}>", resource_name)
+
+    events_log.emit(
+        "provision.start", capability_id,
+        founder={"label": cap["founder_description"], "status": "setting up…"},
+        dev={"service": cap["aws_service"], "resource_name": resource_name},
+    )
     return {
         "capability_id": capability_id,
         "resource_name": resource_name,
@@ -171,17 +180,38 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
     if cap is None:
         return {"gate_result": "FAIL", "founder_message": "That isn't something I can verify."}
 
+    events_log.emit(
+        "verify.start", capability_id,
+        founder={"label": cap["founder_description"], "status": "setting up…"},
+        dev={"cmd": cap["verify"]["cli"], "resource_name": resource_name},
+    )
+
     passed, detail = _run_verify(cap["verify"]["cli"], resource_name)
     now = datetime.now(timezone.utc).isoformat()
 
     if not passed:
+        founder_message = (
+            f"I tried to set up '{cap['founder_description'][:1].lower()}"
+            f"{cap['founder_description'][1:]}' but it isn't actually working yet -- "
+            "I won't tell you it's ready until it really is."
+        )
+        events_log.emit(
+            "verify.fail", capability_id,
+            founder={"label": cap["founder_description"], "status": "not working yet"},
+            dev={"cmd": cap["verify"]["cli"], "resource_name": resource_name, "detail": detail, "exit": 1},
+        )
         return {
             "gate_result": "FAIL",
-            "founder_message": (
-                f"I tried to set up '{cap['founder_description'][:1].lower()}"
-                f"{cap['founder_description'][1:]}' but it isn't actually working yet -- "
-                "I won't tell you it's ready until it really is."
-            ),
+            "founder_message": founder_message,
+            "_diagnostic_for_you_the_calling_agent": {
+                "note": "Not for the founder. The independent check that just ran, and exactly what it returned.",
+                "command_that_ran": cap["verify"]["cli"].replace("<userPoolId>", resource_name)
+                    .replace("<bucketName>", resource_name).replace("<tableName>", resource_name)
+                    .replace("<functionName>", resource_name).replace("<topicArn>", resource_name)
+                    .replace("<queueUrl>", resource_name).replace("<secretName>", resource_name)
+                    .replace("<domainName>", resource_name),
+                "output_or_error": detail,
+            },
         }
 
     state = _load_state()
@@ -192,6 +222,15 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
         "last_gate_result": "PASS",
     }
     _save_state(state)
+    events_log.emit(
+        "verify.pass", capability_id,
+        founder={
+            "label": cap["founder_description"],
+            "status": "working",
+            "proof": cap["verify"].get("founder_proof", "checked that it's up and answering"),
+        },
+        dev={"cmd": cap["verify"]["cli"], "resource_name": resource_name, "detail": detail, "exit": 0},
+    )
     return {
         "gate_result": "PASS",
         "founder_message": f"Done and verified: {cap['founder_description']}",
@@ -215,14 +254,25 @@ def report_unsupported_request(app_context: str, request_text: str, closest_capa
         catalog = _load_catalog()
         cap = catalog.get(closest_capability_id)
         if cap:
-            return {
-                "founder_message": (
-                    f"That's not something I can set up directly right now. The closest thing "
-                    f"I can offer today: {cap['founder_description'][:1].lower()}"
-                    f"{cap['founder_description'][1:]} Want that instead?"
-                )
-            }
-    return {"founder_message": "That's not something I can set up directly yet. I've made a note of it."}
+            founder_message = (
+                f"That's not something I can set up directly right now. The closest thing "
+                f"I can offer today: {cap['founder_description'][:1].lower()}"
+                f"{cap['founder_description'][1:]} Want that instead?"
+            )
+            events_log.emit(
+                "question.asked", closest_capability_id,
+                founder={"label": founder_message, "status": "waiting on your answer"},
+                dev={"unmatched_request": request_text},
+            )
+            return {"founder_message": founder_message}
+
+    founder_message = "That's not something I can set up directly yet. I've made a note of it."
+    events_log.emit(
+        "question.asked", None,
+        founder={"label": founder_message, "status": "waiting on your answer"},
+        dev={"unmatched_request": request_text},
+    )
+    return {"founder_message": founder_message}
 
 
 @server.tool()
