@@ -62,6 +62,34 @@
   details.dev-panel { margin-top: 20px; font-size: 12px; }
   details.dev-panel summary { cursor: pointer; color: var(--muted); }
   details.dev-panel pre { background: #f0efe9; padding: 10px; border-radius: 6px; overflow-x: auto; }
+
+  .export-footer {
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .export-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer;
+    font-size: 13px; color: var(--muted); background: var(--bg);
+  }
+  .export-btn:hover { background: #efeee8; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(28,27,25,.35); display: none;
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--panel); border-radius: 8px; width: 420px; padding: 24px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.18);
+  }
+  .modal h3 { margin: 0 0 18px; font-size: 16px; }
+  .modal .section { margin-bottom: 18px; }
+  .modal .section-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .04em; }
+  .modal label { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 4px 0; cursor: pointer; }
+  .modal .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .modal button { padding: 9px 16px; border-radius: 5px; border: 1px solid var(--border); font-size: 14px; cursor: pointer; background: var(--panel); }
+  .modal button.primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .modal button.primary:disabled { opacity: .4; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -86,8 +114,38 @@
         <p style="color:var(--muted)">You don't need to read this. If you have someone technical, send it to them.</p>
         <pre id="dev-raw">—</pre>
       </details>
+      <div class="export-footer">
+        <div class="export-btn" id="export-open-btn">
+          <span>↓ Export what you have</span>
+        </div>
+      </div>
     </div>
   </main>
+
+  <div class="modal-overlay" id="export-overlay">
+    <div class="modal">
+      <h3>Export what you have</h3>
+      <div class="section">
+        <div class="section-label">What goes in</div>
+        <label><input type="checkbox" id="exp-has" checked> What your product has</label>
+        <label><input type="checkbox" id="exp-diagram" checked> How the pieces fit together</label>
+        <label><input type="checkbox" id="exp-checked" checked> What was checked, and when</label>
+        <label><input type="checkbox" id="exp-tech"> Technical details</label>
+      </div>
+      <div class="section">
+        <div class="section-label">As</div>
+        <label><input type="radio" name="exp-format" value="page" checked> A page to share (opens for printing/PDF)</label>
+        <label><input type="radio" name="exp-format" value="diagram"> Just the diagram (SVG)</label>
+        <label><input type="radio" name="exp-format" value="text"> A written summary (text)</label>
+        <label><input type="radio" name="exp-format" value="devfiles"> Files a developer needs</label>
+      </div>
+      <div class="actions">
+        <button id="export-cancel-btn">Cancel</button>
+        <button class="primary" id="export-go-btn">Export</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 const STATUS_ICON = {
   "working": "●", "not working yet": "○",
@@ -210,6 +268,153 @@ source.onmessage = (msg) => {
 };
 
 refreshState();
+
+// ---- Export ----
+// interface/README.md's "Export" section: what a founder walks away with when the tool closes.
+// Two audiences, same split as everything else in this board -- plain (founder-safe, diagram +
+// proof sentences + an explicit "not reachable from the internet yet" note) and technical (real
+// resource names, the check that verified each one, and the actual local connection details).
+
+function orderedCapabilities(app) {
+  // Respects real dependency constraints (catalog/capabilities.json's depends_on) but otherwise
+  // preserves original insertion order -- the order capabilities were actually provisioned in,
+  // which is itself a meaningful narrative signal. A batch-by-depth topological sort (the first
+  // version of this function) is equally VALID but can read as misleading: for photo-confirm
+  // (file-storage -> background-job depends on it, send-email depends on nothing) it produced
+  // "upload -> email -> resize" instead of the intuitive "upload -> resize -> email", since
+  // send-email has no edge forcing it later and got grouped into the same "ready" batch as
+  // file-storage. Caught by actually looking at the exported diagram, not by unit-testing the
+  // sort function against its own (technically correct) definition of "valid."
+  const caps = Object.entries(app.capabilities || {});
+  const placed = new Set();
+  const ordered = [];
+  let remaining = caps.slice();
+  while (remaining.length) {
+    const idx = remaining.findIndex(([, c]) => (c.depends_on || []).every(d => placed.has(d)));
+    if (idx === -1) { ordered.push(...remaining); break; } // cycle guard, shouldn't happen
+    const [id, c] = remaining[idx];
+    placed.add(id);
+    ordered.push([id, c]);
+    remaining.splice(idx, 1);
+  }
+  return ordered;
+}
+
+function buildDiagramSVG(appName, app) {
+  const caps = orderedCapabilities(app);
+  const boxW = 220, boxH = 64, gapX = 60, padTop = 30, padLeft = 30;
+  const totalW = padLeft * 2 + caps.length * boxW + (caps.length - 1) * gapX;
+  const totalH = padTop * 2 + boxH;
+  const wrap = (s, n) => {
+    const words = s.split(" "); const lines = []; let cur = "";
+    for (const w of words) { if ((cur + " " + w).trim().length > n) { lines.push(cur.trim()); cur = w; } else cur += " " + w; }
+    if (cur.trim()) lines.push(cur.trim());
+    return lines.slice(0, 3);
+  };
+  let boxes = "", arrows = "";
+  caps.forEach(([id, c], i) => {
+    const x = padLeft + i * (boxW + gapX);
+    const y = padTop;
+    const lines = wrap(c.label, 28);
+    boxes += `<rect x="${x}" y="${y}" width="${boxW}" height="${boxH}" rx="6" fill="#ffffff" stroke="#e6e3dc"/>`;
+    lines.forEach((line, li) => {
+      boxes += `<text x="${x + boxW/2}" y="${y + 24 + li*16}" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="12.5" fill="#1c1b19">${line}</text>`;
+    });
+    if (i > 0) {
+      const ax = x - gapX;
+      arrows += `<line x1="${ax}" y1="${y + boxH/2}" x2="${x - 6}" y2="${y + boxH/2}" stroke="#a4a196" stroke-width="1.5" marker-end="url(#arrow)"/>`;
+    }
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">
+    <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#a4a196"/></marker></defs>
+    <rect width="100%" height="100%" fill="#f7f6f3"/>
+    ${boxes}${arrows}
+  </svg>`;
+}
+
+function buildPlainSummary(appName, app) {
+  const caps = orderedCapabilities(app);
+  const lines = [`${appName}`, "", "WHAT YOUR PRODUCT HAS", ""];
+  caps.forEach(([, c]) => {
+    lines.push(`- ${c.label} — ${c.status}${c.proof ? ` (${c.proof})` : ""}`);
+  });
+  lines.push("", "HOW THE PIECES FIT TOGETHER", "");
+  lines.push(caps.map(([, c]) => c.label).join("\n  → "));
+  lines.push("", "WHAT WAS CHECKED, AND WHEN", "");
+  caps.forEach(([, c]) => lines.push(`- ${c.label}: last checked ${c.last_checked || "unknown"}`));
+  lines.push("", "None of this is reachable from the internet yet — it's running locally for development.");
+  return lines.join("\n");
+}
+
+function buildTechnicalBundle(appName, app) {
+  const caps = orderedCapabilities(app);
+  const lines = [`# Developer handoff — ${appName}`, "", "Generated from the live board. Local Floci environment, not deployed.", ""];
+  lines.push("## Connection details", "", "```", "AWS_ENDPOINT_URL=http://localhost:4566", "AWS_ACCESS_KEY_ID=test", "AWS_SECRET_ACCESS_KEY=test", "AWS_DEFAULT_REGION=us-east-1");
+  caps.forEach(([id, c]) => {
+    if (c._dev) lines.push(`# ${id}: ${c._dev.service} — ${c._dev.resource_name}`);
+  });
+  lines.push("```", "");
+  lines.push("## Capabilities", "");
+  caps.forEach(([id, c]) => {
+    lines.push(`### ${c.label}`);
+    if (c._dev) {
+      lines.push(`- service: \`${c._dev.service}\``, `- resource: \`${c._dev.resource_name}\``, `- status: ${c.status}`, `- real AWS equivalent: ${c._dev.cloud_equivalent}`, "");
+    }
+  });
+  return lines.join("\n");
+}
+
+function downloadBlob(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function openSharePage(appName, app, includeTech) {
+  const diagram = buildDiagramSVG(appName, app);
+  const caps = orderedCapabilities(app);
+  const rows = caps.map(([id, c]) => `
+    <div style="padding:14px 0;border-bottom:1px solid #e6e3dc;">
+      <div style="font-weight:600;">${c.label} <span style="font-weight:400;color:#6b6862;font-size:13px;">${c.status}</span></div>
+      ${c.proof ? `<div style="color:#6b6862;font-size:13px;margin-top:4px;">${c.proof}</div>` : ""}
+      ${includeTech && c._dev ? `<div style="color:#a4a196;font-size:12px;margin-top:4px;">${c._dev.service} · ${c._dev.resource_name}</div>` : ""}
+    </div>`).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${appName}</title>
+    <style>body{font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:700px;margin:40px auto;color:#1c1b19;padding:0 20px;}
+    h1{font-size:22px;} .note{color:#6b6862;font-size:13px;margin-top:30px;padding-top:16px;border-top:1px solid #e6e3dc;}</style></head>
+    <body><h1>${appName}</h1>${diagram}<div>${rows}</div>
+    <div class="note">None of this is reachable from the internet yet — it's running locally for development.</div>
+    <script>window.onload = () => setTimeout(() => window.print(), 400);<\/script>
+    </body></html>`;
+  const w = window.open("", "_blank");
+  w.document.write(html);
+  w.document.close();
+}
+
+function doExport() {
+  if (!selectedApp || !currentState[selectedApp]) return;
+  const app = currentState[selectedApp];
+  const includeTech = document.getElementById("exp-tech").checked;
+  const format = document.querySelector('input[name="exp-format"]:checked').value;
+
+  if (format === "page") openSharePage(selectedApp, app, includeTech);
+  else if (format === "diagram") downloadBlob(`${selectedApp}-diagram.svg`, buildDiagramSVG(selectedApp, app), "image/svg+xml");
+  else if (format === "text") downloadBlob(`${selectedApp}-summary.txt`, buildPlainSummary(selectedApp, app), "text/plain");
+  else if (format === "devfiles") downloadBlob(`${selectedApp}-developer-handoff.md`, buildTechnicalBundle(selectedApp, app), "text/markdown");
+
+  document.getElementById("export-overlay").classList.remove("open");
+}
+
+document.getElementById("export-open-btn").addEventListener("click", () => {
+  document.getElementById("export-overlay").classList.add("open");
+});
+document.getElementById("export-cancel-btn").addEventListener("click", () => {
+  document.getElementById("export-overlay").classList.remove("open");
+});
+document.getElementById("export-go-btn").addEventListener("click", doExport);
 </script>
 </body>
 </html>

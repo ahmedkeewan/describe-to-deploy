@@ -77,12 +77,22 @@ async def state(request):
 
     reconciled = {app_context: {"created": raw_state[app_context].get("created"), "capabilities": {}}
                   for app_context in raw_state}
-    for (app_context, cap_id, cap, _), passed in zip(jobs, results):
+    for (app_context, cap_id, cap, resource_name), passed in zip(jobs, results):
         reconciled[app_context]["capabilities"][cap_id] = {
             "label": cap["founder_description"],
             "status": "working" if passed else "not working yet",
             "proof": cap["verify"].get("founder_proof") if passed else None,
             "last_checked": "just now",
+            "depends_on": cap.get("depends_on", []),
+            # Technical fields -- the UI must only ever show these behind the explicit
+            # "Details for a developer" disclosure or the technical export option, never in the
+            # founder-facing board itself (interface/README.md's language rule).
+            "_dev": {
+                "service": cap["aws_service"],
+                "resource_name": resource_name,
+                "endpoint": "http://localhost:4566",
+                "cloud_equivalent": cap.get("cloud_equivalent_note", ""),
+            },
         }
 
     return JSONResponse(reconciled)
