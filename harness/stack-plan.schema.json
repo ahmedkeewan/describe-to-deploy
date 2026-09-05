@@ -1,0 +1,33 @@
+{
+  "$schema_note": "The intermediate artifact fix #2 introduces between planning and execution. Kept cloud-provider-neutral in shape (see GAME_PLAN.md's comparison table) so it stays retargetable from Floci to real AWS/GCP after PMF without a redesign. Written by the planner agent, read by the executor agent -- the two never share an underlying conversation.",
+  "example": {
+    "app_context": "a short, human-readable label for this app/project, chosen by the planner, stable across follow-up requests",
+    "founder_request": "the verbatim request text this plan was built from, kept for traceability",
+    "provider": "aws",
+    "matched_capabilities": [
+      {
+        "capability_id": "file-storage",
+        "resource_name": "a deterministic name the planner chose for the underlying resource, e.g. <app_context>-photos",
+        "reused_existing": false,
+        "depends_on": []
+      }
+    ],
+    "fallback": null
+  },
+  "fallback_shape": {
+    "app_context": null,
+    "founder_request": "the verbatim unmatched request",
+    "provider": "aws",
+    "matched_capabilities": [],
+    "fallback": {
+      "closest_capability_id": "the nearest catalog entry, or null if nothing is close",
+      "question_for_founder": "the exact plain-language question or statement to show the founder -- the executor relays this verbatim and provisions nothing"
+    }
+  },
+  "field_notes": {
+    "matched_capabilities": "Ordered so every entry's depends_on capability_ids appear earlier in the list -- the executor provisions in list order and does not re-resolve dependencies itself.",
+    "reused_existing": "true only if the planner found a real, live, compatible existing resource on Floci for this exact app_context and capability -- the planner must have actually checked, not assumed.",
+    "resource_name": "Always present, even when reused_existing is true, so the executor never has to guess a name.",
+    "fallback": "Present (non-null) only when matched_capabilities is empty. The two are mutually exclusive."
+  }
+}

@@ -50,8 +50,8 @@ order). Fill in `t1`-`t6` as pass/fail/partial; the last three columns aggregate
 |---|---|---|---|---|---|---|---|---|---|---|
 | 0 — baseline (bare agent) | pass | pass | pass | pass | **overreach** | pass* | 5/6 functional | ~100s median | 2-36 (t3/t5 much higher) | 5/6 (t3,t5 heaviest) |
 | 1 — + capability catalog | pass | pass | pass | pass | **pass (fixed)** | pass | 6/6, correct outcome type on all 6 | ~52s median (~310s total vs. ~1040s baseline) | 1-11 (21 total vs. ~87 baseline) | **0/6** |
-| 2 — + planner tool | | | | | | | | | | |
-| 3 — + executor tool | | | | | | | | | | |
+| 2 — + planner + executor tools* | pass | pass | pass | skipped† | pass | **pass (plan corrected)** | 5/6 measured, all correct | combined ~2x fix-1 (two-agent overhead) | see notes below | **0/6** |
+| 3 — + executor tool | *(merged into row 2 — a planner needs something to execute its plan, so both were built and measured together)* | | | | | | | | | |
 | 4 — + verification gate | | | | | | | | | | |
 | 5 — + state file | | | | | | | | | | |
 | 6 — + failure escalation | | | | | | | | | | |
@@ -170,3 +170,58 @@ just re-expressed in founder-safe language). This is the cleanest single-fix res
 order: catalog + fallback rule buys speed, cost, and the one correctness fix (t5) baseline
 couldn't get right on its own — for a model this capable, translation and scope discipline turn
 out to be the harness's actual value-add, not raw task competence.
+
+## Fix-2 run (planner/executor split) — recorded 2026-09-05
+
+Harness = [harness/build_prompt.py](../harness/build_prompt.py) `--fix 2 --role planner|executor`,
+plus the schema at [harness/stack-plan.schema.json](../harness/stack-plan.schema.json). The
+single fix-1 agent is split into two agents that never share a conversation: a **planner** that
+may only read Floci state (never write) and must produce a `stack-plan.json` matching the schema,
+and an **executor** that reads only that plan file — not the founder's original words — and does
+the actual provisioning. This makes the plan a real, inspectable artifact between intent and
+action, and forces the executor to independently verify rather than just trust what it's handed.
+
+- **t1, t2** — Clean plan → clean execution, both verified against live Floci state exactly
+  matching the plan's `resource_name`. **Pass, zero jargon leak** on both halves.
+- **t3** — Planner correctly resolved the 3-capability dependency chain in order
+  (`file-storage` → `background-job` → `send-email`) with zero help beyond the catalog's
+  `depends_on` field. Executor followed the plan's exact resource names, proved a real resize
+  (8.0 KiB → 1.4 KiB) and a real queued confirmation email. **Pass, zero jargon leak.**
+- **t4 — skipped due to a sequencing mistake, not a harness failure.** I poisoned the t2 bucket
+  for t6 before running t4's executor against that same plan, which would have silently
+  conflated the two measurements. t4's planner output was captured and was correct (`file-storage`
+  marked `reused_existing: true` against the live bucket) — see
+  `/tmp/floci-hackathon-fix2-t4/stack-plan.json` — but the executor half was not run for this
+  fix level. Fix-1's already-verified t4 pass stands as the reference point for incremental-request
+  behavior; a clean fix-2 rerun is a fast redo if this specific number matters later.
+- **t5** — Planner produced a correct fallback block (empty `matched_capabilities`, a real
+  plain-language question) without the executor ever needing the full catalog. Executor relayed
+  it and provisioned nothing, confirmed against a fresh Floci instance. **Pass, zero jargon leak.**
+  2 tool calls / ~23s total across both agents (still far below baseline's 36 / 463s for the same
+  task, though costlier than fix-1's single-agent 1 / 12.6s — the two-agent split has a real,
+  measurable overhead when nothing needs building).
+- **t6 — the most important result of this fix.** The planner's own diagnosis was **wrong**: it
+  ran a single `put-object` to a brand-new key (which always succeeds regardless of the lock,
+  since only overwrites/deletes are blocked), never actually reproduced the reported symptom
+  ("an existing user replacing their photo"), and confidently proposed the wrong root cause
+  (missing CORS configuration) in its `diagnostic_notes`. The executor was explicitly instructed
+  to treat the plan's diagnostic notes as "a hypothesis, not a verified fact" and to test the
+  specific reported scenario itself. It did: found the CORS theory didn't explain the symptom,
+  tested an actual replace-cycle, found the real Object Lock failure, fixed it, verified the fix
+  with a real upload-then-replace round trip, added the (harmless, real) CORS gap as a bonus, and
+  **explicitly told the founder its first theory had been wrong** — all in zero-jargon language.
+  Every claim independently re-verified against live Floci state, including the honest disclosure
+  that pre-existing locked objects remain stuck. **Pass — and proof that the "verify
+  independently, don't trust the plan" instruction is load-bearing, not decorative:** a
+  planner/executor split without that instruction would very plausibly have shipped the wrong fix
+  with high confidence.
+
+**What this run says about fix #2's value, honestly.** On raw efficiency, the two-agent split is
+a net cost, not a win — roughly 2x fix-1's tool calls and wall-clock for the same tasks, since
+each agent pays its own setup/context overhead and the planner often re-does a subset of the
+executor's own state inspection. Its value is entirely in **inspectability and error correction**:
+a wrong intermediate belief (t6's CORS theory) is visible and catchable in an artifact *before* it
+becomes an action, and this run caught a real example of exactly that — not a hypothetical one.
+Recommend keeping this fix for the demo specifically because of the t6 result, while being honest
+on stage that it costs time/tokens fix-1 didn't, and that the win here came from an explicit
+verify-independently instruction on the executor, not from the split alone.
