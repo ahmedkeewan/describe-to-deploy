@@ -1,100 +1,109 @@
-# Hackathon Game Plan
+# Hackathon Game Plan — Floci Control-Plane Agent
 
-Companion to [README.md](README.md). Hackathon date: Saturday 2026-09-06.
+Companion to [README.md](README.md) and [VOCAB.md](VOCAB.md). Hackathon date: Saturday 2026-09-06.
 
-## Event profile (confirmed 2026-09-03)
+Supersedes the earlier TB2.0/mini-swe-agent plan (see git history) — the project pivoted from
+"climb a public leaderboard" to "build a useful agent harness for a real workflow." The
+harness-engineering vocabulary and judging logic carry over unchanged; only the target task and
+scoring method change.
 
-Internal event, no public rubric. Any stack. Judged on **measured performance gain AND a working demo**. One day, solo or pair.
+## The idea
 
-## Tailored recommendation
+[Floci](https://floci.io/) is a suite of local cloud emulators (AWS/Azure/GCP/OCI — real Docker,
+real Postgres, real Redis, not mocks) that run entirely on a dev machine. The gap: an engineer
+still has to know which emulator maps to which cloud service, hand-write the compose/manifest
+config, get SDK endpoint URLs right, and manually confirm things actually came up.
 
-**Base**: `mini-swe-agent`. Tiny loop, one bash tool, model-agnostic, and Harbor already supports it, so the baseline is a one-liner. A pair can hold the whole codebase in their heads, which matters when you are patching the loop live.
+**Project**: an agent harness that takes a plain-language infra request ("I need S3 + a Lambda
+that reads DynamoDB" / "add a Postgres instance to what's running") and turns it into a running,
+*verified* local environment on Floci — then can extend or tear it down on request.
 
-**Project**: "Five fixes, one number." Stack the cheapest leaderboard-proven changes onto the seed harness and show the score climbing after each one. This satisfies both judging axes at once: the score is the measured gain, and the running agent with traces on screen is the demo.
+This is still a harness-engineering demo: Floci is the sandbox/execution substrate, and the
+interesting work is the guide/sensor/state layers wrapped around it, per the taxonomy in
+[VOCAB.md §3, §4](VOCAB.md).
 
-Build order, each one measured before the next starts:
+## Architecture
 
-| # | Fix | Where in mini-swe-agent | Est. time |
-|---|---|---|---|
-| 1 | Environment bootstrap injected into first user turn | prompt template / run script | 45 min |
-| 2 | Output cap (30 KB) on tool results | environment class | 20 min |
-| 3 | Completion gate: agent's "done" returns a checklist and requires a second confirm | agent loop, intercept the submit action | 60 min |
-| 4 | Time-aware execution: elapsed and remaining time appended to each observation | agent loop | 45 min |
-| 5 | Loop detection: same command or same file edited N times triggers an intervention message | agent loop | 45 min |
+| Layer | Component | Harness role |
+|---|---|---|
+| Guide | **Service catalog** — structured map of Floci services (cloud, port, floci-cli invocation, common capability → service mapping) built from `floci-cli` service list | Environment bootstrap equivalent (VOCAB §5b): the agent doesn't guess CLI flags or ports, it looks them up |
+| Guide | **Stack templates** — 5-8 pre-verified common combos (S3+Lambda+DynamoDB, RDS+Redis, API Gateway+Lambda) | Cuts exploration turns for the common case; agent still free-forms outside the catalog |
+| Tool | **Planner** — NL request → structured plan (`stack-plan.json`: services, ports, env vars) | Forces an explicit, inspectable intermediate artifact before anything executes |
+| Tool | **Executor** — wraps `floci-cli` / `docker-compose` start/stop, one call per service, structured result back | Unified runtime boundary (VOCAB §5b): all side effects go through one tool, not raw bash |
+| Sensor | **Verification gate** — after start, hits the *real* endpoint per service (`aws --endpoint-url=... s3 ls`, an actual DB connection, not "container running") before declaring ready | Completion gate (VOCAB §5b/§6d): no "done" claim without live proof |
+| State | **`floci-stack.json`** — durable record of what's running, so a follow-up request ("also add Redis") is incremental, not a fresh guess | Progress file / feature list pattern (VOCAB §4), applied to infra instead of code |
+| Loop | **Failure escalation** — port conflict or failed container after 1 retry stops and reports, doesn't loop silently | Doom-loop detection (VOCAB §5), scoped to infra ops where blind retry can double-provision |
+| Guide | **Endpoint wiring output** — generates `.env` / SDK profile pointing at local endpoints, printed at the end | AX (VOCAB §9): the deliverable a human engineer actually pastes into their app |
 
-Stretch (only if all five are measured by mid-afternoon): a one-iteration **evolution loop**. A second agent reads the failing traces from the slice, proposes one prompt or tool change, you apply it and re-run. Showing the harness improve itself on stage is the strongest possible closer for a demo-judged room.
+## Build order
 
-**Scoring**: 10-task Terminal-Bench 2.0 slice through Harbor, 2 trials each, same model throughout. Pick tasks where the baseline fails on timeouts or premature completion, since fixes 3 and 4 target exactly those. Record pass rate, mean turns, and mean wall-clock per config.
+Same rhythm as before: measure before/after each fix, don't stack unmeasured changes.
 
-**Watch for infrastructure noise before crediting a fix.** Anthropic's ["Quantifying infrastructure noise in agentic coding evals"](https://www.anthropic.com/engineering/infrastructure-noise) found runtime/sandbox configuration alone can move a benchmark score by more than many leaderboard gaps between harnesses. Keep sandbox/container config, network conditions, and trial count identical across every row of the results table — a 2-trial slice makes this worse, not better, since a single flaky run swings the pass rate a lot. If a fix's number moves by less than the run-to-run variance you'd expect from re-running the *unmodified* baseline twice, don't claim it as the fix's effect on stage.
+| # | Fix | Est. time |
+|---|---|---|
+| 0 | Baseline: bare agent, bash + floci-cli --help/docs in context, no catalog, no verification gate | 30 min |
+| 1 | Service catalog + stack templates (guide) | 45 min |
+| 2 | Planner tool: NL request → `stack-plan.json` | 45 min |
+| 3 | Executor tool wrapping floci-cli/docker-compose | 30 min |
+| 4 | Verification gate: real endpoint checks per service, blocks "ready" claim | 45-60 min |
+| 5 | State file for incremental requests | 30 min |
+| 6 | Failure escalation / loop detection on repeated start failures | 30 min |
 
-**Demo (5 minutes)**:
-1. One slide: Agent = Model + Harness, and the baseline number.
-2. Live run of one task on the final harness with the trace viewer open. Point at the bootstrap block, the time counter, and the completion checklist firing.
-3. The results table, one row per fix. Same model, five harness changes, score climbed from X to Y.
-4. If stretch landed: the evolution agent's proposed diff and the re-run number.
+Stretch (if core lands by mid-afternoon): teardown command that reads the state file and cleanly
+stops only what it started; or a second cloud in the same request (AWS + GCP stack) to show the
+catalog generalizes past one provider.
 
-**Pair split**: Person A owns Harbor, the slice, the baseline, and the results table. Person B owns the harness patches. Swap for review before each measurement run.
+## Scoring — no public leaderboard, so define the task set first
 
-**Solo**: drop fix 5 and the stretch. Four fixes measured beats six unmeasured.
+Build a fixed set of 6-10 requests before touching the harness, ordered easy → hard:
 
-## Before Saturday (2 to 3 hours total)
+1. Single service ("I need an S3 bucket")
+2. Small stack (S3 + Lambda)
+3. Stack with a real dependency chain (Lambda reads DynamoDB, writes to S3)
+4. Incremental add ("now also give me Postgres") on top of #2's running state
+5. A request the catalog doesn't cover (forces free-form floci-cli use)
+6. An intentional failure case (ask for a port already in use, or an unsupported service) —
+   the harness should report clearly, not hang or fake success
 
-1. **Read the Tier 1 canon.** Anthropic's long-running harness post, LangChain's Deep Agents post, and the Fowler guides-vs-sensors article. Those three give you the vocabulary and the three biggest levers.
-2. **Pick your base now, not on Saturday.** Recommendation: `SWE-agent/mini-swe-agent`. It is about 100 lines, model-agnostic, and already scores well on SWE-bench, so every change you make is visible and attributable. Use `langchain-ai/deepagents` instead only if the hackathon rewards feature breadth over measurable gains.
-3. **Get a scoreboard running.** Install Harbor and run a 5 to 10 task slice of Terminal-Bench 2.0 against the unmodified base. Save the baseline number. This is the single highest-value prep task: a harness demo without a before-and-after number is just a prompt.
-4. **Set up tracing.** LangSmith or Langfuse, whichever you already have keys for. Hashimoto's loop ("engineer away every observed mistake") only works if you can see where the agent failed.
-5. **Confirm API keys and sandbox.** Daytona, Docker, or whatever Harbor needs. Do not lose the first hour of the hackathon to setup.
+Run each request against **baseline (fix 0)** and again after **each subsequent fix**, same model
+throughout. Record per config: success rate (environment verified working, not just "agent said
+done"), time to working environment, number of tool calls/retries, and whether the failure case
+(#6) was reported honestly.
 
-Prep checklist:
-- [x] Tier 1 articles read (vocabulary distilled in [VOCAB.md](VOCAB.md))
-- [ ] Base repo cloned and running locally
-- [ ] Harbor installed, TB2.0 slice chosen (5 to 10 tasks)
-- [ ] Baseline score recorded
-- [ ] Tracing wired and verified
-- [ ] API keys and sandbox working
+Same infrastructure-noise caution as before applies even though there's no shared leaderboard:
+keep the machine/Docker state clean between runs (`docker ps` empty, ports free) or a stale
+container from a prior run will silently inflate one config's "success."
 
-## On Saturday
+## Demo (5 minutes)
 
-Pick one narrow idea and measure it. Strongest candidates from the research, roughly in order of payoff per hour:
+1. One slide: the gap (Floci is powerful but manual) and the before/after numbers.
+2. Live run: speak/type request #3 (the dependency-chain stack) against the finished harness —
+   show the plan artifact, the executor calls, the verification gate actually hitting real
+   endpoints, and the final `.env` output.
+3. Live run of the incremental add (#4) to show the state file working.
+4. Trigger the failure case (#6) on stage — this is the strongest "harness, not just a wrapper"
+   moment: show it refusing to claim success.
+5. Results table: baseline vs. final harness across the 6-10 requests.
 
-1. **Environment bootstrapping middleware.** Snapshot the working directory, file tree, toolchain, and package managers before turn one and inject it into the prompt. Meta-Harness found this saves 2 to 5 exploration turns. Small patch, easy to demo.
-2. **Self-verification gate.** Force the agent to run tests or re-inspect output before it may declare done. This was LangChain's biggest single lever on Terminal-Bench.
-3. **Doom-loop detector.** A hook that notices repeated identical tool calls and injects a corrective message or escalates. Easy to build, visible in traces.
-4. **Computational sensor pack.** Linters, type checks, and architecture tests wired in as post-edit hooks so failures reach the agent as feedback rather than reaching the reviewer.
+## Pair split
 
-### Day shape
+Person A: catalog, templates, planner (layers that need floci-cli familiarity).
+Person B: executor, verification gate, state file, loop detection (layers that are pure harness
+plumbing, reusable regardless of which cloud/services get added to the catalog).
 
-| Time | Activity |
-|---|---|
-| First hour | Re-run baseline, confirm traces flow, agree on the one idea |
-| Hours 2 to 5 | Build the change, run the slice after each meaningful edit |
-| Hour 6 | Look at traces for the tasks that still fail and harden one more thing |
-| Last hour | Freeze, write the before-and-after table, prepare the demo |
+## Solo
 
-### How to actually win (from the leaderboard and prior hackathons)
+Cut the multi-cloud stretch and request #5 (uncataloged free-form). Ship the catalog, planner,
+executor, verification gate, and one incremental request — that's the whole story: plan → execute
+→ *prove it worked* → extend.
 
-What separates the top harnesses from the middle is a stack of small deterministic fixes, each individually cheap. A winning day is three or four of these on top of a measured baseline, not one big idea:
+## Before Saturday (prep, ~1-2 hrs)
 
-1. **Environment bootstrap** (Meta-Harness): file tree, toolchain, package managers injected at turn one.
-2. **Completion gate** (KIRA + LangChain): `task_complete` returns a checklist instead of ending; the agent must confirm twice.
-3. **Time-aware execution** (LemonHarness): inject elapsed and remaining time each turn. Directly attacks timeout failures, which are a large share of TB2 misses.
-4. **Loop detection** (LangChain): per-file edit counter with an intervention message.
-5. **Output cap + marker polling** (KIRA): 30 KB cap and `__CMDEND__` markers so waits and context bloat drop.
-
-Stretch, if the first four are measured by hour 5: a **mini evolution loop** (AHE / Meta-Harness). Run the slice, have a second agent read the failing traces and propose one harness edit, re-run. Even one iteration on stage is a strong demo because it shows the harness improving itself.
-
-Judging signals seen in prior harness hackathons: observability and traces on screen, real sandboxed execution, a human approval gate on irreversible actions, subagents used for a reason, and a before-and-after number. Judges from Anthropic and Langfuse were on the SF panel; they read traces.
-
-Do not: let test files, answer keys, or task-specific AGENTS.md hints into the agent's environment. Two of the top three TB2 harnesses were caught doing exactly this via trace analysis.
-
-### Demo story
-
-Same model, same tasks, one harness change, and a number that moved. Resist adding a second idea until the first one has a measured result.
-
-Results table template:
-
-| Config | Tasks | Pass rate | Avg turns | Notes |
-|---|---|---|---|---|
-| Baseline | | | | |
-| + harness change | | | | |
+- [ ] Install `floci-cli` / `floci-ui` locally, confirm `floci start` and one emulator
+      (e.g. S3) come up and respond to a real AWS CLI call against the local endpoint
+- [ ] Pull the full Floci service list (AWS/Azure/GCP/OCI) to seed the catalog — don't build
+      this live on Saturday
+- [ ] Draft the 6-10 request task set (above) so baseline can be measured in the first hour,
+      same discipline as the original [KICKOFF_PROMPT.md](KICKOFF_PROMPT.md)
+- [ ] Confirm which agent framework/harness you're building on (Claude Agent SDK, deepagents,
+      or a bare loop) — pick now, not Saturday morning
