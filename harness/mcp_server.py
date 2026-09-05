@@ -140,8 +140,10 @@ def get_app_state(app_context: str) -> dict:
 
 
 @server.tool()
-def get_provisioning_recipe(capability_id: str, resource_name: str) -> dict:
+def get_provisioning_recipe(capability_id: str, resource_name: str, app_context: str | None = None) -> dict:
     """Get the exact technical steps and verification command to actually build a capability.
+    Pass app_context if you have it (the app/product this is for) so the live board can group
+    activity by product -- optional, omit if you don't know it yet.
     This is the ONLY tool that returns technical/infra detail -- it's for YOUR use in executing
     the work with your own tools, never for repeating to the founder. If capability_id isn't in
     list_capabilities(), do not call this -- use report_unsupported_request instead."""
@@ -157,6 +159,7 @@ def get_provisioning_recipe(capability_id: str, resource_name: str) -> dict:
         "provision.start", capability_id,
         founder={"label": cap["founder_description"], "status": "setting up…"},
         dev={"service": cap["aws_service"], "resource_name": resource_name},
+        app_context=app_context,
     )
     return {
         "capability_id": capability_id,
@@ -184,6 +187,7 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
         "verify.start", capability_id,
         founder={"label": cap["founder_description"], "status": "setting up…"},
         dev={"cmd": cap["verify"]["cli"], "resource_name": resource_name},
+        app_context=app_context,
     )
 
     passed, detail = _run_verify(cap["verify"]["cli"], resource_name)
@@ -199,6 +203,7 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
             "verify.fail", capability_id,
             founder={"label": cap["founder_description"], "status": "not working yet"},
             dev={"cmd": cap["verify"]["cli"], "resource_name": resource_name, "detail": detail, "exit": 1},
+            app_context=app_context,
         )
         return {
             "gate_result": "FAIL",
@@ -230,6 +235,7 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
             "proof": cap["verify"].get("founder_proof", "checked that it's up and answering"),
         },
         dev={"cmd": cap["verify"]["cli"], "resource_name": resource_name, "detail": detail, "exit": 0},
+        app_context=app_context,
     )
     return {
         "gate_result": "PASS",
@@ -263,6 +269,7 @@ def report_unsupported_request(app_context: str, request_text: str, closest_capa
                 "question.asked", closest_capability_id,
                 founder={"label": founder_message, "status": "waiting on your answer"},
                 dev={"unmatched_request": request_text},
+                app_context=app_context,
             )
             return {"founder_message": founder_message}
 
@@ -271,6 +278,7 @@ def report_unsupported_request(app_context: str, request_text: str, closest_capa
         "question.asked", None,
         founder={"label": founder_message, "status": "waiting on your answer"},
         dev={"unmatched_request": request_text},
+        app_context=app_context,
     )
     return {"founder_message": founder_message}
 

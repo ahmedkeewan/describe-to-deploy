@@ -43,30 +43,47 @@ async def index(request):
     return FileResponse(LIVE_HTML_PATH)
 
 
+async def _check_one(cap: dict, resource_name: str) -> bool:
+    """Runs one blocking verify_gate check off the event loop, so N capabilities across M apps
+    reconcile concurrently instead of one HTTP request blocking on a serial chain of real AWS CLI
+    round trips -- with growing demo data (multiple apps, some checks doing multi-step Cognito
+    sign-up/confirm/login/delete) the serial version measured 11s+ and only gets worse. Caught by
+    actually loading the page in a browser and watching /state hang pending, not by curl alone."""
+    loop = asyncio.get_event_loop()
+    passed, _ = await loop.run_in_executor(None, verify_gate.run_check, cap["verify"]["cli"], resource_name)
+    return passed
+
+
 async def state(request):
     """Reconciles every row against live Floci before returning -- interface/README.md's
     'never trust the state file on startup' rule. A row only reports working if its check
-    genuinely passes right now, not because the file says it did once."""
+    genuinely passes right now, not because the file says it did once. Runs all checks
+    concurrently (see _check_one) rather than serially."""
     if not STATE_PATH.exists():
         return JSONResponse({})
 
     raw_state = json.loads(STATE_PATH.read_text())
     catalog = _load_catalog()
-    reconciled = {}
 
+    jobs = []  # (app_context, cap_id, cap) in the same order as the gathered results
     for app_context, app in raw_state.items():
-        reconciled[app_context] = {"created": app.get("created"), "capabilities": {}}
         for cap_id, info in app.get("capabilities", {}).items():
             cap = catalog.get(cap_id)
             if cap is None:
                 continue
-            passed, _ = verify_gate.run_check(cap["verify"]["cli"], info["resource_name"])
-            reconciled[app_context]["capabilities"][cap_id] = {
-                "label": cap["founder_description"],
-                "status": "working" if passed else "not working yet",
-                "proof": cap["verify"].get("founder_proof") if passed else None,
-                "last_checked": "just now",
-            }
+            jobs.append((app_context, cap_id, cap, info["resource_name"]))
+
+    results = await asyncio.gather(*[_check_one(cap, resource_name) for _, _, cap, resource_name in jobs])
+
+    reconciled = {app_context: {"created": raw_state[app_context].get("created"), "capabilities": {}}
+                  for app_context in raw_state}
+    for (app_context, cap_id, cap, _), passed in zip(jobs, results):
+        reconciled[app_context]["capabilities"][cap_id] = {
+            "label": cap["founder_description"],
+            "status": "working" if passed else "not working yet",
+            "proof": cap["verify"].get("founder_proof") if passed else None,
+            "last_checked": "just now",
+        }
 
     return JSONResponse(reconciled)
 
