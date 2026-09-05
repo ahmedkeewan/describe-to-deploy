@@ -1,3 +1,14 @@
 harness/.venv/
 __pycache__/
 *.pyc
+
+# macOS
+.DS_Store
+
+# Runtime state written by the harness, not source
+stack-plan.json
+events.jsonl
+
+# Local env
+.env
+.env.local

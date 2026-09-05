@@ -38,5 +38,15 @@
         "last_gate_result": "PASS"
       }
     }
+  },
+  "PixelPost": {
+    "created": "2026-09-05T12:05:19.123288+00:00",
+    "capabilities": {
+      "file-storage": {
+        "resource_name": "pixelpost-profile-photos",
+        "last_verified": "2026-09-05T12:05:19.123288+00:00",
+        "last_gate_result": "PASS"
+      }
+    }
   }
 }
