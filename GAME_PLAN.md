@@ -1,39 +1,53 @@
-# Hackathon Game Plan — Floci Control-Plane Agent
+# Hackathon Game Plan — Infra-Invisible Agent for Non-Technical Founders
 
 Companion to [README.md](README.md) and [VOCAB.md](VOCAB.md). Hackathon date: Saturday 2026-09-06.
 
-Supersedes the earlier TB2.0/mini-swe-agent plan (see git history) — the project pivoted from
-"climb a public leaderboard" to "build a useful agent harness for a real workflow." The
-harness-engineering vocabulary and judging logic carry over unchanged; only the target task and
-scoring method change.
+Supersedes the earlier TB2.0/mini-swe-agent plan and the first engineer-facing Floci plan (see
+git history) — the project narrowed twice: first from "climb a public leaderboard" to "build a
+harness for a real workflow," then from "help engineers pick infra" to **"let a non-technical
+founder never have to know infra exists, until they've proven product-market fit."** The
+harness-engineering vocabulary and judging logic carry over unchanged; the target user and the
+success bar for the guide/sensor layers change a lot.
 
 ## The idea
 
 [Floci](https://floci.io/) is a suite of local cloud emulators (AWS/Azure/GCP/OCI — real Docker,
-real Postgres, real Redis, not mocks) that run entirely on a dev machine. The gap: an engineer
-still has to know which emulator maps to which cloud service, hand-write the compose/manifest
-config, get SDK endpoint URLs right, and manually confirm things actually came up.
+real Postgres, real Redis, not mocks) that run entirely on a dev machine, free, no cloud account.
 
-**Project**: an agent harness that takes a plain-language infra request ("I need S3 + a Lambda
-that reads DynamoDB" / "add a Postgres instance to what's running") and turns it into a running,
-*verified* local environment on Floci — then can extend or tear it down on request.
+**Comparison point: Replit.** Replit's actual value isn't "runs your code" — it's "hides
+everything you'd otherwise have to learn to run your code." This project applies that same move
+to one narrower slice: **control planes and local dev infra**, not full hosting. A founder
+describes their product in plain language; the agent decides, provisions, verifies, and wires up
+the infra on Floci — and is honest the moment something isn't actually working, because the
+founder has no way to sanity-check that themselves.
 
-This is still a harness-engineering demo: Floci is the sandbox/execution substrate, and the
-interesting work is the guide/sensor/state layers wrapped around it, per the taxonomy in
-[VOCAB.md §3, §4](VOCAB.md).
+This is still a harness-engineering demo: Floci is the sandbox/execution substrate. The
+interesting work is the guide/sensor/state layers around it (VOCAB §3, §4) — but the bar for each
+layer is higher than an engineer-facing tool, because there is no human in the loop who can catch
+a wrong or half-working setup.
+
+## What changes for a non-technical audience
+
+| For an engineer (prior plan) | For a non-technical founder (this plan) |
+|---|---|
+| Describes infra needs ("S3 + Lambda + DynamoDB") | Describes the *product* ("users sign up, upload photos, get a weekly email") — the agent does the translation |
+| Can debug a wrong free-form floci-cli call | Cannot debug anything — outside the catalog, the agent falls back to the closest proven template and asks a plain-language clarifying question, never improvises silently |
+| Verification gate is a nice-to-have | Verification gate is the *entire* trust mechanism — it's the only thing standing between the founder and false confidence |
+| `.env` printed for them to paste in | Endpoint config is wired directly into their app's existing config file — no paste step, no concept of "endpoint" exposed |
+| Local-only is the whole scope | Local-only is *this stage's* scope — the stack-plan artifact should stay cloud-provider-shaped (VOCAB §2 "unified runtime boundary" style) so it can retarget from Floci to real AWS/GCP later without a redesign, even though that retarget is out of scope for Saturday |
 
 ## Architecture
 
 | Layer | Component | Harness role |
 |---|---|---|
-| Guide | **Service catalog** — structured map of Floci services (cloud, port, floci-cli invocation, common capability → service mapping) built from `floci-cli` service list | Environment bootstrap equivalent (VOCAB §5b): the agent doesn't guess CLI flags or ports, it looks them up |
-| Guide | **Stack templates** — 5-8 pre-verified common combos (S3+Lambda+DynamoDB, RDS+Redis, API Gateway+Lambda) | Cuts exploration turns for the common case; agent still free-forms outside the catalog |
-| Tool | **Planner** — NL request → structured plan (`stack-plan.json`: services, ports, env vars) | Forces an explicit, inspectable intermediate artifact before anything executes |
-| Tool | **Executor** — wraps `floci-cli` / `docker-compose` start/stop, one call per service, structured result back | Unified runtime boundary (VOCAB §5b): all side effects go through one tool, not raw bash |
-| Sensor | **Verification gate** — after start, hits the *real* endpoint per service (`aws --endpoint-url=... s3 ls`, an actual DB connection, not "container running") before declaring ready | Completion gate (VOCAB §5b/§6d): no "done" claim without live proof |
-| State | **`floci-stack.json`** — durable record of what's running, so a follow-up request ("also add Redis") is incremental, not a fresh guess | Progress file / feature list pattern (VOCAB §4), applied to infra instead of code |
-| Loop | **Failure escalation** — port conflict or failed container after 1 retry stops and reports, doesn't loop silently | Doom-loop detection (VOCAB §5), scoped to infra ops where blind retry can double-provision |
-| Guide | **Endpoint wiring output** — generates `.env` / SDK profile pointing at local endpoints, printed at the end | AX (VOCAB §9): the deliverable a human engineer actually pastes into their app |
+| Guide | **Product-capability catalog** — maps plain-language product needs ("store user uploads," "send email," "background job") to a Floci service + a pre-verified template, built from the full Floci service list | Environment bootstrap equivalent (VOCAB §5b), but the lookup key is a capability phrase, not a service name — this is the translation layer a founder needs and an engineer wouldn't |
+| Guide | **Conservative fallback rule** | Outside the catalog: never freelance a floci-cli call. Offer the nearest template plus one plain-language clarifying question. Matches "advisory banner vs. hard gate" (VOCAB §6d) — a founder-facing gap in coverage should always escalate to a question, never a guess |
+| Tool | **Planner** — plain-language request → structured `stack-plan.json` (services, capabilities, provider-neutral shape) | Explicit, inspectable intermediate artifact; also the thing that stays portable to a real-cloud retarget later |
+| Tool | **Executor** — wraps `floci-cli` / `docker-compose` start/stop, one call per service | Unified runtime boundary (VOCAB §5b): all side effects go through one tool |
+| Sensor | **Verification gate** — hits the *real* endpoint per service before declaring ready, and reports failures in plain language ("the file storage isn't responding yet"), never technical stack traces | Completion gate (VOCAB §5b/§6d) — here it's the founder's only trust signal, so false positives are the worst possible failure mode to demo |
+| State | **`stack-state.json`** — durable record of what's running, read on every follow-up so "also let users upload profile pictures" is additive, not a fresh guess that might duplicate or conflict | Progress file pattern (VOCAB §4), and doubles as the artifact a future real-cloud migration path would read |
+| Loop | **Failure escalation** — one retry, then stop and report in plain language, never loop silently | Doom-loop detection (VOCAB §5), scoped tighter than an engineer tool because a founder won't notice a silent retry storm |
+| Guide | **Auto-wiring output** — writes the local endpoint config directly into the founder's app config/env file, no manual paste step | AX (VOCAB §9) taken further: not just legible to an agent, invisible to the human too |
 
 ## Build order
 
@@ -41,61 +55,72 @@ Same rhythm as before: measure before/after each fix, don't stack unmeasured cha
 
 | # | Fix | Est. time |
 |---|---|---|
-| 0 | Baseline: bare agent, bash + floci-cli --help/docs in context, no catalog, no verification gate | 30 min |
-| 1 | Service catalog + stack templates (guide) | 45 min |
-| 2 | Planner tool: NL request → `stack-plan.json` | 45 min |
+| 0 | Baseline: bare agent, bash + floci-cli docs in context, no catalog, no gate, given the *plain-language* task set directly (not pre-translated to infra terms) | 30 min |
+| 1 | Product-capability catalog + conservative fallback rule | 60 min |
+| 2 | Planner tool: plain-language request → `stack-plan.json` | 45 min |
 | 3 | Executor tool wrapping floci-cli/docker-compose | 30 min |
-| 4 | Verification gate: real endpoint checks per service, blocks "ready" claim | 45-60 min |
-| 5 | State file for incremental requests | 30 min |
-| 6 | Failure escalation / loop detection on repeated start failures | 30 min |
+| 4 | Verification gate with plain-language failure reporting | 45-60 min |
+| 5 | `stack-state.json` for incremental, additive requests | 30 min |
+| 6 | Failure escalation (one retry, then stop and report) | 30 min |
+| 7 | Auto-wiring into the founder's app config | 30 min |
 
-Stretch (if core lands by mid-afternoon): teardown command that reads the state file and cleanly
-stops only what it started; or a second cloud in the same request (AWS + GCP stack) to show the
-catalog generalizes past one provider.
+Stretch (if core lands by mid-afternoon): a one-line "what would it take to go live?" answer —
+read `stack-plan.json` and name the real AWS/GCP equivalents, no migration, just proving the
+artifact is retarget-shaped. Strong closer because it directly answers "what happens after PMF?"
 
-## Scoring — no public leaderboard, so define the task set first
+## Scoring — task set is plain-language product asks, not infra asks
 
-Build a fixed set of 6-10 requests before touching the harness, ordered easy → hard:
+Build the fixed set before touching the harness. Every request is phrased the way a non-technical
+founder would actually say it — this is the whole point, so don't write these as infra requests
+in disguise:
 
-1. Single service ("I need an S3 bucket")
-2. Small stack (S3 + Lambda)
-3. Stack with a real dependency chain (Lambda reads DynamoDB, writes to S3)
-4. Incremental add ("now also give me Postgres") on top of #2's running state
-5. A request the catalog doesn't cover (forces free-form floci-cli use)
-6. An intentional failure case (ask for a port already in use, or an unsupported service) —
-   the harness should report clearly, not hang or fake success
+1. "I need users to be able to sign up and log in" (single capability)
+2. "Users should be able to upload a profile photo" (small stack: storage + a table)
+3. "When someone uploads a photo, resize it and email them a confirmation" (dependency chain:
+   storage → background job → email)
+4. Follow-up on #2: "now let them upload more than one photo" (incremental, additive request
+   against `stack-state.json`)
+5. A request the catalog doesn't cover, e.g. "I need real-time chat" (forces the conservative
+   fallback + clarifying question, not a guess)
+6. An intentional failure case (ask for something that collides with what's already running, or
+   an unsupported capability) — the harness must say so plainly, not hang or fake success
 
 Run each request against **baseline (fix 0)** and again after **each subsequent fix**, same model
-throughout. Record per config: success rate (environment verified working, not just "agent said
-done"), time to working environment, number of tool calls/retries, and whether the failure case
-(#6) was reported honestly.
+throughout. Record per config: success rate (verified working, judged by you, not by the agent's
+own claim), time to working environment, tool calls/retries, and — new metric specific to this
+framing — **whether any infra term leaked into the agent's response** to the founder (a jargon
+leak is a harness failure here, not just a style nit).
 
-Same infrastructure-noise caution as before applies even though there's no shared leaderboard:
-keep the machine/Docker state clean between runs (`docker ps` empty, ports free) or a stale
-container from a prior run will silently inflate one config's "success."
+Same infrastructure-noise caution as before: keep Docker/Floci state clean between runs or a
+stale container from a prior run will silently inflate one config's "success."
 
 ## Demo (5 minutes)
 
-1. One slide: the gap (Floci is powerful but manual) and the before/after numbers.
-2. Live run: speak/type request #3 (the dependency-chain stack) against the finished harness —
-   show the plan artifact, the executor calls, the verification gate actually hitting real
-   endpoints, and the final `.env` output.
-3. Live run of the incremental add (#4) to show the state file working.
-4. Trigger the failure case (#6) on stage — this is the strongest "harness, not just a wrapper"
-   moment: show it refusing to claim success.
-5. Results table: baseline vs. final harness across the 6-10 requests.
+1. One slide: the Replit comparison — "Replit hid servers so you could just build; this hides
+   infra so you can build without becoming a part-time devops engineer" — plus the baseline
+   number.
+2. Live run: type request #3 (the dependency-chain one) in plain founder language. Show nothing
+   infra-shaped on screen except the plan artifact (for you, the presenter) — the founder-facing
+   output should read like a product changelog, not a deploy log.
+3. Live run of the incremental follow-up (#4) to show state carrying over.
+4. Trigger the failure case (#6) on stage — the strongest moment: it says plainly "that's not
+   working yet" instead of confidently claiming success it can't back up.
+5. If stretch landed: "what would it take to go live?" — the plan artifact naming real AWS/GCP
+   equivalents, no migration performed.
+6. Results table: baseline vs. final harness, plus the jargon-leak count column.
 
 ## Pair split
 
-Person A: catalog, templates, planner (layers that need floci-cli familiarity).
-Person B: executor, verification gate, state file, loop detection (layers that are pure harness
-plumbing, reusable regardless of which cloud/services get added to the catalog).
+Person A: capability catalog, fallback rule, planner (needs floci-cli + product-translation
+judgment — the parts that decide *what* founders mean).
+Person B: executor, verification gate, state file, loop detection, auto-wiring (pure harness
+plumbing, reusable regardless of what's in the catalog).
 
 ## Solo
 
-Cut the multi-cloud stretch and request #5 (uncataloged free-form). Ship the catalog, planner,
-executor, verification gate, and one incremental request — that's the whole story: plan → execute
-→ *prove it worked* → extend.
+Cut the multi-capability stretch and request #5 (uncataloged fallback). Ship the catalog,
+planner, executor, verification gate, and one incremental request — that's the whole story:
+plain language in → plan → execute → *prove it worked, honestly* → extend.
 
 ## Before Saturday (prep, ~1-2 hrs)
 
@@ -107,9 +132,10 @@ executor, verification gate, and one incremental request — that's the whole st
       Colima's own forwarded socket path isn't visible inside its VM for the bind-mount
       floci needs for its Lambda emulation. `AWS_ENDPOINT_URL` and `~/.aws/config`
       `s3.addressing_style = path` are now persisted in `~/.zshrc` / `~/.aws/config`.
-- [ ] Pull the full Floci service list (AWS/Azure/GCP/OCI) to seed the catalog — don't build
-      this live on Saturday
-- [ ] Draft the 6-10 request task set (above) so baseline can be measured in the first hour,
-      same discipline as the original [KICKOFF_PROMPT.md](KICKOFF_PROMPT.md)
+- [ ] Pull the full Floci service list (AWS/Azure/GCP/OCI) and draft the plain-language
+      product-capability catalog on top of it — this translation table is the hardest part
+      to get right and shouldn't be built live on Saturday
+- [ ] Draft the 6 plain-language product requests (above) so baseline can be measured in the
+      first hour, same discipline as [KICKOFF_PROMPT.md](KICKOFF_PROMPT.md)
 - [ ] Confirm which agent framework/harness you're building on (Claude Agent SDK, deepagents,
       or a bare loop) — pick now, not Saturday morning
