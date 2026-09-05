@@ -53,7 +53,7 @@ order). Fill in `t1`-`t6` as pass/fail/partial; the last three columns aggregate
 | 2 — + planner + executor tools* | pass | pass | pass | skipped† | pass | **pass (plan corrected)** | 5/6 measured, all correct | combined ~2x fix-1 (two-agent overhead) | see notes below | **0/6** |
 | 3 — + executor tool | *(merged into row 2 — a planner needs something to execute its plan, so both were built and measured together)* | | | | | | | | | |
 | 4 — + verification gate | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **caught a false PASS in a targeted adversarial test — see notes below** | ~10-15s per gate run | 1 script, 0 LLM calls | n/a |
-| 5 — + state file | | | | | | | | | | |
+| 5 — + state file | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no win on well-named cases; prevented a real duplicate-infra bug on a naming-mismatch case — see notes** | comparable to live discovery when naming is predictable | comparable when naming is predictable, fewer when it isn't | n/a |
 | 6 — + failure escalation | | | | | | | | | | |
 | 7 — + auto-wiring | | | | | | | | | | |
 
@@ -276,3 +276,49 @@ inevitably isn't good on some future run. In production, the gate's raw JSON mus
 founder directly (it's exactly the jargon fix #1 exists to hide) -- it should only ever flip a
 binary "ready" / "not ready yet, here's what's still broken in plain language" decision that the
 harness's own founder-facing report is built from.
+
+## Fix-5 run (state file) — recorded 2026-09-05
+
+Harness = [harness/stack-state.json](../harness/stack-state.json) (durable, keyed by
+`app_context`) + [harness/stack-state.schema.json](../harness/stack-state.schema.json). The
+planner reads it before falling back to live Floci discovery; the intended design has the
+executor write to it only after a fix-4 gate PASS.
+
+**Honest negative result first.** The originally hypothesized wins -- avoiding cross-app
+misattribution, and saving discovery tool calls -- mostly did **not** materialize against this
+model at this small scale:
+- *Misattribution risk*: gave a planner with zero state access a brand-new app ("SnapShare")
+  amid 3 existing, semantically-similar buckets from other apps. It correctly refused to reuse
+  any of them ("none are named for or otherwise verifiably tied to the snapshare app") and
+  created fresh storage. No state file needed to get this right.
+- *Efficiency*: for a known app whose resource follows the obvious `<app_context>-<noun>` naming
+  convention, live discovery took 1 Floci call / 22.6s to find and correctly reuse it; the state
+  file took 0 Floci calls / 19.4s. The gap is within noise -- not a real efficiency win at this
+  scale (~4 buckets total in the whole environment).
+
+**The real failure mode found instead.** Registered an app (`loopchat`) in the state file whose
+recorded resource, `vault7-media-store`, does **not** follow the `<app_context>`-prefixed naming
+convention every other test in this project used (representing a rename, a migration, or just an
+inconsistent earlier run -- all realistic). Ran the identical follow-up request
+("Let users upload profile photos.") two ways:
+- **Without the state file**: the planner inspected all 5 existing buckets, correctly declined to
+  guess which (if any) belonged to loopchat since none were "confirmed," and **created a brand
+  new duplicate bucket** (`loopchat-profile-photos`) — orphaning `vault7-media-store` and
+  whatever the founder had already stored there. This is not a contrived failure: it's the
+  direct, verified consequence of live discovery having no way to recover intent that isn't
+  encoded in a resource's current name.
+- **With the state file**: read `stack-state.json`, found `loopchat` → `vault7-media-store`
+  recorded directly, and reused it exactly — "not a name I'd have guessed from the app name," in
+  the planner's own words. Verified both plan files directly; the contrast is exact and real, not
+  paraphrased.
+
+**What this run actually says about fix #5's value.** Don't claim a speed or naming-collision-
+avoidance win this fix didn't earn in testing -- the model's own caution already covers the
+misattribution case, and discovery is fast enough at this scale to make raw efficiency a non-
+story. The real, demonstrated value is narrower and specific: **recovering legitimate history
+that a resource's current name no longer encodes** -- a rename, a migration, or simply an
+inconsistent earlier session. That's a real scenario for any long-lived app, and live discovery
+is structurally incapable of solving it no matter how careful the model is, because the
+information it needs (intent, not just current state) doesn't exist anywhere in Floci itself.
+This is a good discipline to carry into the demo: report the negative result plainly rather than
+overselling a fix on a benchmark too small and too well-behaved to actually need it.
