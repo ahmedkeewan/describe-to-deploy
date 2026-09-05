@@ -39,16 +39,18 @@ def _next_seq() -> int:
     return next(_seq_counter)
 
 
-def emit(kind: str, capability: str | None, founder: dict, dev: dict | None = None) -> dict:
+def emit(kind: str, capability: str | None, founder: dict, dev: dict | None = None, app_context: str | None = None) -> dict:
     """Append one event. `founder` and `dev` are both plain dicts -- founder must never contain
     a service name, port, ARN, or error code; dev is exactly that detail, addressed to someone
-    else (interface/README.md's "Details for a developer" panel)."""
+    else (interface/README.md's "Details for a developer" panel). `app_context` lets the UI
+    filter the activity feed per product once more than one exists on the same board."""
     with _lock:
         event = {
             "seq": _next_seq(),
             "t": datetime.now(timezone.utc).isoformat(),
             "kind": kind,
             "capability": capability,
+            "app_context": app_context,
             "founder": founder,
             "dev": dev or {},
         }
