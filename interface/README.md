@@ -109,8 +109,12 @@ Every decision below follows from that sentence.
 
 | | |
 |---|---|
-| [README.md](README.md) — this file | The design: language rule, platform, coupling, the three-step journey, trust vocabulary, event contract |
+| [README.md](README.md) — this file | The design: language rule, platform, coupling, the journey, trust vocabulary, disclosure, event contract |
 | [founder-copy.md](founder-copy.md) | Every word the founder can read, in one place — status words, proof sentences for all 12 capabilities, screen text, translation reference |
+| [design-brief.md](design-brief.md) | The visual brief: tone, hard constraints, and the screen inventory a designer draws from |
+| [regenerate-prompt.md](regenerate-prompt.md) | A self-contained prompt that rebuilds the whole 16-screen canvas, with exact tokens and copy |
+| [founder-interface.html](founder-interface.html) | The 16-screen canvas, exported. Open it in a browser to pan through every screen |
+| [canvas/](canvas/) | Source for that canvas — one `.dc.html` per screen, `canvas.json` for layout, `build.mjs` to regenerate them all |
 
 Read in ~3 minutes: [In one sentence](#in-one-sentence) → [Why an interface layer is the harness
 work](#why-an-interface-layer-is-the-harness-work) → [What is novel](#what-is-novel-here) →
@@ -215,9 +219,11 @@ harness (CLI, scoreable)          ui (disposable)
 1. what do you need?         plain English, one sentence
 2. confirm the checklist     scope made visible
 3. watch it get set up       and proven, one row at a time
+   └ expand a row            what it does, what was checked, what to do
+   └ export                  a record you can hand to anyone
 ```
 
-Three steps. Nothing in them requires a project, a file, or a path.
+Nothing in this requires a project, a file, or a path.
 
 ## Step 1 — the ask
 
@@ -278,42 +284,118 @@ expanded plan:
   [ that works ]   [ no, I need live chat ]
 ```
 
-## Step 3 — the board
+## Step 3 — the two panes
+
+The app is one fixed layout, 1200 × 760 at desktop. Conversation left, product sidebar right.
 
 ```
-┌──────────────────────────────────────────────┐
-│  you ▸ when someone uploads a photo,         │  ← conversation
-│        email them a confirmation             │    ephemeral
-│                                              │
-│  Setting that up now.                        │
-├──────────────────────────────────────────────┤
-│  YOUR PRODUCT                                │
-│                                              │  ← board
-│  ● photo storage       working               │    persistent
-│    stored a test file and read it back       │    = stack-state
-│    last checked 12s ago                      │
-│                                              │
-│  ● accounts            working               │
-│    created a test account and signed in      │
-│    last checked 1m ago                       │
-│                                              │
-│  ○ email               not working yet       │
-│    nothing arrived when I sent a test        │
-└──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  ▣ Photo app ⌄                                    ⚙      │  header
+├────────────────────────────────┬─────────────────────────┤
+│                                │  Your product      3 …  │
+│  you ▸ when someone uploads    │ ───────────────────────  │
+│        a photo, email them     │  ● photo storage     ⌄  │
+│        a confirmation          │    stored a test file,  │
+│                                │    read it back …       │
+│  Setting that up now.          │    last checked 12s ago │
+│                                │ ───────────────────────  │
+│                                │  ○ email             ⌄  │
+│                                │    nothing arrived …    │
+├────────────────────────────────┤    [try again][get help]│
+│  Ask for something else…       │ ───────────────────────  │
+│                                │  ↓ Export what you have │
+└────────────────────────────────┴─────────────────────────┘
+     conversation, ephemeral        the durable list
 ```
 
 Rules:
 
+- **The sidebar is permanent.** It is the answer to *"what do I have?"*, and the conversation
+  never pushes it off screen. A founder should never have to scroll a chat log to find out what
+  their product currently has.
 - **Every row carries its proof sentence, always visible.** Not on hover, not behind a
   disclosure. Seeing *what was actually checked*, in words they understand, is the founder's only
   defence against false confidence. This is the product.
-- **The board renders `stack-state.json`, not the conversation.** An incremental request visibly
+- **The sidebar renders `stack-state.json`, not the conversation.** An incremental request visibly
   *updates a row* rather than appending one, so state carrying over is something an audience can
   see rather than something the presenter narrates.
 - **No modes, no keyboard shortcuts, no hidden panes.** Every affordance is a labelled button.
   Anything a founder must be told about is a design failure.
-- **Rows are not clickable.** The proof sentence is the whole disclosure. Anything needing more
-  explanation is a catalog-writing failure, not a missing affordance.
+
+## Disclosure — depth without jargon
+
+An earlier draft of this spec said the proof sentence was the whole disclosure and rows should
+not expand. That was wrong, and it conflated two different rules:
+
+```diff
+- The proof sentence is the whole disclosure. No expansion.
++ Expanding a row reveals more PLAIN LANGUAGE, never more jargon.
++ Depth is fine. Changing register is not.
+```
+
+The spec's own analogy undercut it: a doctor's report *has* depth — a summary line, then what was
+measured, then what to do. Refusing all detail leaves a founder unable to retry, rebuild, or
+escalate, which makes the product unusable rather than honest.
+
+An expanded row carries, in sentence-case sections:
+
+```
+What this gives you     one plain sentence
+What I checked          the individual checks, each with a time
+History                 set up / checked — worked, with times
+                        [ check it again ]  [ remove ]
+```
+
+A failed row swaps the middle section for **What I tried** — a plain-language timeline of the
+attempts — and offers three actions: `try again`, `set it up fresh`, `get help`.
+
+### Where the technical layer surfaces
+
+`get help` opens a modal carrying `event.dev` — real service names, commands, exit codes — under
+a heading that says who it is for:
+
+```
+  Details for a developer                    [ copy ]
+
+  You don't need to read this. If you have someone
+  technical, send it to them.
+
+  capability   send-email
+  service      ses · floci 2.0.1
+  check        aws ses list-identities
+  result       exit 254 — could not connect
+```
+
+**This is the only place jargon is permitted**, and the language rule survives
+intact because the panel is explicitly *addressed to someone else*. It is not the founder failing
+to understand — it is a handoff, labelled as one. It is also the honest answer to "how does a
+non-technical founder debug?" They don't. They forward.
+
+## Export — what the founder walks away with
+
+The sidebar's footer carries one permanent action, `Export what you have`. It resolves what a
+founder is left holding when the tool is closed, and it reuses the same two-audience split as
+everything else — a single checkbox, off by default, switches which one is produced.
+
+```
+  What goes in                      As
+   ☑ What your product has           ● A page to share      PDF
+   ☑ How the pieces fit together     ○ Just the diagram     image
+   ☑ What was checked, and when      ○ A written summary    text
+   ☐ Technical details               ○ Files a developer needs
+```
+
+**Plain export** — a shareable page: a diagram in the founder's own words (*someone uploads a
+photo → photo storage → resizing → a confirmation email*), the capability list with its proof
+sentences and dates, and a closing note that none of it is reachable from the internet yet. That
+last line matters: a founder showing this to an investor needs to know what it is not.
+
+**Technical export** — the same diagram with real resource names, a table of what verified each
+capability, and the file manifest: `docker-compose.yml`, `.env`, `endpoints.json`,
+`stack-plan.json`, `verification.md`.
+
+If anything here slips, **protect the diagram**. It is the only view that shows how the pieces
+connect, and it is the artifact a founder actually shows people.
 
 ## Where the board's state lives
 
@@ -594,9 +676,14 @@ them.
   Round-trip sentences are drafted in [founder-copy.md](founder-copy.md).
 - **The UI is outside the measurement path.** That is deliberate — it keeps the scored CLI clean
   — but it means the jargon-leak metric is measured on agent responses, not on rendered pixels.
-- **One machine, one stack.** Because Floci runs a single instance per machine, a founder with
-  two products would have them share infrastructure and overwrite each other's state. Acceptable
-  at this stage — Floci has the same constraint — but it is a real ceiling, not an oversight.
+- **Multi-product is designed for, not built.** One Floci instance can hold several products
+  side by side — they collide only if they pick the same resource names, and the catalog
+  generates those. So the cheap half should be built now (prefix resource names by product, key
+  `stack-state.json` by product, scope reconciliation per product) and the switcher UI deferred;
+  it should not compete with the verification gate for hackathon hours.
+- **Export is designed, not built.** The dialog, the plain page and the technical page are
+  specified and drawn; nothing generates them yet. The diagram is the piece to protect if the
+  rest slips — it is the only view that shows how the pieces connect.
 - **`stack-state.json` is not built yet.** It is fix #5 in the build order. Until it exists the
   board has no durable source and can only render a single run. The recorded baseline showed a
   capable model already handles incremental requests correctly by re-querying live state
