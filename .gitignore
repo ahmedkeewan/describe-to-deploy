@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Runtime state written by the harness, not source
+stack-state.json
+stack-plan.json
+events.jsonl
+
+# Local env
+.env
+.env.local
