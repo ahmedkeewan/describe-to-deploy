@@ -397,3 +397,16 @@ result is process, not the mechanism: catching the SES guess before it shipped i
 concrete instance of exactly the review discipline this whole project has tried to apply
 throughout -- verify independently, don't trust a plausible-looking value, even (especially) one
 your own code just produced.
+
+## Stretch goal: "what would it take to go live?" — recorded 2026-09-05
+
+Harness = [harness/go_live_plan.py](../harness/go_live_plan.py). Reads any `stack-plan.json` and,
+for each matched capability, prints its `founder_description`, the real AWS service it ran on
+locally, and the catalog's existing `cloud_equivalent_note`. No new harness capability was
+required — this only works because [catalog/capabilities.json](../catalog/capabilities.json) and
+the plan schema were kept provider-neutral in shape from fix #2 onward, per GAME_PLAN.md's design
+note. Tested against two real artifacts: t3's actual gate-verified plan (3 capabilities, clean
+output naming S3/Lambda/SES equivalents) and t5's fallback plan (correctly reports nothing to
+migrate, no crash). This is the intended demo closer: point at `stack-plan.json` from the live
+run on stage and get this report with no extra setup, proving the local-first architecture never
+painted itself into a corner.
