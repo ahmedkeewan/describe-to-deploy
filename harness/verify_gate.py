@@ -46,6 +46,7 @@ def run_check(cli_template: str, resource_name: str) -> tuple[bool, str]:
         .replace("<bucketName>", resource_name)
         .replace("<tableName>", resource_name)
         .replace("<functionName>", resource_name)
+        .replace("<userPoolId>", resource_name)
         .replace("<topicArn>", resource_name)
         .replace("<queueUrl>", resource_name)
         .replace("<secretName>", resource_name)

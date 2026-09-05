@@ -80,6 +80,7 @@ def _run_verify(cli_template: str, resource_name: str) -> tuple[bool, str]:
         .replace("<bucketName>", resource_name)
         .replace("<tableName>", resource_name)
         .replace("<functionName>", resource_name)
+        .replace("<userPoolId>", resource_name)
         .replace("<topicArn>", resource_name)
         .replace("<queueUrl>", resource_name)
         .replace("<secretName>", resource_name)
@@ -146,7 +147,7 @@ def get_provisioning_recipe(capability_id: str, resource_name: str) -> dict:
     if cap is None:
         return {"error": f"'{capability_id}' is not a known capability"}
     verify_cli = cap["verify"]["cli"]
-    for placeholder in ("bucketName", "tableName", "functionName", "topicArn", "queueUrl", "secretName", "domainName"):
+    for placeholder in ("bucketName", "tableName", "functionName", "userPoolId", "topicArn", "queueUrl", "secretName", "domainName"):
         verify_cli = verify_cli.replace(f"<{placeholder}>", resource_name)
     return {
         "capability_id": capability_id,
