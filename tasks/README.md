@@ -55,7 +55,7 @@ order). Fill in `t1`-`t6` as pass/fail/partial; the last three columns aggregate
 | 4 — + verification gate | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **caught a false PASS in a targeted adversarial test — see notes below** | ~10-15s per gate run | 1 script, 0 LLM calls | n/a |
 | 5 — + state file | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no win on well-named cases; prevented a real duplicate-infra bug on a naming-mismatch case — see notes** | comparable to live discovery when naming is predictable | comparable when naming is predictable, fewer when it isn't | n/a |
 | 6 — + failure escalation | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no doom-loop observed in either adversarial test — see notes** | 5 calls / 55s (fixable case), 5 calls / 94s (genuinely unfixable case) | bounded on its own, no retry-cap needed | n/a |
-| 7 — + auto-wiring | | | | | | | | | | |
+| 7 — + auto-wiring | n/a‡ | n/a‡ | **wired + functionally proven** | n/a‡ | n/a‡ | n/a‡ | real app reads only .env, real Floci round trip succeeds | instant (no LLM call) | 1 script, 0 LLM calls | one bad guess caught and fixed before shipping |
 
 \* Fix 2 covers both the "planner tool" and "executor tool" rows from GAME_PLAN.md's build order —
 a planner needs something to execute its plan, so both were built and measured together; see the
@@ -360,3 +360,40 @@ harness fix earns its place by fixing an observed failure, not by matching a pat
 research written against older or weaker models. Recommend keeping this fix out of the demo's
 "here's what we built" list -- it would be presenting a fix for a bug this model doesn't have --
 while keeping the *finding* (tested for it, found none) as evidence of measurement discipline.
+
+## Fix-7 run (auto-wiring) — recorded 2026-09-05
+
+Harness = [harness/auto_wire.py](../harness/auto_wire.py). Reads a gate-PASS'd `stack-plan.json`,
+looks up each capability's `wiring.env_vars` in the catalog, and merges real values into
+`<app-dir>/.env` -- idempotently (a managed block it fully owns and replaces on re-run, never
+duplicating), without touching any pre-existing, unrelated lines in the file.
+
+**A real bug caught before it shipped.** The first version guessed `SES_SENDER_ADDRESS` as
+`<resource_name>@local.test`. Checked it against what was actually registered on Floci for t3's
+plan: the real identity was `confirmations@local.test`, and `resource_name` was
+`photo-confirm-email-notify` -- an unrelated internal label, not an email address at all. That
+guess would have silently wired a broken sender address into a founder's app while looking
+completely plausible. Fixed by removing the guess entirely (matching the existing, correct
+caution already applied to `user-accounts`, which was never guessed) -- only `S3_BUCKET_NAME` and
+`AWS_ENDPOINT_URL` are wired for now, both genuinely derivable from the plan; anything not safely
+derivable is left out rather than guessed. Worth stating plainly on stage: **auto-wiring is a
+sharp tool** -- a wrong value here is worse than no value, since it looks exactly like a right one
+until the app actually runs.
+
+**Functional proof, not just a file diff.** Built a throwaway "founder's app" directory with a
+pre-existing `.env` (`APP_NAME=SnapConfirm`, `DEBUG=true`, `PORT=3000`, all preserved untouched).
+Ran auto-wiring against t3's real, gate-verified plan. Then wrote a small shell script that reads
+*only* the resulting `.env` (no other context, no hardcoded values) and performs a real upload/
+download round trip against Floci using exactly those values -- confirmed byte-for-byte match.
+This proves the wired config is actually usable by a real app, not just textually plausible.
+Confirmed idempotent: running auto-wiring twice produces byte-identical output, one managed
+block, no duplication.
+
+**What this run says about fix #7.** Unlike fixes #5 and #6, this one has a clean, unambiguous
+win with no "did the model already handle this" caveat -- there is no such thing as a founder
+manually pasting values into a config file if the harness writes them there itself, and no LLM
+call is even needed to do it once the plan and gate result exist. The genuinely interesting
+result is process, not the mechanism: catching the SES guess before it shipped is a small,
+concrete instance of exactly the review discipline this whole project has tried to apply
+throughout -- verify independently, don't trust a plausible-looking value, even (especially) one
+your own code just produced.
