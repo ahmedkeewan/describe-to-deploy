@@ -1,0 +1,200 @@
+{
+  "artboards": [
+    {
+      "file": "Empty.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1200,
+      "h": 760,
+      "title": "1 · First launch"
+    },
+    {
+      "file": "Thinking.dc.html",
+      "x": 1320,
+      "y": 0,
+      "w": 1200,
+      "h": 760,
+      "title": "2 · Working it out"
+    },
+    {
+      "file": "Checklist.dc.html",
+      "x": 2640,
+      "y": 0,
+      "w": 1200,
+      "h": 760,
+      "title": "3 · The confirmation gate"
+    },
+    {
+      "file": "Provisioning.dc.html",
+      "x": 0,
+      "y": 900,
+      "w": 1200,
+      "h": 760,
+      "title": "4 · Setting up"
+    },
+    {
+      "file": "AllWorking.dc.html",
+      "x": 1320,
+      "y": 900,
+      "w": 1200,
+      "h": 760,
+      "title": "5 · All working"
+    },
+    {
+      "file": "Main.dc.html",
+      "x": 2640,
+      "y": 900,
+      "w": 1200,
+      "h": 760,
+      "title": "6 · Partial failure — the honest one"
+    },
+    {
+      "file": "Escalated.dc.html",
+      "x": 0,
+      "y": 1800,
+      "w": 1200,
+      "h": 760,
+      "title": "7 · Stopped — needs a person"
+    },
+    {
+      "file": "Question.dc.html",
+      "x": 1320,
+      "y": 1800,
+      "w": 1200,
+      "h": 760,
+      "title": "8 · Outside what's supported"
+    },
+    {
+      "file": "Returning.dc.html",
+      "x": 2640,
+      "y": 1800,
+      "w": 1200,
+      "h": 760,
+      "title": "9 · Coming back later"
+    },
+    {
+      "file": "ExpandedWorking.dc.html",
+      "x": 0,
+      "y": 2700,
+      "w": 1200,
+      "h": 760,
+      "title": "10 · Expanded — what was actually checked"
+    },
+    {
+      "file": "ExpandedFailure.dc.html",
+      "x": 1320,
+      "y": 2700,
+      "w": 1200,
+      "h": 760,
+      "title": "11 · Expanded — what I tried, and what you can do"
+    },
+    {
+      "file": "DeveloperPanel.dc.html",
+      "x": 2640,
+      "y": 2700,
+      "w": 1200,
+      "h": 760,
+      "title": "12 · Get help — a handoff, not the founder's problem"
+    },
+    {
+      "file": "Switcher.dc.html",
+      "x": 1320,
+      "y": 3600,
+      "w": 1200,
+      "h": 760,
+      "title": "13 · Switching products"
+    },
+    {
+      "file": "Export.dc.html",
+      "x": 2640,
+      "y": 3600,
+      "w": 1200,
+      "h": 760,
+      "title": "14 · Export"
+    },
+    {
+      "file": "ExportPlain.dc.html",
+      "x": 0,
+      "y": 4500,
+      "w": 1200,
+      "h": 760,
+      "title": "15 · What you get — plain"
+    },
+    {
+      "file": "ExportTechnical.dc.html",
+      "x": 1320,
+      "y": 4500,
+      "w": 1200,
+      "h": 760,
+      "title": "16 · What you get — technical"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-layout",
+      "x": 3960,
+      "y": 0,
+      "w": 320,
+      "text": "Two panes, fixed.\n\nLeft: the conversation — what you asked, what's happening. Ephemeral.\n\nRight: Your product — the durable list of what exists, always visible, never pushed off screen by chat. Each row expands in place.\n\nThe sidebar is the answer to \"what do I have?\" and it should never require scrolling the chat to see."
+    },
+    {
+      "id": "note-deps",
+      "x": 3960,
+      "y": 560,
+      "w": 320,
+      "text": "Screen 3 is the gate that stops the agent silently building more than was asked.\n\nUnchecking \"a place to store photos\" auto-unchecks \"something to resize them\", with the line: this needs somewhere to put the photos first.\n\nThe founder can't judge infrastructure, but they can judge \"I never asked for email.\""
+    },
+    {
+      "id": "note-thesis",
+      "x": 3960,
+      "y": 1200,
+      "w": 320,
+      "text": "The design argument lives in screens 4-7.\n\nThere is deliberately NO status meaning \"started but unverified\" — something created but unproven stays \"setting up…\". It never gets to look like success.\n\nThat missing state is why the verification gate can't be quietly downgraded later: there is nowhere in the UI to put a half-truth."
+    },
+    {
+      "id": "note-restraint",
+      "x": 3960,
+      "y": 1800,
+      "w": 320,
+      "text": "No celebration on success — no banner, no \"All set!\". Something working is the expected outcome, not an achievement. This is the design's most likely point of failure: resist the instinct to reward the user.\n\nSame restraint on the other side: no red, no warning triangles. A failure is stated, not alarmed about."
+    },
+    {
+      "id": "note-disclosure",
+      "x": 3960,
+      "y": 2400,
+      "w": 320,
+      "text": "Row 10-12 is the disclosure rule, corrected.\n\n\"No jargon\" and \"no depth\" are different rules. A doctor's report has depth — a summary line, then what was measured, then what to do. The register stays plain; the detail doesn't disappear.\n\nSo: expanding a row reveals MORE PLAIN LANGUAGE, never more jargon."
+    },
+    {
+      "id": "note-devpanel",
+      "x": 3960,
+      "y": 3000,
+      "w": 320,
+      "text": "Screen 12 is where the event contract's `dev` channel finally surfaces — real service names, commands, exit codes.\n\nThe jargon rule survives because this panel is explicitly ADDRESSED TO SOMEONE ELSE. It isn't the founder failing to understand; it's a handoff, labelled as one.\n\nThe honest answer to \"how does a founder debug?\" is: they don't, they forward."
+    },
+    {
+      "id": "note-switcher",
+      "x": 0,
+      "y": 3600,
+      "w": 380,
+      "text": "One Floci instance holds many products side by side — they only collide if they pick the same resource names, and the catalog generates those.\n\nSo the switcher is a header, not a sidebar: a founder has products, not sessions.\n\nCheap to build toward now (prefix resource names, key state by product). The switcher UI itself is deferrable — it shouldn't compete with the verification gate."
+    },
+    {
+      "id": "note-nomatch",
+      "x": 3960,
+      "y": 3600,
+      "w": 380,
+      "text": "Screen 8 has a second variant, for when nothing in the catalog is close enough to offer:\n\n\"I can't set that up yet — it's not something I know how to do properly, and I'd rather say so than get it wrong. I've made a note of what you asked for.\"\n\nThis should read as competence, not limitation."
+    },
+    {
+      "id": "note-export",
+      "x": 2640,
+      "y": 4500,
+      "w": 380,
+      "text": "Export is the answer to \"what does the founder walk away with?\"\n\nSame two-audience split as everything else: the plain page (15) is what a founder sends an investor or cofounder — their own words, their own diagram. The technical one (16) is what a developer picks up.\n\nOne checkbox in the dialog switches between them: \"Technical details — for a developer\". Off by default.\n\nThe diagram is the part worth building even if the rest slips: it's the only view that shows how the pieces connect."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}
