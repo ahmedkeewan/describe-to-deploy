@@ -19,6 +19,12 @@
     display: flex; align-items: center; gap: 10px; font-weight: 600; position: relative;
   }
   header .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--working); }
+  .view-tabs { margin-left: auto; display: flex; gap: 2px; background: var(--bg); border-radius: 6px; padding: 2px; }
+  .view-tab {
+    border: none; background: none; padding: 6px 14px; border-radius: 5px; font-size: 13px;
+    color: var(--muted); cursor: pointer; font-family: inherit;
+  }
+  .view-tab.active { background: var(--panel); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
   .switcher {
     display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 5px;
     cursor: pointer; user-select: none; background: transparent;
@@ -39,10 +45,74 @@
   .switcher-menu .item.active { font-weight: 600; }
   .switcher-menu .item .count { font-size: 12px; color: var(--muted); }
   main { flex: 1; display: flex; overflow: hidden; }
-  .activity { flex: 1; padding: 20px; overflow-y: auto; }
-  .activity h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 14px; }
-  .activity-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-  .activity-item .t { color: var(--muted); font-size: 12px; }
+  .activity { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .activity[hidden] { display: none; }
+  .activity-scroll { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+
+  /* Chat bubbles -- "you" turns right-aligned/tinted, assistant turns left-aligned/plain,
+     roughly matching a familiar chat client so the mental model transfers immediately. */
+  .chat-msg { max-width: 78%; margin-bottom: 14px; }
+  .chat-msg.you { align-self: flex-end; }
+  .chat-msg.assistant { align-self: flex-start; }
+  .chat-msg .bubble { padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.4; }
+  .chat-msg.you .bubble { background: #eef0ea; border-bottom-right-radius: 3px; }
+  .chat-msg.assistant .bubble { background: var(--panel); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .chat-msg .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .typing-dots { display: inline-flex; gap: 4px; padding: 2px 0; }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
+    animation: typing-bounce 1.2s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: .5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* Inline chain-of-thought trace, nested under an assistant turn or standing alone for
+     activity that didn't originate from a message typed in this pane (e.g. another Claude
+     Code/Desktop session, or history from before this tab was open). */
+  .trace-group { align-self: stretch; max-width: 100%; margin-bottom: 14px; }
+  .trace-group.standalone { max-width: 90%; }
+  .trace-toggle {
+    font-size: 12px; color: var(--muted); cursor: pointer; user-select: none;
+    display: flex; align-items: center; gap: 6px; padding: 4px 0;
+  }
+  .trace-toggle:hover { color: var(--text); }
+  .trace-steps { margin-top: 4px; padding-left: 14px; border-left: 2px solid var(--border); }
+  .trace-step { font-size: 12px; color: var(--muted); padding: 3px 0; }
+  .trace-step b { color: var(--text); font-weight: 500; }
+
+  .new-project-bar {
+    flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+    background: #fbf6e9; border-top: 1px solid var(--border); font-size: 13px;
+  }
+  .new-project-bar[hidden] { display: none; }
+  .new-project-bar input {
+    flex: 1; border: 1px solid var(--border); border-radius: 5px; padding: 6px 9px; font-size: 13px;
+  }
+  .new-project-bar button { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+
+  .chat-composer { flex-shrink: 0; border-top: 1px solid var(--border); background: var(--panel); padding: 14px 20px; }
+  .chat-row { display: flex; gap: 8px; align-items: flex-end; }
+  .chat-composer textarea {
+    flex: 1; border: 1px solid var(--border); border-radius: 5px; padding: 9px 10px;
+    font-size: 14px; font-family: inherit; resize: vertical;
+  }
+  .chat-composer button {
+    padding: 9px 16px; border-radius: 5px; border: 1px solid var(--text); background: var(--text);
+    color: #fff; font-size: 14px; cursor: pointer; height: 38px;
+  }
+  .chat-composer button:disabled { opacity: .4; cursor: not-allowed; }
+  .chat-status { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 15px; }
+  .chat-status.error { color: var(--failed); }
+
+  .switcher-menu .new-chat {
+    padding: 10px 14px; font-size: 14px; cursor: pointer; border-top: 1px solid var(--border);
+    color: var(--text); font-weight: 500;
+  }
+  .switcher-menu .new-chat:hover { background: var(--bg); }
   .sidebar {
     width: 380px; border-left: 1px solid var(--border); background: var(--panel);
     padding: 20px; overflow-y: auto;
@@ -105,6 +175,41 @@
   .modal button { padding: 9px 16px; border-radius: 5px; border: 1px solid var(--border); font-size: 14px; cursor: pointer; background: var(--panel); }
   .modal button.primary { background: var(--text); color: #fff; border-color: var(--text); }
   .modal button.primary:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Diagram tab -- dark, spatial, "select a structure to see why it exists" inspired by
+     replit.com/@ahmedkeewan/Architecture-Spatializer, scoped down to a 2D card-and-connector
+     layout rather than a full isometric scene, which the remaining build time didn't allow for. */
+  .diagram-view {
+    flex: 1; display: flex; background: #14151a; color: #e8e8ec; overflow: hidden;
+  }
+  .diagram-view[hidden] { display: none; }
+  .diagram-canvas { flex: 1; overflow: auto; padding: 40px; position: relative; }
+  .diagram-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .diagram-node {
+    width: 200px; border-radius: 10px; padding: 14px; cursor: pointer;
+    background: #1d1e25; border: 1px solid #2c2d36; transition: border-color 120ms ease, transform 120ms ease;
+  }
+  .diagram-node:hover { border-color: #4a4b58; transform: translateY(-1px); }
+  .diagram-node.selected { border-color: #7c8cff; box-shadow: 0 0 0 1px #7c8cff; }
+  .diagram-node .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .diagram-node .status-dot.working { background: #4ade80; }
+  .diagram-node .status-dot.failed { background: #f87171; }
+  .diagram-node .status-dot.setting-up { background: #94a3b8; }
+  .diagram-node .status-dot.waiting { background: #fbbf24; }
+  .diagram-node .name { font-size: 13px; font-weight: 600; color: #e8e8ec; margin-bottom: 4px; }
+  .diagram-node .desc { font-size: 11.5px; color: #8b8d98; line-height: 1.4; }
+  .diagram-connector { color: #4a4b58; font-size: 18px; flex-shrink: 0; }
+  .diagram-detail {
+    width: 320px; border-left: 1px solid #2c2d36; padding: 24px; overflow-y: auto; flex-shrink: 0;
+  }
+  .diagram-detail .empty { color: #8b8d98; font-size: 13px; }
+  .diagram-detail .d-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: #6b6d78; margin: 16px 0 4px; }
+  .diagram-detail .d-label:first-child { margin-top: 0; }
+  .diagram-detail .d-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .diagram-detail .d-desc { font-size: 13px; color: #b8b9c4; line-height: 1.5; }
+  .diagram-detail .d-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #23242c; }
+  .diagram-detail code { font-size: 11.5px; color: #a5b4fc; background: #23242c; padding: 2px 6px; border-radius: 4px; }
+  .diagram-detail .d-row { font-size: 12.5px; color: #b8b9c4; padding: 3px 0; }
 </style>
 </head>
 <body>
@@ -115,11 +220,34 @@
       <span class="chev">▾</span>
     </div>
     <div class="switcher-menu" id="switcher-menu"></div>
+    <div class="view-tabs">
+      <button type="button" class="view-tab active" id="tab-chat">Chat</button>
+      <button type="button" class="view-tab" id="tab-diagram">Diagram</button>
+    </div>
   </header>
   <main>
-    <div class="activity">
-      <h2>Activity</h2>
-      <div id="activity-list"><div class="empty">Nothing yet — ask for something through your assistant to see it appear here.</div></div>
+    <div class="activity" id="chat-view">
+      <div class="activity-scroll" id="activity-list">
+        <div class="empty">Nothing yet — type below to get started.</div>
+      </div>
+      <div class="new-project-bar" id="new-project-bar" hidden>
+        <span>Starting a new project</span>
+        <input type="text" id="new-project-name" placeholder="Name it, e.g. &quot;PixelPost&quot;">
+        <button type="button" id="new-project-cancel">Cancel</button>
+      </div>
+      <form class="chat-composer" id="chat-composer">
+        <div class="chat-row">
+          <textarea id="chat-message" placeholder="What do you need? e.g. &quot;Users should be able to upload a profile photo&quot;" rows="2"></textarea>
+          <button type="submit" id="chat-send-btn">Send</button>
+        </div>
+        <div class="chat-status" id="chat-status"></div>
+      </form>
+    </div>
+    <div class="diagram-view" id="diagram-view" hidden>
+      <div class="diagram-canvas" id="diagram-canvas"></div>
+      <div class="diagram-detail" id="diagram-detail">
+        <div class="empty">Select a service to see what it is and how it's doing.</div>
+      </div>
     </div>
     <div class="sidebar">
       <h2 id="product-name">Your product</h2>
@@ -168,6 +296,10 @@ const STATUS_CLASS = {
 
 let currentState = {};
 let selectedApp = null;
+let forcingBlankState = false; // true only in the window between "+ New chat" and either sending
+                                // a message (picks a real name) or cancelling -- suppresses
+                                // renderSwitcher()'s default-to-last-app fallback so the new-chat
+                                // window actually starts blank instead of snapping back
 let allEvents = [];
 
 function workingCount(app) {
@@ -179,25 +311,44 @@ function renderSwitcher() {
   const menu = document.getElementById("switcher-menu");
   const headerName = document.getElementById("header-product-name");
 
-  if (apps.length === 0) { headerName.textContent = "Your product"; menu.innerHTML = ""; return; }
-  if (!selectedApp || !apps.includes(selectedApp)) selectedApp = apps[apps.length - 1];
-  headerName.textContent = selectedApp;
+  // Only pick a default when nothing is selected yet -- never override an explicitly chosen
+  // name just because it isn't in currentState YET. A brand-new project's app_context won't
+  // appear there until its first capability actually finishes provisioning; reverting the
+  // selection in that window is exactly the bug where sending a message for a new project
+  // silently snapped back to whatever was previously selected.
+  if (!selectedApp && apps.length > 0 && !forcingBlankState) selectedApp = apps[apps.length - 1];
+  headerName.textContent = selectedApp || "Your product";
 
-  menu.innerHTML = apps.map(a => `
+  const itemsHtml = apps.map(a => `
     <div class="item ${a === selectedApp ? 'active' : ''}" data-app="${a}">
       <span>${a}</span>
       <span class="count">${workingCount(currentState[a])} working</span>
     </div>
   `).join("");
+  menu.innerHTML = itemsHtml + `<div class="new-chat" id="new-chat-item">+ New chat</div>`;
+
   menu.querySelectorAll(".item").forEach(el => {
     el.addEventListener("click", () => {
       selectedApp = el.dataset.app;
-      expandedCapId = null; // an expanded row from a different product would be confusing here
+      switchToClean(); // treat this like opening a different chat window entirely -- no
+                        // leftover expanded rows, draft text, or status message from whatever
+                        // was on screen a moment ago should carry over
       menu.classList.remove("open");
       renderSwitcher();
       renderCapabilities();
       renderActivity();
+      if (activeView === "diagram") renderDiagram();
     });
+  });
+  document.getElementById("new-chat-item").addEventListener("click", () => {
+    menu.classList.remove("open");
+    selectedApp = null; // a genuinely blank window until the new project is named and sent
+    forcingBlankState = true;
+    switchToClean();
+    renderSwitcher();
+    renderCapabilities();
+    renderActivity();
+    showNewProjectBar(true);
   });
 }
 
@@ -211,6 +362,98 @@ document.addEventListener("click", (e) => {
 });
 
 let expandedCapId = null;
+
+function switchToClean() {
+  // Called on every project switch (existing or new) -- reset everything that isn't part of
+  // that project's own data, so switching genuinely reads as opening a different chat window
+  // rather than filtering the same one. Never leaves a draft message, an error from the
+  // previous project, or an expanded row/trace group open across the switch.
+  expandedCapId = null;
+  expandedGroupKey = null;
+  selectedDiagramNode = null;
+  const msgEl = document.getElementById("chat-message");
+  const statusEl = document.getElementById("chat-status");
+  if (msgEl) msgEl.value = "";
+  if (statusEl) { statusEl.textContent = ""; statusEl.classList.remove("error"); }
+}
+
+// ---- Diagram tab ----
+// A 2D, dark-themed take on "select a structure to see why it exists" -- design reference:
+// replit.com/@ahmedkeewan/Architecture-Spatializer. Cards connected by dependency order,
+// colored by live status, click a card for the same technical detail the sidebar's row
+// expansion shows -- same data, different presentation for a different kind of question
+// ("how does this fit together" vs "what's the status of each piece").
+let activeView = "chat";
+let selectedDiagramNode = null;
+
+function switchView(view) {
+  activeView = view;
+  document.getElementById("chat-view").hidden = view !== "chat";
+  document.getElementById("diagram-view").hidden = view !== "diagram";
+  document.getElementById("tab-chat").classList.toggle("active", view === "chat");
+  document.getElementById("tab-diagram").classList.toggle("active", view === "diagram");
+  if (view === "diagram") renderDiagram();
+}
+document.getElementById("tab-chat").addEventListener("click", () => switchView("chat"));
+document.getElementById("tab-diagram").addEventListener("click", () => switchView("diagram"));
+
+function renderDiagram() {
+  const canvas = document.getElementById("diagram-canvas");
+  const detail = document.getElementById("diagram-detail");
+  if (!selectedApp || !currentState[selectedApp]) {
+    canvas.innerHTML = '<div class="empty" style="color:#8b8d98;">Nothing set up yet for this project.</div>';
+    detail.innerHTML = '<div class="empty">Select a service to see what it is and how it\'s doing.</div>';
+    return;
+  }
+  const caps = orderedCapabilities(currentState[selectedApp]);
+  if (caps.length === 0) {
+    canvas.innerHTML = '<div class="empty" style="color:#8b8d98;">Nothing set up yet for this project.</div>';
+    return;
+  }
+
+  canvas.innerHTML = `<div class="diagram-row">${caps.map(([id, c], i) => {
+    const dev = c._dev || {};
+    return `
+    ${i > 0 ? '<span class="diagram-connector">→</span>' : ""}
+    <div class="diagram-node ${selectedDiagramNode === id ? "selected" : ""}" data-cap="${id}">
+      <div class="name"><span class="status-dot ${STATUS_CLASS[c.status] || ""}"></span>${(dev.service || id).toUpperCase()}</div>
+      <div class="desc">${dev.resource_name || id}</div>
+    </div>
+  `;
+  }).join("")}</div>`;
+
+  canvas.querySelectorAll(".diagram-node").forEach(el => {
+    el.addEventListener("click", () => {
+      selectedDiagramNode = el.dataset.cap;
+      renderDiagram();
+    });
+  });
+
+  if (selectedDiagramNode) {
+    const entry = caps.find(([id]) => id === selectedDiagramNode);
+    if (entry) {
+      const [id, c] = entry;
+      const dev = c._dev || {};
+      detail.innerHTML = `
+        <div class="d-status"><span class="status-dot ${STATUS_CLASS[c.status] || ""}"></span>${c.status}</div>
+        <div class="d-label">What this is</div>
+        <div class="d-name">${c.label}</div>
+        ${c.proof ? `<div class="d-desc">${c.proof}</div>` : ""}
+        <div class="d-label">Depends on</div>
+        <div class="d-row">${(c.depends_on || []).length ? c.depends_on.join(", ") : "nothing"}</div>
+        <div class="d-label">Technical</div>
+        <div class="d-row">capability <code>${id}</code></div>
+        <div class="d-row">service <code>${dev.service || "—"}</code></div>
+        <div class="d-row">resource <code>${dev.resource_name || "—"}</code></div>
+        <div class="d-row">endpoint <code>${dev.endpoint || "—"}</code></div>
+        <div class="d-label">Real AWS equivalent</div>
+        <div class="d-desc">${dev.cloud_equivalent || "—"}</div>
+      `;
+    }
+  } else {
+    detail.innerHTML = '<div class="empty">Select a service to see what it is and how it\'s doing.</div>';
+  }
+}
 
 function renderCapabilities() {
   const list = document.getElementById("capability-list");
@@ -285,24 +528,107 @@ const EVENT_KIND_LABEL = {
   "question.asked": "asked a question",
 };
 
+let expandedGroupKey = null;
+// chatHistory holds turns actually sent from THIS browser tab, keyed by app_context. Turns
+// aren't persisted server-side (there's no store for them, only for infra state and the raw
+// event log) -- reloading the page or opening a new tab loses the conversational framing for
+// past turns, though the underlying events are still there and render as anonymous trace
+// groups instead. Known, accepted limitation rather than building a transcript store.
+let chatHistory = {};
+
+function groupActivity(events) {
+  // Consecutive events for the same capability -- a full provision.start/verify.start/verify.pass
+  // cycle is usually 2-3 events -- read as one meaningful action, not three lines of near-
+  // duplicate text. Group by contiguous runs (in chronological order) sharing a capability.
+  const groups = [];
+  for (const e of events) {
+    const last = groups[groups.length - 1];
+    if (last && last.capability === e.capability) last.events.push(e);
+    else groups.push({ capability: e.capability, events: [e] });
+  }
+  return groups;
+}
+
+function renderTraceGroup(g, keyPrefix, standalone) {
+  const first = g.events[0], last = g.events[g.events.length - 1];
+  const key = `${keyPrefix}-${g.capability}-${first.seq}`;
+  const isOpen = expandedGroupKey === key;
+  return `
+    <div class="trace-group ${standalone ? "standalone" : ""}">
+      <div class="trace-toggle" data-group="${key}">
+        <span>${isOpen ? "▾" : "▸"}</span>
+        <span>${g.capability || "—"} · ${EVENT_KIND_LABEL[last.kind] || last.kind}${g.events.length > 1 ? ` (${g.events.length} steps)` : ""}</span>
+      </div>
+      ${isOpen ? `<div class="trace-steps">${g.events.map(e => `
+        <div class="trace-step">${new Date(e.t).toLocaleTimeString()} — <b>${EVENT_KIND_LABEL[e.kind] || e.kind}</b> — ${e.founder.label}</div>
+      `).join("")}</div>` : ""}
+    </div>`;
+}
+
 function renderActivity() {
   const list = document.getElementById("activity-list");
-  // Strict app_context match only. An earlier version fell back to showing events with no
-  // app_context under every app (events recorded before app_context was added to the event
-  // schema) -- that's exactly what made the feed look "not accurate": switching products showed
-  // the same unrelated history everywhere. An event with unknown ownership belongs to no product
-  // on screen, not to all of them.
-  const relevant = selectedApp ? allEvents.filter(e => e.app_context === selectedApp) : [];
-  if (relevant.length === 0) {
-    list.innerHTML = '<div class="empty">Nothing recorded for this project yet.</div>';
+  if (!selectedApp) {
+    list.innerHTML = '<div class="empty">Nothing yet — type below to get started.</div>';
     return;
   }
-  list.innerHTML = relevant.slice().reverse().map(e => `
-    <div class="activity-item">
-      <div class="t">${new Date(e.t).toLocaleTimeString()} · ${e.capability || "—"} · ${EVENT_KIND_LABEL[e.kind] || e.kind}</div>
-      <div>${e.founder.label}</div>
-    </div>
-  `).join("");
+
+  // Strict app_context match. Events with no app_context (recorded before that field existed)
+  // belong to no product on screen, never to all of them -- showing them everywhere was the
+  // original activity-log accuracy bug.
+  const relevant = allEvents.filter(e => e.app_context === selectedApp);
+  const turns = chatHistory[selectedApp] || [];
+
+  if (relevant.length === 0 && turns.length === 0) {
+    list.innerHTML = '<div class="empty">Nothing recorded for this project yet — type below.</div>';
+    return;
+  }
+
+  // Claim events into whichever chat turn's time window [tStart, tEnd] they fall in; anything
+  // left over (activity from another Claude Code/Desktop session, or from before this tab was
+  // open) renders as a standalone trace group instead of being silently dropped.
+  const claimed = new Set();
+  const turnItems = turns.map(turn => {
+    const trace = relevant.filter(e => {
+      const t = new Date(e.t).getTime();
+      return t >= turn.tStart && t <= (turn.tEnd || Infinity);
+    });
+    trace.forEach(e => claimed.add(e.seq));
+    return { type: "turn", t: turn.tStart, turn, trace };
+  });
+  const leftover = relevant.filter(e => !claimed.has(e.seq));
+  const leftoverGroups = groupActivity(leftover).map(g => ({
+    type: "trace", t: new Date(g.events[0].t).getTime(), group: g,
+  }));
+
+  const items = [...turnItems, ...leftoverGroups].sort((a, b) => a.t - b.t);
+
+  list.innerHTML = items.map(item => {
+    if (item.type === "trace") return renderTraceGroup(item.group, "standalone", true);
+    const turn = item.turn;
+    const youBubble = `
+      <div class="chat-msg you"><div class="bubble">${turn.you}</div></div>`;
+    const traceGroups = groupActivity(item.trace).map(g => renderTraceGroup(g, "turn", false)).join("");
+    const pending = turn.tEnd === null;
+    const assistantBubble = turn.assistant
+      ? `<div class="chat-msg assistant">
+          ${traceGroups}
+          <div class="bubble">${turn.assistant}</div>
+          ${turn.meta ? `<div class="meta">${turn.meta}</div>` : ""}
+        </div>`
+      : `<div class="chat-msg assistant">
+          ${traceGroups}
+          ${pending ? `<div class="bubble"><span class="typing-dots"><span></span><span></span><span></span></span></div>` : ""}
+        </div>`;
+    return youBubble + assistantBubble;
+  }).join("");
+
+  list.querySelectorAll(".trace-toggle").forEach(el => {
+    el.addEventListener("click", () => {
+      expandedGroupKey = expandedGroupKey === el.dataset.group ? null : el.dataset.group;
+      renderActivity();
+    });
+  });
+  list.scrollTop = list.scrollHeight;
 }
 
 let stateInFlight = false;
@@ -328,6 +654,7 @@ async function refreshState() {
     // forever despite matching events already being loaded (caught by inspecting page state
     // directly in the browser, not by checking the SSE stream or events.jsonl in isolation).
     renderActivity();
+    if (activeView === "diagram") renderDiagram();
   } catch (e) { /* server not up yet */ }
   stateInFlight = false;
   if (stateRefreshPending) { stateRefreshPending = false; refreshState(); }
@@ -341,6 +668,88 @@ source.onmessage = (msg) => {
 };
 
 refreshState();
+
+// ---- Chat ----
+// Bridges to a real Claude Code invocation server-side (harness/web_server.py's /chat) -- there's
+// no LLM API key in this environment, so this is what makes "create a new project from the live
+// board" real instead of a mock. Progress during a send shows up for free as an inline trace
+// under the assistant's turn (see renderActivity/renderTraceGroup above), via the same
+// events.jsonl the spawned session's own tool calls write to -- no separate polling needed here.
+
+let creatingNewProject = false;
+
+function showNewProjectBar(show) {
+  creatingNewProject = show;
+  document.getElementById("new-project-bar").hidden = !show;
+  if (show) document.getElementById("new-project-name").focus();
+}
+document.getElementById("new-project-cancel").addEventListener("click", () => {
+  showNewProjectBar(false);
+  forcingBlankState = false;
+  renderSwitcher(); // falls back to the last real project again now that the flag is cleared
+  renderCapabilities();
+  renderActivity();
+});
+
+document.getElementById("chat-composer").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const msgEl = document.getElementById("chat-message");
+  const statusEl = document.getElementById("chat-status");
+  const sendBtn = document.getElementById("chat-send-btn");
+
+  const message = msgEl.value.trim();
+  if (!message) return;
+
+  let appContext;
+  if (creatingNewProject) {
+    appContext = document.getElementById("new-project-name").value.trim();
+    if (!appContext) { statusEl.textContent = "Name the project first."; statusEl.classList.add("error"); return; }
+  } else {
+    appContext = selectedApp;
+    if (!appContext) { statusEl.textContent = 'No project selected — use "+ New chat" to start one.'; statusEl.classList.add("error"); return; }
+  }
+
+  const turn = { you: message, assistant: null, meta: null, tStart: Date.now(), tEnd: null };
+  chatHistory[appContext] = chatHistory[appContext] || [];
+  chatHistory[appContext].push(turn);
+  selectedApp = appContext; // switch straight to this project so the turn renders immediately
+  forcingBlankState = false; // it's a real, explicit selection now, not a blank pre-name state
+  showNewProjectBar(false);
+  msgEl.value = "";
+  sendBtn.disabled = true;
+  statusEl.textContent = "Working on it — this runs a real Claude Code session, usually 20-90s…";
+  statusEl.classList.remove("error");
+  renderActivity();
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, app_context: appContext }),
+    });
+    const data = await res.json();
+    turn.tEnd = Date.now();
+    if (!res.ok || data.error) {
+      statusEl.textContent = data.error || "Something went wrong.";
+      statusEl.classList.add("error");
+      turn.assistant = data.error || "Something went wrong.";
+    } else {
+      statusEl.textContent = "";
+      turn.assistant = data.reply;
+      turn.meta = data.cost_usd != null
+        ? `$${data.cost_usd.toFixed(3)} · ${(data.duration_ms / 1000).toFixed(1)}s`
+        : null;
+    }
+  } catch (e) {
+    turn.tEnd = Date.now();
+    statusEl.textContent = "Couldn't reach the server.";
+    statusEl.classList.add("error");
+    turn.assistant = "Couldn't reach the server.";
+  }
+  sendBtn.disabled = false;
+  renderActivity();
+  refreshState();
+});
 
 // ---- Export ----
 // interface/README.md's "Export" section: what a founder walks away with when the tool closes.
