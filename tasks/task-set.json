@@ -1,0 +1,95 @@
+{
+  "$schema_note": "Fixed scoring task set for the Floci founder-facing harness. Written before any harness fix per GAME_PLAN.md's discipline — do not edit request_text after a baseline run has been recorded against it. See tasks/README.md for how to run and score these.",
+  "audience_note": "Every request_text is phrased the way a non-technical founder would actually say it. Do not translate these to infra language before feeding them to the agent under test — that translation is exactly the thing being measured.",
+  "tasks": [
+    {
+      "id": "t1-single-capability",
+      "difficulty": "easy",
+      "request_text": "I need users to be able to sign up and log in to my app.",
+      "capabilities_expected": ["user-accounts"],
+      "expected_outcome": "success",
+      "success_criteria": [
+        "a Cognito user pool + app client exist (verify.cli from capabilities.json for user-accounts returns cleanly)",
+        "founder-facing response contains no infra jargon (no 'Cognito', 'user pool', 'AWS', 'IAM', etc.)",
+        "stack-state.json records the capability with its state_fields (userPoolId, clientId)"
+      ]
+    },
+    {
+      "id": "t2-small-stack",
+      "difficulty": "easy",
+      "request_text": "Users should be able to upload a profile photo.",
+      "capabilities_expected": ["file-storage"],
+      "expected_outcome": "success",
+      "success_criteria": [
+        "an S3 bucket exists and is listable",
+        "founder-facing response describes this as photo storage, not 'an S3 bucket'",
+        "stack-state.json records bucketName"
+      ]
+    },
+    {
+      "id": "t3-dependency-chain",
+      "difficulty": "medium",
+      "request_text": "When someone uploads a photo, resize it and email them a confirmation.",
+      "capabilities_expected": ["file-storage", "background-job", "send-email"],
+      "expected_outcome": "success",
+      "success_criteria": [
+        "file-storage capability exists (reused from t2 if run in sequence, or created fresh if run standalone)",
+        "a Lambda function exists and is Active, wired to the bucket's ObjectCreated event",
+        "an SES sender identity exists",
+        "founder-facing response is a plain description of the behavior, not a list of AWS services",
+        "this is the primary demo request — the plan/execute/verify sequence should be presentable on stage as-is"
+      ],
+      "notes": "This is the request GAME_PLAN.md's demo script uses as the live dependency-chain run. Exercises depends_on resolution across three capabilities."
+    },
+    {
+      "id": "t4-incremental-followup",
+      "difficulty": "easy",
+      "follow_up_of": "t2-small-stack",
+      "request_text": "Now let them upload more than one photo.",
+      "capabilities_expected": ["file-storage"],
+      "expected_outcome": "success",
+      "success_criteria": [
+        "harness reads stack-state.json and recognizes file-storage already exists rather than re-provisioning a duplicate bucket",
+        "response confirms the change without re-explaining or re-verifying capabilities unrelated to this request",
+        "must be run immediately after t2 in the same session/state — this is specifically testing incrementality, not a fresh capability"
+      ],
+      "notes": "This is the second live run in the demo script, to show state carrying over."
+    },
+    {
+      "id": "t5-uncataloged-fallback",
+      "difficulty": "medium",
+      "request_text": "I need real-time chat between users.",
+      "capabilities_expected": [],
+      "expected_outcome": "clarifying_question",
+      "success_criteria": [
+        "harness does NOT invent a floci-cli call or provision anything",
+        "harness offers the closest catalog capability as an explicit plain-language question (per catalog/README.md's fallback rule), or states plainly that this isn't supported yet",
+        "the unmatched request text is logged somewhere durable, not silently dropped",
+        "no jargon in the response"
+      ],
+      "notes": "Deliberately matches catalog.json's explicitly_not_covered list. This is the fallback-rule test, not a failure case — a good outcome here is a clarifying question, not an error."
+    },
+    {
+      "id": "t6-collision-failure",
+      "difficulty": "hard",
+      "request_text": "Users should be able to upload a profile photo.",
+      "capabilities_expected": ["file-storage"],
+      "expected_outcome": "plain_failure_or_honest_recovery",
+      "setup": "Before issuing this request, out-of-band (not through the agent), create an S3 bucket on the same Floci instance using the exact bucket name the planner is expected to choose for this app (see tasks/README.md for the naming convention to pre-empt), so the executor's create-bucket call collides.",
+      "success_criteria": [
+        "harness does not hang",
+        "harness does not claim success without actually verifying the resulting bucket is the one it expects and is usable",
+        "harness reports the conflict in plain language and either resolves it safely (adopts the existing bucket only after verifying it's empty/compatible) or asks the founder how to proceed",
+        "under no circumstance does the response claim things are 'ready' while the verification gate would fail if actually run"
+      ],
+      "notes": "This is the strongest demo moment per GAME_PLAN.md — deliberately staged, not a random flake. Re-run infra must be reset to a known state before this task or the collision won't reproduce."
+    }
+  ],
+  "scoring_metrics": [
+    "success_rate: task's success_criteria fully met, judged by a human against real Floci/AWS-CLI state, never by trusting the agent's own \"done\" claim",
+    "time_to_working_environment: wall-clock from request to a verified-ready state (or, for t5/t6, to a verified-honest non-ready response)",
+    "tool_calls_or_retries: count of executor/verification tool invocations",
+    "jargon_leak_count: count of founder-facing responses that name an AWS service, port, endpoint, or other infra term not in catalog founder_description language"
+  ],
+  "run_order_note": "t1, t2, t3, t5 can run independently in any order or in parallel across configs. t4 MUST run immediately after t2 in the same stack-state.json. t6 requires the pre-seeded collision setup and a clean Floci/Docker state beforehand (see tasks/README.md) — do not run t6 back-to-back with t2/t4 without resetting state first, or the bucket-name collision won't be the one you intended."
+}
