@@ -52,10 +52,17 @@ order). Fill in `t1`-`t6` as pass/fail/partial; the last three columns aggregate
 | 1 — + capability catalog | pass | pass | pass | pass | **pass (fixed)** | pass | 6/6, correct outcome type on all 6 | ~52s median (~310s total vs. ~1040s baseline) | 1-11 (21 total vs. ~87 baseline) | **0/6** |
 | 2 — + planner + executor tools* | pass | pass | pass | skipped† | pass | **pass (plan corrected)** | 5/6 measured, all correct | combined ~2x fix-1 (two-agent overhead) | see notes below | **0/6** |
 | 3 — + executor tool | *(merged into row 2 — a planner needs something to execute its plan, so both were built and measured together)* | | | | | | | | | |
-| 4 — + verification gate | | | | | | | | | | |
+| 4 — + verification gate | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **caught a false PASS in a targeted adversarial test — see notes below** | ~10-15s per gate run | 1 script, 0 LLM calls | n/a |
 | 5 — + state file | | | | | | | | | | |
 | 6 — + failure escalation | | | | | | | | | | |
 | 7 — + auto-wiring | | | | | | | | | | |
+
+\* Fix 2 covers both the "planner tool" and "executor tool" rows from GAME_PLAN.md's build order —
+a planner needs something to execute its plan, so both were built and measured together; see the
+fix-2 section below. † t4's executor was skipped at fix-2 due to a sequencing mistake (see the
+fix-2 section). ‡ Fix 4 is a standalone script with no task-specific behavior of its own — it was
+validated with a targeted adversarial test (a "sloppy executor" vs. the gate) rather than a full
+task-set run; see the fix-4 section below for what that test showed.
 
 ## What each task is actually testing
 
@@ -225,3 +232,47 @@ becomes an action, and this run caught a real example of exactly that — not a 
 Recommend keeping this fix for the demo specifically because of the t6 result, while being honest
 on stage that it costs time/tokens fix-1 didn't, and that the win here came from an explicit
 verify-independently instruction on the executor, not from the split alone.
+
+## Fix-4 run (computational verification gate) — recorded 2026-09-05
+
+Harness = [harness/verify_gate.py](../harness/verify_gate.py) -- a plain Python script, **zero
+LLM calls**, that reads a `stack-plan.json`, looks up each matched capability in
+[catalog/capabilities.json](../catalog/capabilities.json), runs its real `verify.cli` against
+live Floci, and exits 0 only if every one actually passes. This is the computational counterpart
+to fix-2's *inferential* self-verification instruction (VOCAB.md sec 3: "prefer computational
+over inferential wherever a deterministic check exists") -- the gate cannot be argued with,
+distracted, or fooled by a confident LLM report, because no LLM is in its loop at all.
+
+**A real gap found and fixed before the demo scenario, not glossed over.** The original
+`file-storage` check (`aws s3 ls s3://<bucketName>`) is a pure existence check -- it would have
+returned a clean PASS against t6's poisoned bucket, since listing a locked bucket works fine.
+Hardened it to a real functional round trip: write a uniquely-keyed object, read it back, byte-
+compare, then delete it -- the delete step is exactly what Object Lock blocks. Verified both
+directions: PASS on a healthy bucket (clean write/read/delete), FAIL (exit 1, delete step) on a
+freshly poisoned one. This is worth stating plainly on stage: **a computational gate is only as
+good as what it actually tests** -- the t6 win in fix-2 came from an LLM reasoning about the
+*specific reported scenario*; the gate needed that same specificity encoded into its check before
+it could catch the same class of bug on its own.
+
+**The core demonstration.** Built a deliberately "sloppy executor" -- no self-verification
+instruction, explicitly told "a simple existence check is enough" (simulating a harness
+regression, e.g. someone deleting the verify-independently instruction from fix-2's prompt during
+a later edit). Pointed it at the same freshly-poisoned bucket. It ran one `aws s3 ls`, saw the
+bucket existed, and confidently told the founder: *"Photo storage is confirmed set up and ready —
+your app can start uploading and storing photos right away, no further setup needed."* This is a
+real, observed false positive, not a hypothetical. Ran `verify_gate.py` against the identical
+resource immediately after: **`gate_result: FAIL`**, exit code 1, the exact delete-step
+`AccessDenied` surfaced in the structured report -- independent of, and contradicting, what the
+executor had just told the founder.
+
+**What this proves.** Fix #2 showed a *good* LLM executor, properly instructed, catches this
+class of failure. Fix #4 shows what happens when that instruction erodes or a weaker prompt slips
+through: the founder gets told "ready" for infrastructure that is not ready, and a plain,
+~10-15-second script with no model in the loop is the thing that actually catches it, every time,
+regardless of the executor's prompt quality that run. This is the argument for keeping the gate
+as a hard requirement between "executor claims done" and "founder sees ready" — not a redundant
+safety net on top of a good executor, but the thing that keeps working after the executor
+inevitably isn't good on some future run. In production, the gate's raw JSON must never reach the
+founder directly (it's exactly the jargon fix #1 exists to hide) -- it should only ever flip a
+binary "ready" / "not ready yet, here's what's still broken in plain language" decision that the
+harness's own founder-facing report is built from.
