@@ -51,6 +51,11 @@
         "resource_name": "us-east-1_fc2de4774",
         "last_verified": "2026-09-05T12:23:41.649284+00:00",
         "last_gate_result": "PASS"
+      },
+      "structured-data": {
+        "resource_name": "pixelpost-profiles",
+        "last_verified": "2026-09-05T12:41:54.595035+00:00",
+        "last_gate_result": "PASS"
       }
     }
   },
