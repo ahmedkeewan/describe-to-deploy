@@ -56,6 +56,11 @@
         "resource_name": "pixelpost-profiles",
         "last_verified": "2026-09-05T12:41:54.595035+00:00",
         "last_gate_result": "PASS"
+      },
+      "send-email": {
+        "resource_name": "hello@pixelpost.app",
+        "last_verified": "2026-09-05T13:06:17.441429+00:00",
+        "last_gate_result": "PASS"
       }
     }
   },
