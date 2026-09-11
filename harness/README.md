@@ -44,6 +44,12 @@ Floci install/start with confirmation, venv + deps, and wiring the MCP server in
 and Claude Code), and is safe to re-run. The steps below are what it automates, useful if you want
 to do them by hand or understand what changed on your machine.
 
+**Platforms**: macOS and Linux are supported directly. Windows is supported via **WSL** (run
+`./setup.sh` inside your WSL distro — it correctly wires Claude Desktop's config on the Windows
+side, even though the script itself runs in Linux). Native Windows without WSL isn't scripted
+here — install Floci with its own PowerShell installer (`irm https://floci.io/install.ps1 | iex`)
+and wire the MCP server manually using the steps below.
+
 ```bash
 python3 -m venv harness/.venv
 source harness/.venv/bin/activate
