@@ -12,3 +12,6 @@ events.jsonl
 # Local env
 .env
 .env.local
+
+# Written by setup.sh -- machine-specific absolute paths, not portable source
+.mcp.json
