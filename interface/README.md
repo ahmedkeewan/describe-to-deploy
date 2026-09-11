@@ -665,27 +665,29 @@ and it is the 5/6 → 0/6 jargon result made visible rather than asserted from a
 ## Known limitations
 
 Stated plainly, because a submission that hides these is easier to catch out than one that names
-them.
+them. Reviewed and corrected 2026-09-11 against the code as it stands — several items below were
+originally written as forward-looking design notes and have since been built; this list keeps
+only what's still actually true.
 
 - **Launching is a terminal command.** There is exactly one technical step, and the pitch should
-  not claim zero. In a real product this is a downloadable app; the browser UI is unchanged.
-- **Verification is only as strong as the catalog's checks.** As of 2026-09-05 all 12 are
-  existence checks, which honestly earn only the weaker proof sentence. The recorded fix-0
-  baseline was *stronger* — it verified photo storage with a byte-identical round trip — so
-  existence-only checks would regress on proof strength against the baseline being compared to.
-  Round-trip sentences are drafted in [founder-copy.md](founder-copy.md).
-- **The UI is outside the measurement path.** That is deliberate — it keeps the scored CLI clean
-  — but it means the jargon-leak metric is measured on agent responses, not on rendered pixels.
-- **Multi-product is designed for, not built.** One Floci instance can hold several products
-  side by side — they collide only if they pick the same resource names, and the catalog
-  generates those. So the cheap half should be built now (prefix resource names by product, key
-  `stack-state.json` by product, scope reconciliation per product) and the switcher UI deferred;
-  it should not compete with the verification gate for hackathon hours.
-- **Export is designed, not built.** The dialog, the plain page and the technical page are
-  specified and drawn; nothing generates them yet. The diagram is the piece to protect if the
-  rest slips — it is the only view that shows how the pieces connect.
-- **`stack-state.json` is not built yet.** It is fix #5 in the build order. Until it exists the
-  board has no durable source and can only render a single run. The recorded baseline showed a
-  capable model already handles incremental requests correctly by re-querying live state
-  ([tasks/README.md](../tasks/README.md)), so the file's value is a stable render source and
-  fewer round trips — not correctness.
+  not claim zero. In a real product this is a downloadable app; the browser UI is unchanged. Still
+  true — `setup.sh` automates installing and wiring everything, but deliberately does not
+  auto-launch the live board (`harness/web_server.py`); starting it is still one terminal command.
+- **Verification strength is mixed across the catalog, not uniform.** 5 of 12 capabilities
+  (`user-accounts`, `file-storage`, `structured-data`, `background-job`, `send-email` — the ones
+  exercised by tasks t1–t4) run a real round-trip check: create, read/verify unchanged, delete.
+  The remaining 7 still run a weaker "service is up and answering" existence check. So the
+  founder-facing proof sentence is honest per-capability, but not uniformly strong yet.
+- **The UI is outside the measurement path.** Still true and still deliberate — it keeps the
+  scored CLI clean. The jargon-leak metric is measured on agent response text
+  ([tasks/README.md](../tasks/README.md)), not on rendered pixels.
+- **Multi-product switching is built.** The live board's switcher (`interface/live.html`) lets a
+  founder move between products sharing one Floci instance, keyed by `app_context` so resources
+  don't collide.
+- **Export is built.** The export dialog and its plain/technical page variants
+  (`interface/canvas/Export*.dc.html`, wired into `live.html`) are implemented, not just
+  specified.
+- **`harness/stack-state.json` exists and is the board's durable source.** It's no longer built as
+  demo-data checked into the repo — see the fix that stopped tracking it — but the feature itself
+  (state keyed by `app_context`, read by the planner before falling back to live discovery) is
+  live.
