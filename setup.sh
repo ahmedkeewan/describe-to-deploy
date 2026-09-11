@@ -239,11 +239,15 @@ fi
 step "Wiring Claude Code (project-scoped)"
 merge_mcp_config "$REPO_ROOT/.mcp.json" "Claude Code" || say "  (skipped -- fix the file above and re-run)"
 
+step "Wiring Cursor (project-scoped)"
+merge_mcp_config "$REPO_ROOT/.cursor/mcp.json" "Cursor" || say "  (skipped -- fix the file above and re-run)"
+
 # --- 8. Summary --------------------------------------------------------------------------
 step "Setup complete"
 say "Next steps:"
-say "  - Claude Desktop and Claude Code are wired to the floci-control-plane MCP server."
-say "    Restart Claude Desktop (or start a new Claude Code session in this repo) to pick it up."
+say "  - Claude Desktop, Claude Code, and Cursor are wired to the floci-control-plane MCP server."
+say "    Restart Claude Desktop (or Cursor, or start a new Claude Code session in this repo) to"
+say "    pick it up."
 if [ "$START_BOARD" = false ]; then
   say "  - To start the live board:"
   say "      $VENV_PYTHON harness/web_server.py"
