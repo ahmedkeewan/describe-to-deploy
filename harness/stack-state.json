@@ -1,1 +1,32 @@
-{}
+{
+  "demo_app - PixelPost": {
+    "created": "2026-09-05T14:11:49.424556+00:00",
+    "capabilities": {
+      "structured-data": {
+        "resource_name": "pixelpost-profiles",
+        "last_verified": "2026-09-05T14:11:49.424556+00:00",
+        "last_gate_result": "PASS"
+      },
+      "file-storage": {
+        "resource_name": "pixelpost-photos",
+        "last_verified": "2026-09-05T14:11:52.061239+00:00",
+        "last_gate_result": "PASS"
+      },
+      "send-email": {
+        "resource_name": "pixelpost-mail",
+        "last_verified": "2026-09-05T14:11:54.496082+00:00",
+        "last_gate_result": "PASS"
+      },
+      "user-accounts": {
+        "resource_name": "us-east-1_f1f3bdbc3",
+        "last_verified": "2026-09-05T14:14:25.778207+00:00",
+        "last_gate_result": "PASS"
+      },
+      "app-settings": {
+        "resource_name": "pixelpost-settings",
+        "last_verified": "2026-09-05T14:41:34.258816+00:00",
+        "last_gate_result": "PASS"
+      }
+    }
+  }
+}
