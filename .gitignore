@@ -7,6 +7,7 @@ __pycache__/
 
 # Runtime state written by the harness, not source
 stack-plan.json
+stack-state.json
 events.jsonl
 
 # Local env
