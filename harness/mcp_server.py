@@ -26,13 +26,18 @@ explicitly the one technical/graduation report in this whole harness and is docu
 Run: source harness/.venv/bin/activate && python3 harness/mcp_server.py
 """
 import json
+import re
+import secrets
+import socket
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import events as events_log
+from environments_store import environments_lock, load_environments, save_environments
 from state_lock import locked
 
 from mcp.server.mcpserver import MCPServer
@@ -49,6 +54,12 @@ ENV = {
     "AWS_SECRET_ACCESS_KEY": "test",
     "AWS_DEFAULT_REGION": "us-east-1",
 }
+
+# Lowercase alphanumeric + hyphen, 3-40 chars. This allowlist already excludes `::`, the
+# reserved separator the resource-name-to-environment binding (GH-29) relies on -- see the
+# technical design's Error responses table.
+ENVIRONMENT_NAME_RE = re.compile(r"^[a-z0-9-]{3,40}$")
+BOARD_PORT_RANGE = range(7777, 7877)
 
 server = MCPServer(
     name="floci-control-plane",
@@ -99,6 +110,69 @@ def _run_verify(cli_template: str, resource_name: str) -> tuple[bool, str]:
         return result.returncode == 0, (result.stdout or result.stderr or "").strip()[:500]
     except subprocess.TimeoutExpired:
         return False, "verification timed out"
+
+
+def _scan_free_board_port(taken_ports: set[int]) -> int | None:
+    """Return the first port in BOARD_PORT_RANGE that isn't already registered to another
+    environment AND is actually bindable right now. Two checks, not one: `taken_ports` catches
+    ports this harness already handed out; the bind attempt catches anything else already
+    listening on the machine (an unrelated local service, a board still running from a prior
+    session)."""
+    for port in BOARD_PORT_RANGE:
+        if port in taken_ports:
+            continue
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                probe.bind(("127.0.0.1", port))
+            except OSError:
+                continue
+        return port
+    return None
+
+
+@server.tool()
+def create_environment(name: str) -> dict:
+    """Mint a new, isolated environment so one agent/worktree can provision and verify its own
+    infra without colliding with another agent's environment. Reserves a permanently-unique
+    app_context (never reused, even if `name` is reused after a later destroy_environment call
+    within the same second) and a free board port, both recorded in environments.json.
+
+    NOT founder-facing -- the returned app_context and board_port are for the developer/agent
+    driving this session. Never relay either value to the founder; see AgDR-0001 and the
+    technical design's jargon-boundary contract update for why."""
+    if not ENVIRONMENT_NAME_RE.match(name):
+        return {
+            "error": "Environment name must be lowercase alphanumeric with hyphens, "
+            "3-40 characters."
+        }
+
+    with environments_lock():
+        envs = load_environments()
+        if name in envs:
+            return {"error": f"Environment '{name}' already exists."}
+
+        taken_ports = {e["board_port"] for e in envs.values()}
+        board_port = _scan_free_board_port(taken_ports)
+        if board_port is None:
+            return {
+                "error": f"No free board port available in range "
+                f"{BOARD_PORT_RANGE.start}-{BOARD_PORT_RANGE.stop - 1}."
+            }
+
+        # Nanosecond timestamp + random suffix, not a plain per-second timestamp -- a same-second
+        # destroy_environment(name) followed by create_environment(name) must never mint the same
+        # app_context, or the new environment would inherit the destroyed one's namespace. See
+        # AgDR-0001 and the technical design's Data Model section.
+        app_context = f"{name}-{time.time_ns()}-{secrets.token_hex(2)}"
+        envs[name] = {
+            "app_context": app_context,
+            "board_port": board_port,
+            "created": datetime.now(timezone.utc).isoformat(),
+        }
+        save_environments(envs)
+
+    return {"app_context": app_context, "board_port": board_port}
 
 
 @server.tool()
