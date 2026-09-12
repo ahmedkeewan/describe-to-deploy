@@ -254,6 +254,32 @@ def get_app_state(app_context: str) -> dict:
     }
 
 
+def _registered_app_contexts() -> set[str]:
+    return {info["app_context"] for info in load_environments().values()}
+
+
+def _resource_name_binding_error(app_context: str | None, resource_name: str) -> dict | None:
+    """Enforce GH-29: when `app_context` belongs to a registered environment, `resource_name`
+    must split on the first `::` into a segment EXACTLY equal to that `app_context` -- not
+    merely a prefix. A naive `resource_name.startswith(app_context)` check is defeatable: an
+    environment can be named after another environment's full app_context, making a prefix
+    check pass across environments. Exact equality on the pre-`::` segment closes that hole
+    (see AgDR-0001 and the technical design's Data Flow step 6).
+
+    An app_context with no matching registered environment (today's default, single-app usage)
+    is unaffected -- this is an accepted, documented gap for FR-7 backward compatibility, not
+    an oversight. Returns None when the call may proceed, or the error dict to return as-is."""
+    if app_context is None or app_context not in _registered_app_contexts():
+        return None
+    prefix, sep, _ = resource_name.partition("::")
+    if sep != "::" or prefix != app_context:
+        return {
+            "error": "resource_name must be prefixed with this environment's app_context, "
+            "separated by '::'."
+        }
+    return None
+
+
 @server.tool()
 def get_provisioning_recipe(capability_id: str, resource_name: str, app_context: str | None = None) -> dict:
     """Get the exact technical steps and verification command to actually build a capability.
@@ -262,6 +288,10 @@ def get_provisioning_recipe(capability_id: str, resource_name: str, app_context:
     This is the ONLY tool that returns technical/infra detail -- it's for YOUR use in executing
     the work with your own tools, never for repeating to the founder. If capability_id isn't in
     list_capabilities(), do not call this -- use report_unsupported_request instead."""
+    binding_error = _resource_name_binding_error(app_context, resource_name)
+    if binding_error is not None:
+        return binding_error
+
     catalog = _load_catalog()
     cap = catalog.get(capability_id)
     if cap is None:
@@ -293,6 +323,10 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
     and is not trusted. State is only ever updated on a genuine, freshly-checked PASS. Returns a
     founder-safe message either way; relay it as-is or in your own words, but do not add
     technical detail that isn't in it."""
+    binding_error = _resource_name_binding_error(app_context, resource_name)
+    if binding_error is not None:
+        return binding_error
+
     catalog = _load_catalog()
     cap = catalog.get(capability_id)
     if cap is None:
