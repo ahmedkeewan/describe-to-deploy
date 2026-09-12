@@ -9,6 +9,7 @@ __pycache__/
 stack-plan.json
 stack-state.json
 events.jsonl
+environments.json
 *.lock
 
 # Local env
