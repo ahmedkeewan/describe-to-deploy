@@ -33,12 +33,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import events as events_log
+from state_lock import locked
 
 from mcp.server.mcpserver import MCPServer
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = REPO_ROOT / "catalog" / "capabilities.json"
 STATE_PATH = REPO_ROOT / "harness" / "stack-state.json"
+STATE_LOCK_PATH = REPO_ROOT / "harness" / ".stack-state.lock"
 FALLBACK_LOG_PATH = Path("/tmp/floci-hackathon-mcp-fallback-log.jsonl")
 
 ENV = {
@@ -219,14 +221,15 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
             },
         }
 
-    state = _load_state()
-    state.setdefault(app_context, {"created": now, "capabilities": {}})
-    state[app_context]["capabilities"][capability_id] = {
-        "resource_name": resource_name,
-        "last_verified": now,
-        "last_gate_result": "PASS",
-    }
-    _save_state(state)
+    with locked(STATE_LOCK_PATH):
+        state = _load_state()
+        state.setdefault(app_context, {"created": now, "capabilities": {}})
+        state[app_context]["capabilities"][capability_id] = {
+            "resource_name": resource_name,
+            "last_verified": now,
+            "last_gate_result": "PASS",
+        }
+        _save_state(state)
     events_log.emit(
         "verify.pass", capability_id,
         founder={
