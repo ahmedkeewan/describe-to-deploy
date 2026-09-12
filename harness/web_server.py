@@ -14,7 +14,8 @@ called by whatever agent (Claude Code, Claude Desktop) is driving the conversati
 only tails what those tool calls already write to events.jsonl and stack-state.json.
 
 Run: source harness/.venv/bin/activate && python3 harness/web_server.py
-Then open http://localhost:7777
+Then open http://localhost:7777 -- or set FLOCI_BOARD_PORT to run more than one board
+side by side (e.g. one per environment from GH-26's create_environment tool).
 """
 import asyncio
 import json
@@ -231,6 +232,13 @@ app = Starlette(routes=[
     Route("/chat", chat, methods=["POST"]),
 ])
 
+def _resolve_board_port() -> int:
+    """FLOCI_BOARD_PORT lets two developers each run their own board side by side (see
+    create_environment's board_port, GH-26). Defaults to today's 7777 when unset. Pulled out as
+    its own function so it's importable and testable without actually starting the server."""
+    return int(os.environ.get("FLOCI_BOARD_PORT", "7777"))
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=7777)
+    uvicorn.run(app, host="127.0.0.1", port=_resolve_board_port())
