@@ -4,13 +4,28 @@
 # step is idempotent and skips work that's already done. Never silently installs software or
 # starts containers; each such step asks for confirmation first.
 #
-# Usage: ./setup.sh
+# Usage: ./setup.sh [--start-board]
+#   --start-board   after setup finishes, also start the live board (harness/web_server.py) in
+#                   the foreground. Without this flag (the default), setup only prints the
+#                   command -- it never launches a long-running process on its own.
 set -euo pipefail
+
+START_BOARD=false
+for arg in "$@"; do
+  case "$arg" in
+    --start-board) START_BOARD=true ;;
+    *)
+      echo "Unknown argument: $arg (supported: --start-board)" >&2
+      exit 2
+      ;;
+  esac
+done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$REPO_ROOT/harness/.venv"
 VENV_PYTHON="$VENV_DIR/bin/python3"
 MCP_SERVER="$REPO_ROOT/harness/mcp_server.py"
+WEB_SERVER="$REPO_ROOT/harness/web_server.py"
 
 say() { printf '%s\n' "$*"; }
 step() { printf '\n== %s ==\n' "$*"; }
@@ -24,26 +39,85 @@ confirm() {
 # --- 1. Platform check --------------------------------------------------------------------
 step "Checking platform"
 platform="$(uname -s)"
+is_wsl=false
 case "$platform" in
-  Darwin|Linux)
+  Darwin)
     say "Detected $platform -- supported."
     ;;
+  Linux)
+    if [ -n "${WSL_DISTRO_NAME:-}" ] || grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
+      is_wsl=true
+      say "Detected Linux under WSL -- supported. Note: Claude Desktop runs on the Windows side,"
+      say "not inside WSL, so its config path is resolved differently below."
+    else
+      say "Detected $platform -- supported."
+    fi
+    ;;
   *)
-    say "This script supports macOS and Linux only (detected: $platform)."
-    say "See https://floci.io/ for other platforms; you can still follow the manual steps"
-    say "in harness/README.md."
+    say "This script supports macOS, Linux, and WSL only (detected: $platform)."
+    say "Native Windows without WSL isn't scripted here -- Floci has its own PowerShell"
+    say "installer (irm https://floci.io/install.ps1 | iex); wire the MCP server manually"
+    say "afterwards per harness/README.md, or install WSL and re-run this script inside it."
     exit 1
     ;;
 esac
 
-# --- 2. Docker check -----------------------------------------------------------------------
+# --- 2. Docker check, with an offer to install Colima via Homebrew if nothing is present ----
 step "Checking Docker"
-if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
-  say "Docker isn't installed or isn't running. Floci needs Docker to run its emulators."
-  say "Install/start Docker (https://docs.docker.com/get-docker/), then re-run this script."
-  exit 1
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  say "Docker is running."
+else
+  say "Docker isn't installed or isn't running. Floci needs Docker (or Colima, a lightweight"
+  say "Docker-compatible runtime) to run its emulators."
+
+  if ! command -v brew >/dev/null 2>&1; then
+    say ""
+    say "Homebrew isn't installed. Official install command:"
+    say ""
+    say '    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    say ""
+    if confirm "Run this now to install Homebrew?"; then
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      if ! command -v brew >/dev/null 2>&1; then
+        say "Homebrew install finished but 'brew' isn't on PATH yet."
+        say "Open a new shell (PATH may need to reload) and re-run this script."
+        exit 1
+      fi
+    else
+      say "Skipping. Install Docker (https://docs.docker.com/get-docker/) or Homebrew + Colima"
+      say "yourself, then re-run ./setup.sh."
+      exit 1
+    fi
+  fi
+
+  say ""
+  say "Colima (a lightweight Docker-compatible runtime) can be installed via Homebrew:"
+  say ""
+  say "    brew install colima docker"
+  say ""
+  if confirm "Install Colima + the docker CLI now?"; then
+    brew install colima docker
+    say "Colima installed."
+  else
+    say "Skipping. Install Docker or Colima yourself, then re-run ./setup.sh."
+    exit 1
+  fi
+
+  if confirm "Start Colima now (colima start)?"; then
+    colima start
+    say "Colima started."
+  else
+    say "Skipping. Run 'colima start' yourself before using the MCP server."
+    exit 1
+  fi
+
+  if ! docker info >/dev/null 2>&1; then
+    say "Docker still isn't responding after installing/starting Colima -- check 'colima status'"
+    say "and re-run this script."
+    exit 1
+  fi
+  say "Docker is running (via Colima)."
 fi
-say "Docker is running."
 
 # --- 3. Floci check + optional install ------------------------------------------------------
 step "Checking Floci"
@@ -138,20 +212,51 @@ PYEOF
 }
 
 step "Wiring Claude Desktop"
-case "$platform" in
-  Darwin) claude_desktop_config="$HOME/Library/Application Support/Claude/claude_desktop_config.json" ;;
-  Linux)  claude_desktop_config="$HOME/.config/Claude/claude_desktop_config.json" ;;
-esac
-merge_mcp_config "$claude_desktop_config" "Claude Desktop" || say "  (skipped -- fix the file above and re-run)"
+claude_desktop_config=""
+if [ "$is_wsl" = true ]; then
+  # Claude Desktop is a native Windows app -- its config lives on the Windows filesystem, not
+  # in WSL's own $HOME. Resolve the real path via the Windows-side %APPDATA% env var.
+  if command -v cmd.exe >/dev/null 2>&1 && command -v wslpath >/dev/null 2>&1; then
+    win_appdata="$(cmd.exe /c 'echo %APPDATA%' 2>/dev/null | tr -d '\r\n')"
+    if [ -n "$win_appdata" ]; then
+      claude_desktop_config="$(wslpath "$win_appdata")/Claude/claude_desktop_config.json"
+    fi
+  fi
+  if [ -z "$claude_desktop_config" ]; then
+    say "Couldn't resolve the Windows-side Claude Desktop config path (cmd.exe/wslpath"
+    say "unavailable or %APPDATA% empty). Wire it manually -- see harness/README.md."
+  fi
+else
+  case "$platform" in
+    Darwin) claude_desktop_config="$HOME/Library/Application Support/Claude/claude_desktop_config.json" ;;
+    Linux)  claude_desktop_config="$HOME/.config/Claude/claude_desktop_config.json" ;;
+  esac
+fi
+if [ -n "$claude_desktop_config" ]; then
+  merge_mcp_config "$claude_desktop_config" "Claude Desktop" || say "  (skipped -- fix the file above and re-run)"
+fi
 
 step "Wiring Claude Code (project-scoped)"
 merge_mcp_config "$REPO_ROOT/.mcp.json" "Claude Code" || say "  (skipped -- fix the file above and re-run)"
 
+step "Wiring Cursor (project-scoped)"
+merge_mcp_config "$REPO_ROOT/.cursor/mcp.json" "Cursor" || say "  (skipped -- fix the file above and re-run)"
+
 # --- 8. Summary --------------------------------------------------------------------------
 step "Setup complete"
 say "Next steps:"
-say "  - Claude Desktop and Claude Code are wired to the floci-control-plane MCP server."
-say "    Restart Claude Desktop (or start a new Claude Code session in this repo) to pick it up."
-say "  - To start the live board:"
-say "      $VENV_PYTHON harness/web_server.py"
-say "    then open http://localhost:7777"
+say "  - Claude Desktop, Claude Code, and Cursor are wired to the floci-control-plane MCP server."
+say "    Restart Claude Desktop (or Cursor, or start a new Claude Code session in this repo) to"
+say "    pick it up."
+if [ "$START_BOARD" = false ]; then
+  say "  - To start the live board:"
+  say "      $VENV_PYTHON harness/web_server.py"
+  say "    then open http://localhost:7777"
+fi
+
+# --- 9. Optionally start the live board (--start-board) ------------------------------------
+if [ "$START_BOARD" = true ]; then
+  step "Starting the live board"
+  say "Open http://localhost:7777 -- press Ctrl+C here to stop it."
+  exec "$VENV_PYTHON" "$WEB_SERVER"
+fi
