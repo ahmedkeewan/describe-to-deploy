@@ -62,14 +62,62 @@ case "$platform" in
     ;;
 esac
 
-# --- 2. Docker check -----------------------------------------------------------------------
+# --- 2. Docker check, with an offer to install Colima via Homebrew if nothing is present ----
 step "Checking Docker"
-if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
-  say "Docker isn't installed or isn't running. Floci needs Docker to run its emulators."
-  say "Install/start Docker (https://docs.docker.com/get-docker/), then re-run this script."
-  exit 1
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  say "Docker is running."
+else
+  say "Docker isn't installed or isn't running. Floci needs Docker (or Colima, a lightweight"
+  say "Docker-compatible runtime) to run its emulators."
+
+  if ! command -v brew >/dev/null 2>&1; then
+    say ""
+    say "Homebrew isn't installed. Official install command:"
+    say ""
+    say '    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    say ""
+    if confirm "Run this now to install Homebrew?"; then
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      if ! command -v brew >/dev/null 2>&1; then
+        say "Homebrew install finished but 'brew' isn't on PATH yet."
+        say "Open a new shell (PATH may need to reload) and re-run this script."
+        exit 1
+      fi
+    else
+      say "Skipping. Install Docker (https://docs.docker.com/get-docker/) or Homebrew + Colima"
+      say "yourself, then re-run ./setup.sh."
+      exit 1
+    fi
+  fi
+
+  say ""
+  say "Colima (a lightweight Docker-compatible runtime) can be installed via Homebrew:"
+  say ""
+  say "    brew install colima docker"
+  say ""
+  if confirm "Install Colima + the docker CLI now?"; then
+    brew install colima docker
+    say "Colima installed."
+  else
+    say "Skipping. Install Docker or Colima yourself, then re-run ./setup.sh."
+    exit 1
+  fi
+
+  if confirm "Start Colima now (colima start)?"; then
+    colima start
+    say "Colima started."
+  else
+    say "Skipping. Run 'colima start' yourself before using the MCP server."
+    exit 1
+  fi
+
+  if ! docker info >/dev/null 2>&1; then
+    say "Docker still isn't responding after installing/starting Colima -- check 'colima status'"
+    say "and re-run this script."
+    exit 1
+  fi
+  say "Docker is running (via Colima)."
 fi
-say "Docker is running."
 
 # --- 3. Floci check + optional install ------------------------------------------------------
 step "Checking Floci"
