@@ -46,6 +46,16 @@ pip install -r harness/requirements.txt
 python3 harness/mcp_server.py   # runs over stdio
 ```
 
+### Running the tests
+
+`verify_gate.py` and `auto_wire.py` have unit tests covering their pure logic (no live Floci
+required — `run_check`'s actual subprocess call is exercised live instead via a real scoring pass,
+see [tasks/README.md](../tasks/README.md)):
+
+```bash
+python3 -m unittest discover -s harness/tests
+```
+
 ### Connecting to Claude Desktop
 
 Add to Claude Desktop's MCP config (`claude_desktop_config.json`):
