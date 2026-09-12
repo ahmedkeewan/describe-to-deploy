@@ -20,8 +20,13 @@ two separate agent prompts:
     could accidentally skip.
 
 Jargon boundary: every string this server returns is built to be founder-safe (plain language,
-no AWS/Floci service names, no ARNs, no ports) EXCEPT whats_needed_to_go_live(), which is
-explicitly the one technical/graduation report in this whole harness and is documented as such.
+no AWS/Floci service names, no ARNs, no ports), EXCEPT the five tools below. Each documents why
+in its own docstring:
+  - whats_needed_to_go_live() -- the one technical/graduation report in this whole harness.
+  - get_provisioning_recipe() -- returns steps, an endpoint, and credentials for the calling
+    agent's own tool use; never for the founder.
+  - create_environment(), destroy_environment(), list_environments() -- return an app_context
+    and/or a board port for the developer/agent managing environments, not the founder.
 
 Run: source harness/.venv/bin/activate && python3 harness/mcp_server.py
 """
@@ -285,9 +290,11 @@ def get_provisioning_recipe(capability_id: str, resource_name: str, app_context:
     """Get the exact technical steps and verification command to actually build a capability.
     Pass app_context if you have it (the app/product this is for) so the live board can group
     activity by product -- optional, omit if you don't know it yet.
-    This is the ONLY tool that returns technical/infra detail -- it's for YOUR use in executing
-    the work with your own tools, never for repeating to the founder. If capability_id isn't in
-    list_capabilities(), do not call this -- use report_unsupported_request instead."""
+    Returns technical/infra detail (endpoint, credentials, resource_name) -- it's for YOUR use
+    in executing the work with your own tools, never for repeating to the founder. The other
+    tools returning non-founder-safe values are named in this module's own docstring. If
+    capability_id isn't in list_capabilities(), do not call this -- use
+    report_unsupported_request instead."""
     binding_error = _resource_name_binding_error(app_context, resource_name)
     if binding_error is not None:
         return binding_error
