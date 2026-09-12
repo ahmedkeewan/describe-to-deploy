@@ -8,6 +8,7 @@ concurrency safety, the resource-name binding's bypass resistance). Requires the
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -16,6 +17,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import environments_store
 import mcp_server
+
+# GH-35's test_record_provisioned_concurrency.py already found this trap: two threads' full
+# round trip can complete too fast to interleave on a fast local filesystem, so a naive version
+# of this test can pass with 0 failures even with the state lock fully disabled -- a false
+# confidence check, not a real regression test. Design review's own PR #53 landed in exactly
+# this trap: confirmed 0/30 failures with the lock disabled and no delay, then 20/20 failures
+# with the lock disabled and this delay in place. Same fix as GH-35: wrap _load_state with a
+# small forced delay to widen the race window deterministically.
+_ORIGINAL_LOAD_STATE = mcp_server._load_state
+
+
+def _slow_load_state():
+    state = _ORIGINAL_LOAD_STATE()
+    time.sleep(0.01)
+    return state
 
 
 class TwoConcurrentEnvironmentsTests(unittest.TestCase):
@@ -33,6 +49,8 @@ class TwoConcurrentEnvironmentsTests(unittest.TestCase):
             # No live Floci in a unit test -- always PASS, so this exercises the harness's own
             # concurrency/binding correctness, not infra availability.
             patch.object(mcp_server, "_run_verify", return_value=(True, "ok")),
+            # See _slow_load_state's comment above -- widens the race window deterministically.
+            patch.object(mcp_server, "_load_state", _slow_load_state),
         ]
         for p in self._patches:
             p.start()
