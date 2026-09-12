@@ -21,7 +21,7 @@ the wins.
 
 Decision (2026-09-05): expose this harness as an MCP server rather than building a chat UI from
 scratch. Whatever AI chat client is already driving the conversation (Claude Desktop, Claude
-Code) becomes the founder-facing interface for free.
+Code, Cursor) becomes the founder-facing interface for free.
 
 **Architecture** mirrors fix #2's planner/executor split, now as an explicit tool contract:
 - The **calling agent** (the LLM behind whatever MCP client is connected) is the planner +
@@ -41,11 +41,11 @@ harness and is documented as such in its own docstring.
 
 Prefer `./setup.sh` from the repo root — it does everything below in one pass (Docker/Colima
 check-or-install via Homebrew, Floci install/start with confirmation, venv + deps, and wiring the
-MCP server into Claude Desktop and Claude Code), and is safe to re-run. The steps below are what
-it automates, useful if you want to do them by hand or understand what changed on your machine.
-Pass `--start-board` to also launch the live board (in the foreground — Ctrl+C to stop) once
-setup finishes; without the flag, setup only prints the command. `make setup` and `make test` are
-thin aliases for `./setup.sh` and the test suite — run `make help` to see them.
+MCP server into Claude Desktop, Claude Code, and Cursor), and is safe to re-run. The steps below
+are what it automates, useful if you want to do them by hand or understand what changed on your
+machine. Pass `--start-board` to also launch the live board (in the foreground — Ctrl+C to stop)
+once setup finishes; without the flag, setup only prints the command. `make setup` and `make test`
+are thin aliases for `./setup.sh` and the test suite — run `make help` to see them.
 
 `make board` runs `./setup.sh --start-board`. That flag ships in this same base branch as of the
 merge of #9/#16, so `make board` works as documented.
@@ -90,6 +90,22 @@ Add to Claude Desktop's MCP config (`claude_desktop_config.json`):
 
 Floci itself must already be running (`floci start`) — this server drives it, it doesn't launch
 it.
+
+### Connecting to Cursor
+
+Same `mcpServers` shape as Claude Desktop, at `.cursor/mcp.json` in the repo root (project-scoped)
+or `~/.cursor/mcp.json` (global):
+
+```json
+{
+  "mcpServers": {
+    "floci-control-plane": {
+      "command": "/absolute/path/to/harness/.venv/bin/python3",
+      "args": ["/absolute/path/to/harness/mcp_server.py"]
+    }
+  }
+}
+```
 
 ### Tools exposed
 
