@@ -1,9 +1,10 @@
-# Saturday Kickoff Prompt
+# Kickoff Prompt (historical)
 
-Paste this as the first message to Claude Code (or whatever agent you're driving the hackathon
-with) tomorrow morning. It only covers hour one: get a real baseline running before any harness
-fix is touched. See [GAME_PLAN.md](GAME_PLAN.md) for the fixes to build after this succeeds, and
-[VOCAB.md](VOCAB.md) for the terms it references.
+The prompt used to start the 2026-09-06 build session. Kept for reference — it documents exactly
+how the baseline in [`tasks/README.md`](tasks/README.md) was first measured, before any harness
+fix was applied. Not an active runbook; re-run it verbatim only if you want to reproduce that
+baseline from scratch. See [GAME_PLAN.md](GAME_PLAN.md) for the fixes built after this succeeded,
+and [VOCAB.md](VOCAB.md) for the terms it references.
 
 ---
 
