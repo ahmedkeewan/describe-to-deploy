@@ -39,14 +39,25 @@ confirm() {
 # --- 1. Platform check --------------------------------------------------------------------
 step "Checking platform"
 platform="$(uname -s)"
+is_wsl=false
 case "$platform" in
-  Darwin|Linux)
+  Darwin)
     say "Detected $platform -- supported."
     ;;
+  Linux)
+    if [ -n "${WSL_DISTRO_NAME:-}" ] || grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
+      is_wsl=true
+      say "Detected Linux under WSL -- supported. Note: Claude Desktop runs on the Windows side,"
+      say "not inside WSL, so its config path is resolved differently below."
+    else
+      say "Detected $platform -- supported."
+    fi
+    ;;
   *)
-    say "This script supports macOS and Linux only (detected: $platform)."
-    say "See https://floci.io/ for other platforms; you can still follow the manual steps"
-    say "in harness/README.md."
+    say "This script supports macOS, Linux, and WSL only (detected: $platform)."
+    say "Native Windows without WSL isn't scripted here -- Floci has its own PowerShell"
+    say "installer (irm https://floci.io/install.ps1 | iex); wire the MCP server manually"
+    say "afterwards per harness/README.md, or install WSL and re-run this script inside it."
     exit 1
     ;;
 esac
@@ -153,11 +164,29 @@ PYEOF
 }
 
 step "Wiring Claude Desktop"
-case "$platform" in
-  Darwin) claude_desktop_config="$HOME/Library/Application Support/Claude/claude_desktop_config.json" ;;
-  Linux)  claude_desktop_config="$HOME/.config/Claude/claude_desktop_config.json" ;;
-esac
-merge_mcp_config "$claude_desktop_config" "Claude Desktop" || say "  (skipped -- fix the file above and re-run)"
+claude_desktop_config=""
+if [ "$is_wsl" = true ]; then
+  # Claude Desktop is a native Windows app -- its config lives on the Windows filesystem, not
+  # in WSL's own $HOME. Resolve the real path via the Windows-side %APPDATA% env var.
+  if command -v cmd.exe >/dev/null 2>&1 && command -v wslpath >/dev/null 2>&1; then
+    win_appdata="$(cmd.exe /c 'echo %APPDATA%' 2>/dev/null | tr -d '\r\n')"
+    if [ -n "$win_appdata" ]; then
+      claude_desktop_config="$(wslpath "$win_appdata")/Claude/claude_desktop_config.json"
+    fi
+  fi
+  if [ -z "$claude_desktop_config" ]; then
+    say "Couldn't resolve the Windows-side Claude Desktop config path (cmd.exe/wslpath"
+    say "unavailable or %APPDATA% empty). Wire it manually -- see harness/README.md."
+  fi
+else
+  case "$platform" in
+    Darwin) claude_desktop_config="$HOME/Library/Application Support/Claude/claude_desktop_config.json" ;;
+    Linux)  claude_desktop_config="$HOME/.config/Claude/claude_desktop_config.json" ;;
+  esac
+fi
+if [ -n "$claude_desktop_config" ]; then
+  merge_mcp_config "$claude_desktop_config" "Claude Desktop" || say "  (skipped -- fix the file above and re-run)"
+fi
 
 step "Wiring Claude Code (project-scoped)"
 merge_mcp_config "$REPO_ROOT/.mcp.json" "Claude Code" || say "  (skipped -- fix the file above and re-run)"
