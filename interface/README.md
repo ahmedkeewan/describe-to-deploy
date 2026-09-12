@@ -670,15 +670,16 @@ originally written as forward-looking design notes and have since been built; th
 only what's still actually true.
 
 - **Launching is a terminal command.** There is exactly one technical step, and the pitch should
-  not claim zero. In a real product this is a downloadable app; the browser UI is unchanged. Still
-  true — `setup.sh` automates installing and wiring everything, but deliberately does not
-  auto-launch the live board (`harness/web_server.py`); starting it is still one terminal command.
+  not claim zero. In a real product this is a downloadable app; the browser UI is unchanged.
+  Manually starting `harness/web_server.py` (`python3 harness/web_server.py`, per
+  [harness/README.md](../harness/README.md)) is that one step today.
 - **Verification strength is mixed across the catalog, not uniform.** 5 of 12 capabilities
   (`user-accounts`, `file-storage`, `structured-data`, `background-job`, `send-email` — the ones
   carrying the 2026-09-05 `hardened_note` upgrade) run a stronger check than the rest, but not
   uniformly the same check: `user-accounts`, `file-storage`, and `structured-data` do a full
   create/read-verify/delete round trip; `background-job` runs once and checks for no error;
-  `send-email` sends and confirms delivery. The remaining 7 still run a weaker "service is up and
+  `send-email` sends and confirms the send succeeded (not end-to-end delivery). The remaining 7
+  still run a weaker "service is up and
   answering" existence check. So the founder-facing proof sentence is honest per-capability, but
   not uniformly strong yet.
 - **The UI is outside the measurement path.** Still true and still deliberate — it keeps the
@@ -690,8 +691,9 @@ only what's still actually true.
 - **Export is built.** The export dialog and its plain/technical page variants
   (`interface/canvas/Export*.dc.html`, wired into `live.html`) are implemented, not just
   specified.
-- **`harness/stack-state.json` exists and is the board's durable source.** The feature itself
-  (state keyed by `app_context`, read by the planner before falling back to live discovery) is
-  live. Separately, the file was until recently tracked in git holding stale demo data from a
-  prior session — a fix for that is in progress (see the repo's open PRs) but not yet merged as
-  of this writing.
+- **`harness/stack-state.json` exists and is the board's durable source.** The feature itself is
+  live: state is keyed by `app_context`, `mcp_server.py`'s `get_app_state` reads it directly, and
+  `web_server.py`'s `/state` route reconciles it against live Floci before returning it to the
+  board. Separately, the file is currently tracked in git holding stale demo data from a prior
+  session — a fix for that is in progress (see the repo's open PRs) but not yet merged as of this
+  writing.
