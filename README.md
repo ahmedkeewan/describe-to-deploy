@@ -1,5 +1,10 @@
 # Harness Engineering Research
 
+**To run the working demo:** `./setup.sh` from the repo root checks for Docker, installs Floci if
+needed (with confirmation), sets up the harness Python environment, and wires the MCP server into
+Claude Desktop and Claude Code. See [`harness/README.md`](harness/README.md) for what it does and
+the manual steps it automates.
+
 **Working definition (consensus across sources):** `Agent = Model + Harness`. The harness is everything around the model: system prompt, tools/skills/MCP, sandbox/filesystem, orchestration (subagents, routing), hooks/middleware (compaction, doom-loop detection, verification), memory/state across context windows, and permissions. Harness changes alone have moved Terminal-Bench 2.0 scores by 10-14 points with the same model.
 
 ## What's in this repo
