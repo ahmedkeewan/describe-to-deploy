@@ -46,9 +46,14 @@ generator layer).
 
 ## Consequences
 
-- Every state write across `stack-state.json` and `environments.json` now goes through one
-  locked read-modify-write helper. `events.jsonl`'s `emit()` and `_next_seq()` use the same
-  helper.
+- Target state, once every ticket in the epic lands: every state write across
+  `stack-state.json` and `environments.json` goes through one locked read-modify-write helper,
+  and `events.jsonl`'s `emit()` and `_next_seq()` use the same helper.
+- Current state as of GH-24 (this decision's first landing): the shared helper
+  (`harness/state_lock.py`) exists and is applied to `stack-state.json` only. `environments.json`
+  does not exist yet (pending GH-25). `events.py`'s `_next_seq()` still uses only its
+  in-process `threading.Lock`, unchanged, and remains exposed to the cross-process race described
+  in Context until GH-31 lands. Do not read this record as saying that race is already closed.
 - Verification (`_run_verify`, up to a 30s subprocess timeout) stays outside the locked section,
   matching today's ordering in `record_provisioned` where verification runs before the state
   write. This is a stated constraint on the helper, not an incidental property.
