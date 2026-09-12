@@ -176,6 +176,32 @@ def create_environment(name: str) -> dict:
 
 
 @server.tool()
+def destroy_environment(name: str) -> dict:
+    """Release an environment's board port and remove its entries from environments.json and
+    stack-state.json. Does NOT delete any real backend resources those entries pointed to --
+    capabilities.json defines no teardown step for any capability, so the underlying Floci
+    resources become permanently unreachable (the resource-name binding, GH-29, ties them to
+    this environment's now-removed app_context) but are never actually deleted. This is a known,
+    accepted limitation, not a bug -- see AgDR-0001.
+
+    NOT founder-facing -- the returned name/port are for the developer/agent driving this
+    session, never to be relayed to the founder."""
+    with environments_lock():
+        envs = load_environments()
+        entry = envs.pop(name, None)
+        if entry is None:
+            return {"error": f"No environment named '{name}'."}
+        save_environments(envs)
+
+    with locked(STATE_LOCK_PATH):
+        state = _load_state()
+        state.pop(entry["app_context"], None)
+        _save_state(state)
+
+    return {"name": name, "released_port": entry["board_port"]}
+
+
+@server.tool()
 def list_capabilities() -> list[dict]:
     """List every product capability this harness can build, in plain language. Match the
     founder's request to one of these by MEANING, not exact phrase match. Never mention AWS,
