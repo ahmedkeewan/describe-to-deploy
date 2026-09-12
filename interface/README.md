@@ -671,8 +671,8 @@ only what's still actually true.
 
 - **Launching is a terminal command.** There is exactly one technical step, and the pitch should
   not claim zero. In a real product this is a downloadable app; the browser UI is unchanged.
-  Manually starting `harness/web_server.py` (`python3 harness/web_server.py`, per
-  [harness/README.md](../harness/README.md)) is that one step today.
+  Running `source harness/.venv/bin/activate && python3 harness/web_server.py` (per that module's
+  own docstring) is that one step today.
 - **Verification strength is mixed across the catalog, not uniform.** 5 of 12 capabilities
   (`user-accounts`, `file-storage`, `structured-data`, `background-job`, `send-email` — the ones
   carrying the 2026-09-05 `hardened_note` upgrade) run a stronger check than the rest, but not
