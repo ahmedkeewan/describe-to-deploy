@@ -695,5 +695,5 @@ only what's still actually true.
   live: state is keyed by `app_context`, `mcp_server.py`'s `get_app_state` reads it directly, and
   `web_server.py`'s `/state` route reconciles it against live Floci before returning it to the
   board. Separately, the file was previously tracked in git holding stale demo data from a prior
-  session — it's untracked now (still gitignored going forward), so a fresh clone starts with no
-  stale demo state.
+  session — it's untracked now (gitignored going forward), so a fresh clone starts with no stale
+  demo state.
