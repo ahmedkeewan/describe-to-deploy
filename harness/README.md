@@ -44,7 +44,11 @@ check-or-install via Homebrew, Floci install/start with confirmation, venv + dep
 MCP server into Claude Desktop and Claude Code), and is safe to re-run. The steps below are what
 it automates, useful if you want to do them by hand or understand what changed on your machine.
 Pass `--start-board` to also launch the live board (in the foreground — Ctrl+C to stop) once
-setup finishes; without the flag, setup only prints the command.
+setup finishes; without the flag, setup only prints the command. `make setup` and `make test` are
+thin aliases for `./setup.sh` and the test suite — run `make help` to see them.
+
+`make board` runs `./setup.sh --start-board`. That flag ships in this same base branch as of the
+merge of #9/#16, so `make board` works as documented.
 
 **Platforms**: macOS and Linux are supported directly. Windows is supported via **WSL** (run
 `./setup.sh` inside your WSL distro — it correctly wires Claude Desktop's config on the Windows
