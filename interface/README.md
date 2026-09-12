@@ -675,9 +675,12 @@ only what's still actually true.
   auto-launch the live board (`harness/web_server.py`); starting it is still one terminal command.
 - **Verification strength is mixed across the catalog, not uniform.** 5 of 12 capabilities
   (`user-accounts`, `file-storage`, `structured-data`, `background-job`, `send-email` — the ones
-  exercised by tasks t1–t4) run a real round-trip check: create, read/verify unchanged, delete.
-  The remaining 7 still run a weaker "service is up and answering" existence check. So the
-  founder-facing proof sentence is honest per-capability, but not uniformly strong yet.
+  carrying the 2026-09-05 `hardened_note` upgrade) run a stronger check than the rest, but not
+  uniformly the same check: `user-accounts`, `file-storage`, and `structured-data` do a full
+  create/read-verify/delete round trip; `background-job` runs once and checks for no error;
+  `send-email` sends and confirms delivery. The remaining 7 still run a weaker "service is up and
+  answering" existence check. So the founder-facing proof sentence is honest per-capability, but
+  not uniformly strong yet.
 - **The UI is outside the measurement path.** Still true and still deliberate — it keeps the
   scored CLI clean. The jargon-leak metric is measured on agent response text
   ([tasks/README.md](../tasks/README.md)), not on rendered pixels.
@@ -687,7 +690,8 @@ only what's still actually true.
 - **Export is built.** The export dialog and its plain/technical page variants
   (`interface/canvas/Export*.dc.html`, wired into `live.html`) are implemented, not just
   specified.
-- **`harness/stack-state.json` exists and is the board's durable source.** It's no longer built as
-  demo-data checked into the repo — see the fix that stopped tracking it — but the feature itself
+- **`harness/stack-state.json` exists and is the board's durable source.** The feature itself
   (state keyed by `app_context`, read by the planner before falling back to live discovery) is
-  live.
+  live. Separately, the file was until recently tracked in git holding stale demo data from a
+  prior session — a fix for that is in progress (see the repo's open PRs) but not yet merged as
+  of this writing.
