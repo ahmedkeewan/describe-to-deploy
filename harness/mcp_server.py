@@ -202,6 +202,19 @@ def destroy_environment(name: str) -> dict:
 
 
 @server.tool()
+def list_environments() -> list[dict]:
+    """List every currently registered environment: name, app_context, board_port, and when it
+    was created. A plain read, not locked -- matches how get_app_state() reads stack-state.json
+    without a lock elsewhere in this file; only the check-then-write sequences in
+    create_environment/destroy_environment need one.
+
+    NOT founder-facing -- app_context and board_port are for the developer/agent, never for the
+    founder."""
+    envs = load_environments()
+    return [{"name": name, **info} for name, info in envs.items()]
+
+
+@server.tool()
 def list_capabilities() -> list[dict]:
     """List every product capability this harness can build, in plain language. Match the
     founder's request to one of these by MEANING, not exact phrase match. Never mention AWS,
