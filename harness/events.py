@@ -14,14 +14,17 @@ through the MCP tools.
 """
 import json
 import itertools
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import Lock
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from state_lock import locked
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EVENTS_PATH = REPO_ROOT / "harness" / "events.jsonl"
+EVENTS_LOCK_PATH = REPO_ROOT / "harness" / ".events.lock"
 
-_lock = Lock()
 _seq_counter = itertools.count(1)
 
 
@@ -43,8 +46,15 @@ def emit(kind: str, capability: str | None, founder: dict, dev: dict | None = No
     """Append one event. `founder` and `dev` are both plain dicts -- founder must never contain
     a service name, port, ARN, or error code; dev is exactly that detail, addressed to someone
     else (interface/README.md's "Details for a developer" panel). `app_context` lets the UI
-    filter the activity feed per product once more than one exists on the same board."""
-    with _lock:
+    filter the activity feed per product once more than one exists on the same board.
+
+    Locked with the same fcntl.flock helper GH-24 introduced for stack-state.json.
+    `_next_seq()` reads the whole file and computes `last + 1`, and each MCP client runs its own
+    process, so two processes could previously compute the same seq (the old threading.Lock only
+    serialized within one process). The lock has to cover both `_next_seq()`'s read and the
+    write in one critical section, not just the write -- locking only the write would still let
+    two processes read the same "current last line" before either appends."""
+    with locked(EVENTS_LOCK_PATH):
         event = {
             "seq": _next_seq(),
             "t": datetime.now(timezone.utc).isoformat(),
