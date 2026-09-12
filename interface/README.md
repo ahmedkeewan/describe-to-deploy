@@ -694,6 +694,6 @@ only what's still actually true.
 - **`harness/stack-state.json` exists and is the board's durable source.** The feature itself is
   live: state is keyed by `app_context`, `mcp_server.py`'s `get_app_state` reads it directly, and
   `web_server.py`'s `/state` route reconciles it against live Floci before returning it to the
-  board. Separately, the file is currently tracked in git holding stale demo data from a prior
-  session — a fix for that is in progress (see the repo's open PRs) but not yet merged as of this
-  writing.
+  board. Separately, the file was previously tracked in git holding stale demo data from a prior
+  session — it's untracked now (still gitignored going forward), so a fresh clone starts with no
+  stale demo state.
