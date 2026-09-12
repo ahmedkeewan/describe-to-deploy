@@ -4,13 +4,28 @@
 # step is idempotent and skips work that's already done. Never silently installs software or
 # starts containers; each such step asks for confirmation first.
 #
-# Usage: ./setup.sh
+# Usage: ./setup.sh [--start-board]
+#   --start-board   after setup finishes, also start the live board (harness/web_server.py) in
+#                   the foreground. Without this flag (the default), setup only prints the
+#                   command -- it never launches a long-running process on its own.
 set -euo pipefail
+
+START_BOARD=false
+for arg in "$@"; do
+  case "$arg" in
+    --start-board) START_BOARD=true ;;
+    *)
+      echo "Unknown argument: $arg (supported: --start-board)" >&2
+      exit 2
+      ;;
+  esac
+done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$REPO_ROOT/harness/.venv"
 VENV_PYTHON="$VENV_DIR/bin/python3"
 MCP_SERVER="$REPO_ROOT/harness/mcp_server.py"
+WEB_SERVER="$REPO_ROOT/harness/web_server.py"
 
 say() { printf '%s\n' "$*"; }
 step() { printf '\n== %s ==\n' "$*"; }
@@ -152,6 +167,15 @@ step "Setup complete"
 say "Next steps:"
 say "  - Claude Desktop and Claude Code are wired to the floci-control-plane MCP server."
 say "    Restart Claude Desktop (or start a new Claude Code session in this repo) to pick it up."
-say "  - To start the live board:"
-say "      $VENV_PYTHON harness/web_server.py"
-say "    then open http://localhost:7777"
+if [ "$START_BOARD" = false ]; then
+  say "  - To start the live board:"
+  say "      $VENV_PYTHON harness/web_server.py"
+  say "    then open http://localhost:7777"
+fi
+
+# --- 9. Optionally start the live board (--start-board) ------------------------------------
+if [ "$START_BOARD" = true ]; then
+  step "Starting the live board"
+  say "Open http://localhost:7777 -- press Ctrl+C here to stop it."
+  exec "$VENV_PYTHON" "$WEB_SERVER"
+fi

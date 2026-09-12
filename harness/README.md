@@ -42,7 +42,9 @@ harness and is documented as such in its own docstring.
 Prefer `./setup.sh` from the repo root — it does everything below in one pass (Docker check,
 Floci install/start with confirmation, venv + deps, and wiring the MCP server into Claude Desktop
 and Claude Code), and is safe to re-run. The steps below are what it automates, useful if you want
-to do them by hand or understand what changed on your machine.
+to do them by hand or understand what changed on your machine. Pass `--start-board` to also
+launch the live board (in the foreground — Ctrl+C to stop) once setup finishes; without the flag,
+setup only prints the command.
 
 ```bash
 python3 -m venv harness/.venv
