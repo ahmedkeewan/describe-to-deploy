@@ -1,8 +1,8 @@
 # Founder Interface — Design Spec
 
-The founder-facing surface of the infra-invisible agent in [GAME_PLAN.md](../GAME_PLAN.md).
-Part of a harness-engineering hackathon submission ([README.md](../README.md)); this document
-covers the interface layer only.
+The founder-facing surface of the infra-invisible agent. This document covers the interface
+layer only — see [harness/README.md](../harness/README.md) for the harness architecture it sits
+on top of.
 
 ---
 
@@ -17,10 +17,10 @@ exists a minute later, and its status is honest.
 
 ## Why an interface layer is the harness work
 
-The measured fix-0 baseline ([tasks/README.md](../tasks/README.md)) already passes 5 of 6 tasks.
-A capable model provisions real infrastructure without any harness at all. **So the harness's
-value is not "it works vs. it doesn't"** — and claiming otherwise would be its own credibility
-risk.
+The measured no-harness baseline ([tasks/README.md](../tasks/README.md)) already passes 5 of 6
+tasks. A capable model provisions real infrastructure without any harness at all. **So the
+harness's value is not "it works vs. it doesn't"** — and claiming otherwise would be its own
+credibility risk.
 
 The baseline's two actual failures are both failures of what the user *sees*:
 
@@ -32,7 +32,7 @@ The baseline's two actual failures are both failures of what the user *sees*:
 Both are now moving in the scored table:
 
 ```
-                    fix 0        fix 1 (+ catalog)
+                    no harness   single-agent harness (+ catalog)
   success rate      5/6          6/6
   jargon leaks      5/6          0/6
   t5 overreach      fail         fixed
@@ -44,9 +44,9 @@ The interface is where those two properties are *enforced* rather than hoped for
 
 ## What is novel here
 
-**A failure mode made unrepresentable instead of instructed against.** The shipped fix-1 harness
-([harness/build_prompt.py](../harness/build_prompt.py)) enforces the language rule by telling the
-model to obey it:
+**A failure mode made unrepresentable instead of instructed against.** The shipped single-agent
+harness ([harness/build_prompt.py](../harness/build_prompt.py)) enforces the language rule by
+telling the model to obey it:
 
 > "This is the single most important rule in this prompt: a jargon leak in your final report is a
 > failure even if the infrastructure itself works perfectly."
@@ -599,30 +599,34 @@ remains late in the build order, where the game plan already has it.
 
 ## How this sits on the harness as it exists today
 
-Read from [harness/build_prompt.py](../harness/build_prompt.py) at fix 1, so the sequencing below
-is what the code actually supports, not an assumption.
+Read from [harness/build_prompt.py](../harness/build_prompt.py) at the single-agent stage
+(`--fix 1`), so the sequencing below is what the code actually supported at that
+point, not an assumption. The harness has since grown well past this point — see
+[harness/README.md](../harness/README.md) for its current architecture — but the sequencing
+narrative below is kept as the honest record of how the interface's own requirements were staged
+against the harness as it existed at each step.
 
-**What already lines up:**
+**What already lined up at the single-agent stage:**
 
-| Already true at fix 1 | What the interface does with it |
+| True at the single-agent stage | What the interface does with it |
 |---|---|
 | The prompt is *generated from* `capabilities.json`, so the two cannot drift | Founder-facing strings live in the same file and inherit the same guarantee — add a capability, and its plain-English wording flows through automatically |
 | The fallback rule appends unmatched requests to a durable log rather than dropping them | Renders as *"I've made a note of what you asked for"* ([founder-copy.md](founder-copy.md)) — nothing new is required |
 | The prompt already forbids naming services in the final report | Same intent; the interface makes it structural instead of instructed |
 | `verify.cli` is run for real before anything is claimed | Becomes the proof sentence under each row — the check that ran *is* what the founder reads |
 
-**What the interface needs that does not exist yet:**
+**What the interface needed that did not exist yet, at that point:**
 
-| Needed | Depends on |
+| Needed | Depended on |
 |---|---|
-| `events.jsonl` with `founder` / `dev` channels | The **executor tool (fix 3)**. At fix 1 the agent is Bash-only and produces a single final prose report, so there is no event stream to render |
-| Live board updates during a run | Same. Until fix 3, a UI could only render the end state |
+| `events.jsonl` with `founder` / `dev` channels | The event-log/executor work (now shipped as `harness/events.py`). At the single-agent stage the agent was Bash-only and produced one final prose report, so there was no event stream to render |
+| Live board updates during a run | Same — until the event log shipped, a UI could only render the end state |
 | `verify.founder_proof` in the catalog | A ~15-minute catalog change; sentences already drafted in [founder-copy.md](founder-copy.md) |
 
-**Honest sequencing.** The interface is not buildable before fix 3, and it is most valuable after
-fix 4 (the verification gate), which is what gives the proof sentences something real to say. If
-the day runs short, the fallback is to render the final report through the founder vocabulary and
-skip live updates — the trust vocabulary and language rule still hold; only the liveness is lost.
+**Honest sequencing (historical).** The interface was not buildable before the event-log work
+landed, and was most valuable once the verification gate (now `harness/verify_gate.py`) shipped,
+since that is what gives the proof sentences something real to say. Both have since shipped; the
+harness's own README documents the current tool surface.
 
 ## Implementation
 
@@ -659,7 +663,7 @@ and it is the 5/6 → 0/6 jargon result made visible rather than asserted from a
 2. **The checklist gate deserves its own line in the architecture table.** It is currently
    implicit in the planner, but it is the mechanism that prevents t5's overreach, and it is
    founder-visible.
-3. **Auto-wiring (fix #7) stays optional and late.** It applies only when a project happens to be
+3. **Auto-wiring stays optional and late.** It applies only when a project happens to be
    present, and none of `t1`–`t6` require it.
 
 ## Known limitations
