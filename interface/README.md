@@ -600,7 +600,7 @@ remains late in the build order, where the game plan already has it.
 ## How this sits on the harness as it exists today
 
 Read from [harness/build_prompt.py](../harness/build_prompt.py) at the single-agent stage
-(`--mode single-agent`), so the sequencing below is what the code actually supported at that
+(`--fix 1`), so the sequencing below is what the code actually supported at that
 point, not an assumption. The harness has since grown well past this point — see
 [harness/README.md](../harness/README.md) for its current architecture — but the sequencing
 narrative below is kept as the honest record of how the interface's own requirements were staged
