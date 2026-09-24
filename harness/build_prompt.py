@@ -17,7 +17,7 @@ planner-executor: splits that single pass into two agents -- a planner that ONLY
 stack-plan.json (see harness/stack-plan.schema.json) and never touches Floci's write APIs, and an
 executor that reads a plan file and never sees the founder's original request text at all. The
 split forces the plan itself to be an inspectable artifact you can read, gate, or hand to a
-different agent, before anything real happens -- see GAME_PLAN.md's architecture table, "Planner"
+different agent, before anything real happens -- see docs/history/GAME_PLAN.md's architecture table, "Planner"
 and "Executor" rows.
 """
 import argparse

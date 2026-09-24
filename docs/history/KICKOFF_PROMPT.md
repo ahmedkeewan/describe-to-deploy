@@ -1,7 +1,7 @@
 # Kickoff Prompt (historical)
 
 The prompt used to start the 2026-09-06 build session. Kept for reference — it documents exactly
-how the baseline in [`tasks/README.md`](tasks/README.md) was first measured, before any harness
+how the baseline in [`tasks/README.md`](../../tasks/README.md) was first measured, before any harness
 fix was applied. Not an active runbook; re-run it verbatim only if you want to reproduce that
 baseline from scratch. See [GAME_PLAN.md](GAME_PLAN.md) for the fixes built after this succeeded,
 and [VOCAB.md](VOCAB.md) for the terms it references.
