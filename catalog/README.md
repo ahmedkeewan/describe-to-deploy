@@ -6,8 +6,8 @@ provisioning recipe, and a real verification check — without the founder ever 
 a cloud service themselves.
 
 Currently AWS-only (Floci's `az`/`gcp`/`oci` emulators are separate containers not started for
-this catalog — extend later if a demo request needs them). All 12 entries were spot-verified
-against a running `floci/floci` server v2.0.1 on 2026-09-05: every `verify.cli` command in
+this catalog — extend later if a request needs them). All 12 entries were spot-verified
+against a running `floci/floci` server v2.0.1: every `verify.cli` command in
 [capabilities.json](capabilities.json) was run for real against
 `aws --endpoint-url=http://localhost:4566` with dummy `test`/`test` credentials and returned a
 clean, empty result — not just copied from AWS docs.
@@ -35,7 +35,7 @@ If a request doesn't clearly match a capability's `phrases`/meaning:
    e.g. "I can give you a place to store and look up messages, but not live chat yet — want
    that instead?"
 3. If nothing here is close, say so plainly and stop. Log the request text somewhere durable
-   (not silently dropped) so it becomes the next entry added to this catalog after Saturday.
+   (not silently dropped) so it becomes the next entry added to this catalog.
 
 See `explicitly_not_covered` in [capabilities.json](capabilities.json) for known gaps —
 these are exactly what request #5 in GAME_PLAN.md's task set is designed to trigger.
@@ -51,11 +51,11 @@ these are exactly what request #5 in GAME_PLAN.md's task set is designed to trig
 | 5. "real-time chat" | intentionally **not covered** — exercises the fallback rule |
 | 6. failure case | any capability, provisioned against a deliberately conflicting state |
 
-## Known gaps to fill before Saturday
+## Known gaps to fill
 
 - No entry yet for a plain "just give me a working backend with a database and an API" request
   that spans `structured-data` + `backend-api` in one ask — likely how a real founder would
   actually phrase request #3's shape. Consider adding a composite/starter-stack entry if the
   planner tool doesn't handle multi-capability matching well enough on its own.
 - `search` and `app-settings` aren't exercised by any task-set request — kept in for catalog
-  breadth, but untested end-to-end. Don't demo these without a dry run first.
+  breadth, but untested end-to-end.

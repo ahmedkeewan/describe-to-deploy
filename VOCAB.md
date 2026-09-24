@@ -1,6 +1,6 @@
 # Harness Engineering — Shared Vocabulary
 
-Built from the Tier 1 canon in [README.md](README.md). Definitions are as the source uses them. Use this as the team's common language on Saturday.
+Built from the Tier 1 canon in [docs/research-links.md](docs/research-links.md). Definitions are as the source uses them. Use this as the team's common language.
 
 Sources read: Anthropic (long-running harnesses), LangChain (Improving Deep Agents; Anatomy of a Harness), Thoughtworks/Fowler (guides and sensors), OpenAI (harness engineering, via InfoQ summary since the original returns 403 to fetchers), Hashimoto (AI adoption journey).
 
@@ -147,7 +147,7 @@ From ["How to Build Your Own Agent Harness"](https://iii.dev/blog/how-to-build-y
 |---|---|---|
 | **Harness responsibility checklist** | A production harness's jobs, broken finer than the LangChain anatomy (§2): accept/persist turn requests, resolve provider credentials, look up model capabilities, drive the per-turn state machine, serve skill/tool metadata, assemble the system prompt in layers, stream tokens, enforce tool-call policy, route human approvals, track spend against budget, run pre/post-tool hooks, persist branching session history, compact on context fill, emit an event stream, trace every step. | Piccolo |
 | **Fail-closed policy semantics** | If the policy/approval check is unavailable or times out, default to deny (or trigger a corrective intervention), never silently proceed. | Piccolo |
-| **Thin vs. thick harness as configuration** | A minimal harness (orchestrator + model provider + auth) and a fully-loaded one (+ approvals + budgets + policy) are the same system with components toggled, not two different codebases. Useful framing for a demo: each hackathon fix is a component flipped on. | Piccolo |
+| **Thin vs. thick harness as configuration** | A minimal harness (orchestrator + model provider + auth) and a fully-loaded one (+ approvals + budgets + policy) are the same system with components toggled, not two different codebases. Useful framing here: each fix in this project is a component flipped on. | Piccolo |
 
 ## 6b. Sandbox and permissions (Agent Sandbox Taxonomy, Fahmy)
 
@@ -167,7 +167,7 @@ The "bundled infrastructure" and permissions slice of the harness, scored as a *
 
 ## 6c. Cross-harness gate portability (ApexYard `harness-adapters`)
 
-From [me2resh/apexyard](https://github.com/me2resh/apexyard)'s `harness-adapters/` (pi, opencode, Codex, Cursor) and `docs/harnesses/`. Extends the **Gate** entry (§3) and **action governance** (§6b) with a worked answer to: once you've built gates for one harness, how do you carry them to another without forking the logic? Directly useful if a hackathon project targets more than one coding-agent CLI.
+From [me2resh/apexyard](https://github.com/me2resh/apexyard)'s `harness-adapters/` (pi, opencode, Codex, Cursor) and `docs/harnesses/`. Extends the **Gate** entry (§3) and **action governance** (§6b) with a worked answer to: once you've built gates for one harness, how do you carry them to another without forking the logic? Directly useful if a project targets more than one coding-agent CLI.
 
 | Term | Definition |
 |---|---|
@@ -268,7 +268,7 @@ Re-read of the Fowler/Thoughtworks article (source of §3) turned up concepts th
 | Term | Definition |
 |---|---|
 | **"Keep Quality Left"** | Sequence checks by cost, speed, and criticality: run cheap, fast controls before integration; reserve expensive ones (mutation testing, broad code review) for post-integration pipeline stages. A concrete ordering principle for building a sensor pack, not just a list of sensors. |
-| **Harnessability** | The codebase's own amenability to being harnessed — strong typing and clear module boundaries increase it, technical debt and unclear architecture reduce it. Distinct from harness quality: a great harness on a low-harnessability codebase still struggles. Worth weighing when picking Saturday's target repo. |
+| **Harnessability** | The codebase's own amenability to being harnessed — strong typing and clear module boundaries increase it, technical debt and unclear architecture reduce it. Distinct from harness quality: a great harness on a low-harnessability codebase still struggles. Worth weighing when picking a target repo. |
 | **Ambient affordances** | Structural properties of the environment itself (not the harness) that make it legible, navigable, and tractable to an agent operating within it. The environment-side counterpart to harness design. |
 | **Ashby's Law of Requisite Variety** | A regulator must have at least as much variety as the system it governs. The theoretical reason **topology templates** (§3) work: committing to a fixed service topology shrinks what the agent can produce, which is what makes comprehensive harnessing tractable at all. |
 | **Cybernetic governor model** | Framing the harness as a self-regulating system combining feedforward (guides) and feedback (sensors) to steer the codebase toward a desired state — the systems-theory grounding for the guides/sensors taxonomy. |
@@ -288,10 +288,10 @@ From an internal "Context Engineering & Agentic Coding" workshop built around a 
 | **Interview checklist that hardens with each iteration** | A spec's checklist of things-to-investigate grows as edge cases are discovered mid-session — each new gap gets baked into the checklist for the next unit of work, so the spec itself becomes the accumulated failure log for that class of task. |
 | **Context window fill breakdown** | Rough budget observed in practice: system prompt + memory file ~5-10%, MCP tool schemas (3-4 servers) ~5-15%, with conversation history and tool results accumulating on top and consuming the rest. A concrete allocation to check a harness against, not just "keep it lean." |
 | **Entropy cleanup time cost** | Before automating it, a reported ~20% of a working day spent on manual cleanup of agent-generated drift ("AI slop"). Quantifies **garbage collection / entropy** (§6) with a real cost figure instead of leaving it qualitative. |
-| **Hook design philosophy: escalate vs. run silent** | Safety hooks should escalate (ask for confirmation) and never silently block; productivity hooks (formatting, tracking) should run silently with no prompt. A one-line rule for designing a Saturday hook/sensor pack so it doesn't become invisible or annoying in the wrong direction. |
+| **Hook design philosophy: escalate vs. run silent** | Safety hooks should escalate (ask for confirmation) and never silently block; productivity hooks (formatting, tracking) should run silently with no prompt. A one-line rule for designing a hook/sensor pack so it doesn't become invisible or annoying in the wrong direction. |
 | **Context engineering vs. harness engineering, one line each** | "Context engineering = what do we show the agent. Harness engineering = what does the system prevent, measure, and fix." Cleaner split than this repo's existing framing — context gets one output right, harness keeps it right over repeated use. |
-| **Default-shipping heuristic** | "If a trick was really useful, AI companies would ship it as a default. If it's not a default, be skeptical." A filter worth applying to the more exotic Tier 4/5 leaderboard tricks in this repo before spending hackathon hours on them. |
+| **Default-shipping heuristic** | "If a trick was really useful, AI companies would ship it as a default. If it's not a default, be skeptical." A filter worth applying to the more exotic Tier 4/5 leaderboard tricks in this repo before spending build hours on them. |
 
-## 12. Ten words to say out loud on Saturday
+## 12. Ten words to say out loud
 
 harness · guide · sensor · computational · inferential · self-verification · doom loop · context injection · handoff · trace

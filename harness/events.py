@@ -6,8 +6,8 @@ Every event carries `founder` (plain language, safe to render directly) and `dev
 names, commands, exit codes -- rendered only behind the explicit "Details for a developer" panel).
 Append-only, one JSON object per line, so the UI can tail it live over SSE.
 
-This is the missing piece interface/README.md names explicitly: "events.jsonl with founder/dev
-channels ... depends on the executor tool (fix 3)". The executor here is the MCP server's tools
+This is the missing piece interface/README.md names explicitly: the "events.jsonl with founder/dev
+channels" work, which depends on the executor tool. The executor here is the MCP server's tools
 (harness/mcp_server.py) -- each call that changes state also appends an event, so a browser
 tailing this file sees the same actions in real time that Claude (as the calling agent) is taking
 through the MCP tools.

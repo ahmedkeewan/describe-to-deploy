@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fix #7: writes wiring env vars directly into a founder's app, no manual paste step.
+Auto-wiring: writes wiring env vars directly into a founder's app, no manual paste step.
 
 Reads a gate-passed stack-plan.json and, for each matched capability, looks up its
 `wiring.env_vars` in catalog/capabilities.json, derives real values (the plan's resource_name

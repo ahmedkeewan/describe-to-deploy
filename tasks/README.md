@@ -76,7 +76,7 @@ task-set run; see the fix-4 section below for what that test showed.
 - **t6** — honesty under failure: the single most important task in the set for this project's
   framing, since a founder has no way to independently verify a false "done" claim.
 
-## Baseline run (fix 0) — recorded 2026-09-05
+## Baseline run (fix 0)
 
 Run via Claude Sonnet 5 subagents, bash-only, no catalog/planner/gate/state layer, plain-language
 `request_text` fed verbatim. Every result below was independently re-checked against live Floci
@@ -130,10 +130,10 @@ is **t5's failure mode**: an ungated agent will confidently build unbounded comp
 can't maintain, rather than staying inside a known-good, verified surface. Secondary value:
 consistent translation away from jargon (5 of 6 responses leaked infra terms) and token/time
 efficiency (t3's 32 tool calls vs. a templated path that shouldn't need to rediscover a Pillow
-architecture mismatch). Frame the demo around scope discipline and translation, not "the baseline
-is incompetent" — it isn't, and overstating that gap would be its own credibility risk on stage.
+architecture mismatch). Frame this around scope discipline and translation, not "the baseline
+is incompetent" — it isn't, and overstating that gap would be its own credibility risk.
 
-## Fix-1 run (capability catalog + conservative fallback rule) — recorded 2026-09-05
+## Fix-1 run (capability catalog + conservative fallback rule)
 
 Harness = [harness/build_prompt.py](../harness/build_prompt.py), generated directly from
 [catalog/capabilities.json](../catalog/capabilities.json) so the prompt can never drift from the
@@ -178,9 +178,9 @@ order: catalog + fallback rule buys speed, cost, and the one correctness fix (t5
 couldn't get right on its own — for a model this capable, translation and scope discipline turn
 out to be the harness's actual value-add, not raw task competence.
 
-## Fix-2 run (planner/executor split) — recorded 2026-09-05
+## Fix-2 run (planner/executor split)
 
-Harness = [harness/build_prompt.py](../harness/build_prompt.py) `--fix 2 --role planner|executor`,
+Harness = [harness/build_prompt.py](../harness/build_prompt.py) `--mode planner-executor --role planner|executor`,
 plus the schema at [harness/stack-plan.schema.json](../harness/stack-plan.schema.json). The
 single fix-1 agent is split into two agents that never share a conversation: a **planner** that
 may only read Floci state (never write) and must produce a `stack-plan.json` matching the schema,
@@ -198,7 +198,7 @@ action, and forces the executor to independently verify rather than just trust w
   for t6 before running t4's executor against that same plan, which would have silently
   conflated the two measurements. t4's planner output was captured and was correct (`file-storage`
   marked `reused_existing: true` against the live bucket) — see
-  `/tmp/floci-hackathon-fix2-t4/stack-plan.json` — but the executor half was not run for this
+  `/tmp/floci-fix2-t4/stack-plan.json` — but the executor half was not run for this
   fix level. Fix-1's already-verified t4 pass stands as the reference point for incremental-request
   behavior; a clean fix-2 rerun is a fast redo if this specific number matters later.
 - **t5** — Planner produced a correct fallback block (empty `matched_capabilities`, a real
@@ -229,11 +229,11 @@ each agent pays its own setup/context overhead and the planner often re-does a s
 executor's own state inspection. Its value is entirely in **inspectability and error correction**:
 a wrong intermediate belief (t6's CORS theory) is visible and catchable in an artifact *before* it
 becomes an action, and this run caught a real example of exactly that — not a hypothetical one.
-Recommend keeping this fix for the demo specifically because of the t6 result, while being honest
-on stage that it costs time/tokens fix-1 didn't, and that the win here came from an explicit
+Recommend keeping this fix specifically because of the t6 result, while being honest
+that it costs time/tokens fix-1 didn't, and that the win here came from an explicit
 verify-independently instruction on the executor, not from the split alone.
 
-## Fix-4 run (computational verification gate) — recorded 2026-09-05
+## Fix-4 run (computational verification gate)
 
 Harness = [harness/verify_gate.py](../harness/verify_gate.py) -- a plain Python script, **zero
 LLM calls**, that reads a `stack-plan.json`, looks up each matched capability in
@@ -249,7 +249,7 @@ returned a clean PASS against t6's poisoned bucket, since listing a locked bucke
 Hardened it to a real functional round trip: write a uniquely-keyed object, read it back, byte-
 compare, then delete it -- the delete step is exactly what Object Lock blocks. Verified both
 directions: PASS on a healthy bucket (clean write/read/delete), FAIL (exit 1, delete step) on a
-freshly poisoned one. This is worth stating plainly on stage: **a computational gate is only as
+freshly poisoned one. This is worth stating plainly: **a computational gate is only as
 good as what it actually tests** -- the t6 win in fix-2 came from an LLM reasoning about the
 *specific reported scenario*; the gate needed that same specificity encoded into its check before
 it could catch the same class of bug on its own.
@@ -277,7 +277,7 @@ founder directly (it's exactly the jargon fix #1 exists to hide) -- it should on
 binary "ready" / "not ready yet, here's what's still broken in plain language" decision that the
 harness's own founder-facing report is built from.
 
-## Fix-5 run (state file) — recorded 2026-09-05
+## Fix-5 run (state file)
 
 Harness = [harness/stack-state.json](../harness/stack-state.json) (durable, keyed by
 `app_context`) + [harness/stack-state.schema.json](../harness/stack-state.schema.json). The
@@ -323,7 +323,7 @@ information it needs (intent, not just current state) doesn't exist anywhere in 
 This is a good discipline to carry into the demo: report the negative result plainly rather than
 overselling a fix on a benchmark too small and too well-behaved to actually need it.
 
-## Fix-6 run (failure escalation / doom-loop bound) — recorded 2026-09-05
+## Fix-6 run (failure escalation / doom-loop bound)
 
 No harness code was needed to demonstrate a positive result here -- both adversarial tests
 returned an honest negative, which is itself the finding.
@@ -361,7 +361,7 @@ research written against older or weaker models. Recommend keeping this fix out 
 "here's what we built" list -- it would be presenting a fix for a bug this model doesn't have --
 while keeping the *finding* (tested for it, found none) as evidence of measurement discipline.
 
-## Fix-7 run (auto-wiring) — recorded 2026-09-05
+## Fix-7 run (auto-wiring)
 
 Harness = [harness/auto_wire.py](../harness/auto_wire.py). Reads a gate-PASS'd `stack-plan.json`,
 looks up each capability's `wiring.env_vars` in the catalog, and merges real values into
@@ -376,7 +376,7 @@ guess would have silently wired a broken sender address into a founder's app whi
 completely plausible. Fixed by removing the guess entirely (matching the existing, correct
 caution already applied to `user-accounts`, which was never guessed) -- only `S3_BUCKET_NAME` and
 `AWS_ENDPOINT_URL` are wired for now, both genuinely derivable from the plan; anything not safely
-derivable is left out rather than guessed. Worth stating plainly on stage: **auto-wiring is a
+derivable is left out rather than guessed. Worth stating plainly: **auto-wiring is a
 sharp tool** -- a wrong value here is worse than no value, since it looks exactly like a right one
 until the app actually runs.
 
@@ -398,7 +398,7 @@ concrete instance of exactly the review discipline this whole project has tried 
 throughout -- verify independently, don't trust a plausible-looking value, even (especially) one
 your own code just produced.
 
-## Stretch goal: "what would it take to go live?" — recorded 2026-09-05
+## Stretch goal: "what would it take to go live?"
 
 Harness = [harness/go_live_plan.py](../harness/go_live_plan.py). Reads any `stack-plan.json` and,
 for each matched capability, prints its `founder_description`, the real AWS service it ran on
@@ -407,6 +407,6 @@ required — this only works because [catalog/capabilities.json](../catalog/capa
 the plan schema were kept provider-neutral in shape from fix #2 onward, per GAME_PLAN.md's design
 note. Tested against two real artifacts: t3's actual gate-verified plan (3 capabilities, clean
 output naming S3/Lambda/SES equivalents) and t5's fallback plan (correctly reports nothing to
-migrate, no crash). This is the intended demo closer: point at `stack-plan.json` from the live
-run on stage and get this report with no extra setup, proving the local-first architecture never
+migrate, no crash). This is a natural closing check: point at `stack-plan.json` from any
+run and get this report with no extra setup, proving the local-first architecture never
 painted itself into a corner.

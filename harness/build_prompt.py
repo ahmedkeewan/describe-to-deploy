@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 """
-Builds harness system prompts for a given fix level from catalog/capabilities.json.
+Builds harness system prompts for a given mode from catalog/capabilities.json.
 
 Generated, not hand-maintained, so the prompt can never drift from the catalog file itself
 (the "derive-from-settings.json" principle in VOCAB.md 6c) -- add a capability to the JSON and
 every future harness run picks it up automatically, no separate prompt edit required.
 
 Usage:
-  python3 harness/build_prompt.py --fix 1 > /tmp/prompt.txt
-  python3 harness/build_prompt.py --fix 2 --role planner  > /tmp/planner-prompt.txt
-  python3 harness/build_prompt.py --fix 2 --role executor > /tmp/executor-prompt.txt
+  python3 harness/build_prompt.py --mode single-agent > /tmp/prompt.txt
+  python3 harness/build_prompt.py --mode planner-executor --role planner  > /tmp/planner-prompt.txt
+  python3 harness/build_prompt.py --mode planner-executor --role executor > /tmp/executor-prompt.txt
 
-Fix 1: capability catalog + conservative fallback rule, single agent plans and acts in one pass.
-Fix 2: splits that single pass into two agents -- a planner that ONLY produces a stack-plan.json
-(see harness/stack-plan.schema.json) and never touches Floci's write APIs, and an executor that
-reads a plan file and never sees the founder's original request text at all. The split forces the
-plan itself to be an inspectable artifact you can read, gate, or hand to a different agent, before
-anything real happens -- see GAME_PLAN.md's architecture table, "Planner" and "Executor" rows.
+single-agent: capability catalog + conservative fallback rule, single agent plans and acts in one
+pass.
+planner-executor: splits that single pass into two agents -- a planner that ONLY produces a
+stack-plan.json (see harness/stack-plan.schema.json) and never touches Floci's write APIs, and an
+executor that reads a plan file and never sees the founder's original request text at all. The
+split forces the plan itself to be an inspectable artifact you can read, gate, or hand to a
+different agent, before anything real happens -- see GAME_PLAN.md's architecture table, "Planner"
+and "Executor" rows.
 """
 import argparse
 import json
@@ -65,7 +67,7 @@ def build_fix1_prompt() -> str:
         "explicit, plain-language question -- e.g. \"I can give you a place to store and look up "
         "messages, but not live chat yet -- want that instead?\"\n"
         "3. If nothing in the catalog is close, say so plainly and stop. Append the exact request "
-        "text as one line to /tmp/floci-hackathon-fallback-log.jsonl (JSON: {\"request\": "
+        "text as one line to /tmp/floci-fallback-log.jsonl (JSON: {\"request\": "
         "\"...\", \"timestamp\": \"...\"}) so it can become a future catalog entry -- never drop "
         "it silently."
     )
@@ -215,18 +217,20 @@ def build_fix2_executor_prompt() -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--fix", type=int, default=1, choices=[1, 2])
+    parser.add_argument(
+        "--mode", choices=["single-agent", "planner-executor"], default="single-agent"
+    )
     parser.add_argument("--role", choices=["planner", "executor"], default=None)
     args = parser.parse_args()
-    if args.fix == 1:
+    if args.mode == "single-agent":
         print(build_fix1_prompt())
-    elif args.fix == 2:
+    elif args.mode == "planner-executor":
         if args.role == "planner":
             print(build_fix2_planner_prompt())
         elif args.role == "executor":
             print(build_fix2_executor_prompt())
         else:
-            raise SystemExit("--fix 2 requires --role planner|executor")
+            raise SystemExit("--mode planner-executor requires --role planner|executor")
 
 
 if __name__ == "__main__":
