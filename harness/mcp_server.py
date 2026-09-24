@@ -5,9 +5,9 @@ The Floci control-plane harness, exposed as an MCP server.
 Delivery surface decision (2026-09-05): expose this as MCP tools rather than build a bespoke
 chat frontend. A founder's existing AI chat client (Claude Desktop, Claude Code) becomes the UI
 for free; this server supplies the harness -- catalog, gate, state, wiring, go-live report --
-that the fix-1 through fix-7 experiments in tasks/README.md already validated.
+that the experiments in tasks/README.md already validated.
 
-Architecture mirrors fix #2's planner/executor split, now as an explicit tool contract instead of
+Architecture mirrors the planner/executor split, now as an explicit tool contract instead of
 two separate agent prompts:
   - The CALLING AGENT (whatever LLM is driving this MCP client) is the "planner + executor": it
     reads list_capabilities(), matches the founder's plain-language request to a capability_id,
@@ -16,8 +16,8 @@ two separate agent prompts:
   - THIS SERVER is the "gate + state": record_provisioned() independently re-verifies via the
     exact same check as harness/verify_gate.py before it will EVER update stack-state.json --
     state can only advance on a real, server-side-checked PASS, never on the calling agent's own
-    claim of success. This makes fix #4's gate a structural boundary instead of a step an agent
-    could accidentally skip.
+    claim of success. This makes the verification gate a structural boundary instead of a step an
+    agent could accidentally skip.
 
 Jargon boundary: every string this server returns is built to be founder-safe (plain language,
 no AWS/Floci service names, no ARNs, no ports), EXCEPT the five tools below. Each documents why
@@ -51,7 +51,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = REPO_ROOT / "catalog" / "capabilities.json"
 STATE_PATH = REPO_ROOT / "harness" / "stack-state.json"
 STATE_LOCK_PATH = REPO_ROOT / "harness" / ".stack-state.lock"
-FALLBACK_LOG_PATH = Path("/tmp/floci-hackathon-mcp-fallback-log.jsonl")
+FALLBACK_LOG_PATH = Path("/tmp/floci-mcp-fallback-log.jsonl")
 
 ENV = {
     "AWS_ENDPOINT_URL": "http://localhost:4566",
