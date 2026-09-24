@@ -15,7 +15,7 @@ This repo has two parts:
    plain-language product request ("users should be able to upload a photo") into a verified,
    running local infra environment on [Floci](https://floci.io/), using a capability catalog
    (`catalog/`) and a fixed scoring task set (`tasks/`). See [`harness/README.md`](harness/README.md)
-   to run it, and [`GAME_PLAN.md`](GAME_PLAN.md) for the design behind it.
+   to run it, and [`GAME_PLAN.md`](docs/history/GAME_PLAN.md) for the design behind it.
 2. **A research reference** ([`docs/research-links.md`](docs/research-links.md) +
    [`VOCAB.md`](VOCAB.md)) — a curated link pack and shared vocabulary on harness engineering as a
    discipline.
@@ -29,8 +29,8 @@ This repo has two parts:
 | `interface/` | Founder-facing UI design spec and canvas mockups |
 | `tasks/` | Fixed scoring task set used to measure harness changes |
 | `docs/research-links.md` | Curated harness-engineering research link pack (Tier 1-6) and next steps |
-| `GAME_PLAN.md` | Architecture, build order, and design rationale |
-| `KICKOFF_PROMPT.md` | Historical record of how the baseline was first measured |
+| `docs/history/GAME_PLAN.md` | Archived: architecture, build order, and design rationale from the original hackathon-day plan |
+| `docs/history/KICKOFF_PROMPT.md` | Archived: historical record of how the baseline was first measured |
 | `VOCAB.md` | Shared harness-engineering vocabulary, elaborated from the research in `docs/research-links.md` |
 
 See [LICENSE](LICENSE) for terms.

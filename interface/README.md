@@ -644,7 +644,7 @@ runs short.
 
 ## What this looks like in the 5-minute demo
 
-The interface carries three of the demo beats in [GAME_PLAN.md](../GAME_PLAN.md#demo-5-minutes):
+The interface carries three of the demo beats in [GAME_PLAN.md](../docs/history/GAME_PLAN.md#demo-5-minutes):
 
 | Beat | What the audience sees | What it proves |
 |---|---|---|
@@ -655,7 +655,7 @@ The interface carries three of the demo beats in [GAME_PLAN.md](../GAME_PLAN.md#
 The demo screen never shows a service name, a port, or an error code. That is checkable live —
 and it is the 5/6 → 0/6 jargon result made visible rather than asserted from a table.
 
-## What this implies for GAME_PLAN.md
+## What this implies for docs/history/GAME_PLAN.md
 
 1. **The demo's framing should follow the baseline data.** Lead with scope discipline (t5) and
    translation (5/6 jargon leaks), not "the baseline can't do it" — it can, and

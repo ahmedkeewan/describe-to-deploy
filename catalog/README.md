@@ -1,6 +1,6 @@
 # Product-Capability Catalog
 
-The "guide" layer from [GAME_PLAN.md](../GAME_PLAN.md)'s architecture table: maps a
+The "guide" layer from [GAME_PLAN.md](../docs/history/GAME_PLAN.md)'s architecture table: maps a
 non-technical founder's plain-language product description to a Floci AWS service, a
 provisioning recipe, and a real verification check — without the founder ever needing to name
 a cloud service themselves.
@@ -38,9 +38,9 @@ If a request doesn't clearly match a capability's `phrases`/meaning:
    (not silently dropped) so it becomes the next entry added to this catalog.
 
 See `explicitly_not_covered` in [capabilities.json](capabilities.json) for known gaps —
-these are exactly what request #5 in GAME_PLAN.md's task set is designed to trigger.
+these are exactly what request #5 in docs/history/GAME_PLAN.md's task set is designed to trigger.
 
-## Coverage vs. the GAME_PLAN.md task set
+## Coverage vs. the docs/history/GAME_PLAN.md task set
 
 | Task set request | Capabilities exercised |
 |---|---|
