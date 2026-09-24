@@ -1,5 +1,5 @@
 {
-  "$schema_note": "Product-capability catalog for the Floci control-plane harness. Keys off plain-language founder phrases, not AWS service names. See catalog/README.md for the fallback rule and how this maps to GAME_PLAN.md's task set.",
+  "$schema_note": "Product-capability catalog for the Floci control-plane harness. Keys off plain-language founder phrases, not AWS service names. See catalog/README.md for the fallback rule and how this maps to docs/history/GAME_PLAN.md's task set.",
   "cloud": "aws",
   "verified_against": "floci/floci server v2.0.1, 2026-09-05, via `aws --endpoint-url=http://localhost:4566` with dummy test/test credentials",
   "capabilities": [
