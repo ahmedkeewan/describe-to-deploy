@@ -59,6 +59,13 @@ machine. Pass `--start-board` to also launch the live board (in the foreground �
 once setup finishes; without the flag, setup only prints the command. `make setup` and `make test`
 are thin aliases for `./setup.sh` and the test suite — run `make help` to see them.
 
+`make down` stops Floci (`floci stop`) — a non-destructive stop that leaves the container and its
+state intact, so a later `floci start` (or `make setup`) picks back up where it left off. If Floci
+isn't installed or isn't currently running, `make down` prints a clear message instead of failing
+noisily. This is not the benchmark-reset command — see
+[tasks/README.md](../tasks/README.md) for `floci stop && docker rm -f floci`, which destroys the
+container and is a separate, deliberate reset step, not a default teardown.
+
 `make board` runs `./setup.sh --start-board`. Set `FLOCI_BOARD_PORT` to run more than one board
 side by side — for example, one per environment from `create_environment` below — instead of
 always binding to the default `7777`:
