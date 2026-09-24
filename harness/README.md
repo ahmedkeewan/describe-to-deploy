@@ -8,7 +8,7 @@ measured against, including the honest negative findings, not just the wins.
 
 | File | What it does |
 |---|---|
-| `build_prompt.py` | Generates harness system prompts from `catalog/capabilities.json`. `--fix 1` produces one prompt for a single planning-and-acting agent; `--fix 2 --role planner\|executor` produces the split-role prompt pair the harness actually runs on (see "Architecture" below). Never hand-edit the catalog content into a prompt; regenerate instead. |
+| `build_prompt.py` | Generates harness system prompts from `catalog/capabilities.json`. `--mode single-agent` produces one prompt for a single planning-and-acting agent; `--mode planner-executor --role planner\|executor` produces the split-role prompt pair the harness actually runs on (see "Architecture" below). Never hand-edit the catalog content into a prompt; regenerate instead. |
 | `state_lock.py` | Shared `fcntl.flock`-based cross-process locking helper. Every MCP client (each agent) runs its own `mcp_server.py` subprocess, so the plain-file state below needs a real OS-level lock, not just an in-process one — see AgDR-0002. |
 | `environments_store.py` | Load/save helpers and the shared lock for `environments.json`, the sidecar file backing `create_environment`/`destroy_environment`/`list_environments` (see "Tools exposed" below). |
 | `verify_gate.py` | Computational verification gate. Zero LLM calls — reads a `stack-plan.json`, re-runs each capability's real `verify.cli` against live Floci, exits 0 only on a genuine pass. |

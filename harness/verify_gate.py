@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Fix #4: a deterministic, computational verification gate.
+The verification gate: deterministic, no LLM in the loop.
 
-Fix #2's executor was TOLD to verify its own work before claiming done -- that instruction did
+The planner/executor split's executor was TOLD to verify its own work before claiming done -- that instruction did
 real work (VOCAB.md 6d's t6 result), but it's still inferential: an LLM choosing to comply. This
 gate is the computational counterpart (VOCAB.md sec 3: "prefer computational over inferential
 wherever a deterministic check exists") -- a plain script that independently re-runs each
