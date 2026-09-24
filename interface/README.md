@@ -639,10 +639,10 @@ ui       ONE static HTML file. No build step, no framework.
          The board is a list re-rendered on each event.
 ```
 
-The UI is a renderer, so a single file is genuinely sufficient — and it stays cuttable if the day
-runs short.
+The UI is a renderer, so a single file is genuinely sufficient — and it stays easy to cut if
+scope needs to shrink.
 
-## What this looks like in the 5-minute demo
+## What this looks like in a live run
 
 The interface carries three of the demo beats in [GAME_PLAN.md](../docs/history/GAME_PLAN.md#demo-5-minutes):
 

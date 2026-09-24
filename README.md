@@ -33,4 +33,4 @@ This repo has two parts:
 | `docs/history/KICKOFF_PROMPT.md` | Archived: historical record of how the baseline was first measured |
 | `VOCAB.md` | Shared harness-engineering vocabulary, elaborated from the research in `docs/research-links.md` |
 
-See [LICENSE](LICENSE) for terms.
+See [LICENSE](LICENSE) for terms, and [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
