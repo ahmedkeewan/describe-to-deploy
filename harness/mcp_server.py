@@ -27,6 +27,11 @@ in its own docstring:
     agent's own tool use; never for the founder.
   - create_environment(), destroy_environment(), list_environments() -- return an app_context
     and/or a board port for the developer/agent managing environments, not the founder.
+One narrower, field-level exception: record_provisioned()'s FAIL path also returns
+`_diagnostic_for_you_the_calling_agent`, an explicitly-labeled, non-founder-safe field carrying
+the raw verify command and its output. Unlike the five tools above, record_provisioned()'s own
+`founder_message` stays founder-safe in every case -- only that one extra, clearly-named field is
+not. See its own docstring.
 
 Run: source harness/.venv/bin/activate && python3 harness/mcp_server.py
 """
@@ -329,7 +334,10 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
     re-verifies for real against live Floci -- your own belief that it worked is not sufficient
     and is not trusted. State is only ever updated on a genuine, freshly-checked PASS. Returns a
     founder-safe message either way; relay it as-is or in your own words, but do not add
-    technical detail that isn't in it."""
+    technical detail that isn't in it. On FAIL only, the response also carries
+    `_diagnostic_for_you_the_calling_agent`: the raw verify command and its real output, for your
+    own debugging. That field can contain AWS/Floci jargon (an ARN, a bucket or table name, raw
+    CLI output) -- it is not founder-safe and must never be relayed to the founder."""
     binding_error = _resource_name_binding_error(app_context, resource_name)
     if binding_error is not None:
         return binding_error
