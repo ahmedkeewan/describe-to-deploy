@@ -95,8 +95,8 @@ Terminal-Bench 2.0 scores by 10-14 points with the same model.
 This repo's demo harness is an MCP server (`harness/`) that turns a non-technical founder's
 plain-language product request ("users should be able to upload a photo") into a verified,
 running local infra environment on [Floci](https://floci.io/), using a capability catalog
-(`catalog/`) and a fixed scoring task set (`tasks/`). See [`harness/README.md`](harness/README.md)
-to run it, and [`GAME_PLAN.md`](research/history/GAME_PLAN.md) for the design behind it.
+(`catalog/`) and a fixed scoring task set (`tasks/`). [`harness/README.md`](harness/README.md)
+covers the architecture, the MCP tools it exposes, and how to run it.
 
 **Design patterns worth stealing**, independent of this specific product:
 
