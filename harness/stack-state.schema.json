@@ -1,6 +1,6 @@
 {
-  "$schema_note": "Durable, shared state file fix #5 introduces: harness/stack-state.json on disk, one entry per app_context ever planned. Written by the executor only after the verification gate (fix #4) actually passes -- never speculatively. Read by the planner before it falls back to live Floci discovery.",
-  "why_this_exists": "Live Floci-state inspection (what fix-1/fix-2's planners already do) gets ordinary incrementality right when there's exactly one app's resources on the instance -- verified in the baseline and fix-1/fix-2 runs. It breaks down once MULTIPLE apps share the same Floci instance with plausibly-similar resource names (a realistic scenario for a hackathon demo box or a shared dev environment): live discovery alone has no reliable way to know which existing bucket is 'this app's' photo storage versus a different app's. The state file is keyed by app_context specifically to make that lookup exact instead of a semantic guess.",
+  "$schema_note": "The harness's durable, shared state file: harness/stack-state.json on disk, one entry per app_context ever planned. Written by the executor only after the verification gate actually passes -- never speculatively. Read by the planner before it falls back to live Floci discovery.",
+  "why_this_exists": "Live Floci-state inspection (what the planner does on its own) gets ordinary incrementality right when there's exactly one app's resources on the instance -- verified both without a harness and with the capability catalog and planner/executor split in place. It breaks down once MULTIPLE apps share the same Floci instance with plausibly-similar resource names (a realistic scenario on a shared dev machine): live discovery alone has no reliable way to know which existing bucket is 'this app's' photo storage versus a different app's. The state file is keyed by app_context specifically to make that lookup exact instead of a semantic guess.",
   "example": {
     "snapshare": {
       "created": "2026-09-05T14:30:00Z",
@@ -27,6 +27,6 @@
     "top_level_keys": "app_context strings -- must match exactly what the planner assigns/reuses; this is the only correct disambiguator between two apps whose resources happen to look similar.",
     "capabilities": "Keyed by capability_id, one entry per capability ever successfully gated for that app.",
     "last_gate_result": "Set from harness/verify_gate.py's actual output, never from an executor's self-report -- an entry only gets written/updated after a real PASS.",
-    "staleness": "A planner that finds an app_context here should still treat last_verified as a hint, not proof current -- re-running the gate (fix #4) before declaring anything ready is still required; this file records intent and history, not live truth."
+    "staleness": "A planner that finds an app_context here should still treat last_verified as a hint, not proof current -- re-running the verification gate before declaring anything ready is still required; this file records intent and history, not live truth."
   }
 }
