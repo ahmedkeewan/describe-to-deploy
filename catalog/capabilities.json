@@ -20,6 +20,9 @@
           "create-user-pool",
           "create-user-pool-client (no secret, for a web/mobile app)"
         ],
+        "cli": "POOL=$(aws cognito-idp create-user-pool --pool-name <name> --query UserPool.Id --output text) && aws cognito-idp create-user-pool-client --user-pool-id \"$POOL\" --client-name <name>-app --explicit-auth-flows ALLOW_USER_PASSWORD_AUTH ALLOW_REFRESH_TOKEN_AUTH > /dev/null && echo \"$POOL\"",
+        "name_suffix": "accounts",
+        "name_max_length": 128,
         "state_fields": ["userPoolId", "clientId"]
       },
       "verify": {
@@ -47,6 +50,9 @@
       "floci_services_flag": "s3",
       "provision": {
         "steps": ["create bucket named after the app, e.g. <app-slug>-uploads"],
+        "cli": "aws s3api create-bucket --bucket <name> > /dev/null && echo <name>",
+        "name_suffix": "files",
+        "name_max_length": 63,
         "state_fields": ["bucketName"]
       },
       "verify": {
@@ -74,6 +80,9 @@
       "floci_services_flag": "dynamodb",
       "provision": {
         "steps": ["create-table with a partition key inferred from the request, e.g. 'id'"],
+        "cli": "aws dynamodb create-table --table-name <name> --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --billing-mode PAY_PER_REQUEST > /dev/null && aws dynamodb wait table-exists --table-name <name> && echo <name>",
+        "name_suffix": "data",
+        "name_max_length": 255,
         "state_fields": ["tableName"]
       },
       "verify": {
@@ -104,6 +113,9 @@
           "create-function from a small starter handler",
           "wire an S3 event notification (ObjectCreated) to invoke it"
         ],
+        "cli": "D=$(mktemp -d) && printf \"def handler(event, context):\\n    return {\\\"ok\\\": True}\\n\" > \"$D/index.py\" && python3 -c \"import sys,zipfile; z=zipfile.ZipFile(sys.argv[1],\\\"w\\\"); z.write(sys.argv[2],\\\"index.py\\\"); z.close()\" \"$D/fn.zip\" \"$D/index.py\" && aws lambda create-function --function-name <name> --runtime python3.12 --handler index.handler --role arn:aws:iam::000000000000:role/service-buddy-exec --zip-file \"fileb://$D/fn.zip\" > /dev/null && aws lambda wait function-active-v2 --function-name <name> && echo <name>",
+        "name_suffix": "job",
+        "name_max_length": 64,
         "state_fields": ["functionName"]
       },
       "verify": {
@@ -131,6 +143,9 @@
       "floci_services_flag": "email",
       "provision": {
         "steps": ["verify-email-identity for a sender address"],
+        "cli": "aws ses verify-email-identity --email-address noreply@<name>.example.com && echo noreply@<name>.example.com",
+        "name_suffix": "mail",
+        "name_max_length": 64,
         "state_fields": ["senderIdentity"]
       },
       "verify": {
@@ -159,6 +174,9 @@
       "depends_on": ["background-job"],
       "provision": {
         "steps": ["create-schedule targeting an existing Lambda function"],
+        "cli": "Q=$(aws sqs create-queue --queue-name <name>-target --query QueueUrl --output text) && T=$(aws sqs get-queue-attributes --queue-url \"$Q\" --attribute-names QueueArn --query Attributes.QueueArn --output text) && aws scheduler create-schedule --name <name> --schedule-expression 'rate(1 day)' --flexible-time-window Mode=OFF --target \"Arn=$T,RoleArn=arn:aws:iam::000000000000:role/service-buddy-exec\" > /dev/null && echo <name>",
+        "name_suffix": "schedule",
+        "name_max_length": 58,
         "state_fields": ["scheduleName"]
       },
       "verify": {
@@ -184,6 +202,9 @@
       "floci_services_flag": "sqs",
       "provision": {
         "steps": ["create-queue"],
+        "cli": "aws sqs create-queue --queue-name <name> --query QueueUrl --output text",
+        "name_suffix": "queue",
+        "name_max_length": 80,
         "state_fields": ["queueUrl"]
       },
       "verify": {
@@ -209,6 +230,9 @@
       "floci_services_flag": "sns",
       "provision": {
         "steps": ["create-topic"],
+        "cli": "aws sns create-topic --name <name> --query TopicArn --output text",
+        "name_suffix": "alerts",
+        "name_max_length": 256,
         "state_fields": ["topicArn"]
       },
       "verify": {
@@ -234,6 +258,9 @@
       "floci_services_flag": "secretsmanager",
       "provision": {
         "steps": ["create-secret with the value provided by the founder"],
+        "cli": "aws secretsmanager create-secret --name <name> --description 'Created by Service Buddy; set the real value before use' --secret-string '{}' > /dev/null && echo <name>",
+        "name_suffix": "secrets",
+        "name_max_length": 256,
         "state_fields": ["secretName"]
       },
       "verify": {
@@ -259,6 +286,9 @@
       "floci_services_flag": "ssm",
       "provision": {
         "steps": ["put-parameter for each setting"],
+        "cli": "aws ssm put-parameter --name /<name>/created-by --value service-buddy --type String --overwrite > /dev/null && echo /<name>",
+        "name_suffix": "settings",
+        "name_max_length": 256,
         "state_fields": ["parameterPrefix"]
       },
       "verify": {
@@ -288,6 +318,9 @@
           "create-rest-api",
           "wire routes to Lambda functions created for this app"
         ],
+        "cli": "aws apigateway create-rest-api --name <name> --query id --output text",
+        "name_suffix": "api",
+        "name_max_length": 128,
         "state_fields": ["apiId"]
       },
       "verify": {
@@ -312,10 +345,13 @@
       "floci_services_flag": "es",
       "provision": {
         "steps": ["create-elasticsearch-domain (small, single-node)"],
+        "cli": "aws opensearch create-domain --domain-name <name> --engine-version OpenSearch_2.11 > /dev/null && echo <name>",
+        "name_suffix": "search",
+        "name_max_length": 28,
         "state_fields": ["domainName"]
       },
       "verify": {
-        "cli": "aws es describe-elasticsearch-domain --domain-name <domainName>",
+        "cli": "aws opensearch describe-domain --domain-name <domainName>",
         "success_criteria": "domain processing is false and endpoint is set",
         "founder_proof": "checked that search is up and ready"
       },
@@ -338,6 +374,9 @@
       "floci_services_flag": "stepfunctions",
       "provision": {
         "steps": ["create-state-machine from a small starter definition (a linear chain of steps)"],
+        "cli": "aws stepfunctions create-state-machine --name <name> --role-arn arn:aws:iam::000000000000:role/service-buddy-exec --definition '{\"StartAt\":\"Start\",\"States\":{\"Start\":{\"Type\":\"Pass\",\"End\":true}}}' --query stateMachineArn --output text",
+        "name_suffix": "workflow",
+        "name_max_length": 80,
         "state_fields": ["stateMachineArn"]
       },
       "verify": {

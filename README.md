@@ -62,10 +62,10 @@ system software, and it's safe to run again. The server shows up in your chat ap
 
 - **Cursor:** open the `service-buddy` folder and turn on `floci-control-plane` under
   Settings → MCP.
-- **Claude Desktop (experimental):** quit and reopen it. To actually set things up, the assistant
-  has to run commands on your machine, so Claude Code or Cursor is the smoother path today. There's
-  also a one-click Desktop bundle: build it with `./mcpb/build.sh` (macOS only, experimental; see
-  [`mcpb/`](mcpb/README.md)). A prebuilt download will be on the Releases page.
+- **Claude Desktop (macOS):** download `service-buddy.mcpb` from the
+  [latest release](https://github.com/ahmedkeewan/service-buddy/releases/latest), double-click it, and click **Install**. Answer **no** when `./setup.sh`
+  offers to wire Claude Desktop, so the server isn't installed twice. Then chat in Desktop's
+  **Chat** tab (the Code tab doesn't load extensions). Details in [`mcpb/`](mcpb/README.md).
 
 ### Your first request
 
@@ -165,7 +165,7 @@ instead of asking a clarifying question.
 | `harness/` | The MCP server, the live status page, and their tests: the runnable project |
 | `catalog/` | The capability catalog the server reads (plain-language need → tested recipe and check) |
 | `tasks/` | The fixed task set and benchmark results |
-| `mcpb/` | Build script and manifest for the experimental one-click Claude Desktop bundle |
+| `mcpb/` | Build script and manifest for the one-click Claude Desktop bundle (macOS) |
 | `interface/` | The live status page (`live.html`, served by `make board`) plus the design spec and mockups for the founder-facing interface |
 | `docs/` | The GitHub Pages site and its assets |
 | `research/` | Harness-engineering vocabulary, research links, AgDRs, and archived planning history |

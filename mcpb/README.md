@@ -1,4 +1,4 @@
-# `.mcpb` Desktop Extension bundle (experimental)
+# `.mcpb` Desktop Extension bundle
 
 Packages `harness/mcp_server.py` as an Anthropic Desktop Extension (`.mcpb`, formerly `.dxt`), so
 the server can be added to Claude Desktop with a double-click and an "Install" button instead of
@@ -6,18 +6,17 @@ editing `claude_desktop_config.json` by hand.
 
 **Status, stated plainly:**
 
-- **Build it yourself for now.** There's no prebuilt bundle yet; one will be attached to
-  [GitHub Releases](https://github.com/ahmedkeewan/service-buddy/releases) once it's been tested.
+- **Prebuilt download:** `service-buddy.mcpb` on the [latest release](https://github.com/ahmedkeewan/service-buddy/releases/latest), or build it
+  yourself (below).
 - **macOS only.**
-- **Not yet verified on a real Claude Desktop install.** The manifest validates and the packaged
-  server runs under `uv`, but the end-to-end install in Claude Desktop hasn't been checked (see
-  below).
+- **Verified on Claude Desktop (2026-09-25):** installed from the bundle, then a "let people
+  upload a photo" request in the Chat tab was set up and verified end to end, with a plain-language
+  reply. The server does the setup itself (`set_up_capability`), so Desktop doesn't need to run
+  any commands.
+- **Use the Chat tab.** Desktop's Code tab runs Claude Code, which doesn't load extensions.
 - **It doesn't replace `./setup.sh`.** It only replaces the "wire the MCP config" step. Docker,
   Floci, and the AWS CLI still need to be set up, so run `./setup.sh` once anyway — and answer
   **no** when it offers to wire Claude Desktop, or you'll have the server installed twice.
-- **Claude Desktop needs a way to run commands.** The server doesn't provision anything itself:
-  the agent runs each recipe's commands with its own tools, then the server verifies. Claude Code
-  and Cursor have that built in, which is why they're the recommended clients.
 
 ## Building
 
@@ -61,8 +60,9 @@ against the staged bundle resolves and installs `mcp` + `pydantic_core` cleanly.
 This is flagged as **experimental** in `@anthropic-ai/mcpb`'s own docs (introduced in manifest
 schema v0.4). The locally installed `mcpb` CLI (v2.1.2) validates a `manifest_version: "0.4"`,
 `server.type: "uv"` manifest without error, and `uv run` against the staged bundle works end to
-end — but it hasn't yet been verified against an actual Claude Desktop install. If Claude
-Desktop's own `.mcpb` loader doesn't support the `uv` server type, the fallback in
+end, including in Claude Desktop itself: on first launch Desktop's `uv` created the bundle's
+environment, installed its dependencies, and started the server. If a future Desktop version drops
+`uv` support, the fallback in
 [`harness/README.md`](../harness/README.md#connecting-to-claude-desktop) (`./setup.sh`, or manual
 `claude_desktop_config.json` editing) still works.
 

@@ -31,10 +31,8 @@ Design decisions are written up as short AgDRs (agent decision records) in
 ```mermaid
 flowchart LR
     F["Founder<br/>(plain-language request)"] --> A["Chat app + its agent<br/>(Claude Code, Cursor, Claude Desktop)"]
-    A -- "list_capabilities<br/>get_provisioning_recipe" --> S["Service Buddy MCP server<br/>(harness/mcp_server.py)"]
-    A -- "runs the recipe's steps<br/>with its own tools" --> FL[("Floci<br/>local AWS emulator")]
-    A -- "record_provisioned" --> S
-    S -- "re-runs the verify check" --> FL
+    A -- "list_capabilities<br/>set_up_capability" --> S["Service Buddy MCP server<br/>(harness/mcp_server.py)"]
+    S -- "runs the catalog's setup command,<br/>then re-runs the verify check" --> FL[("Floci<br/>local AWS emulator")]
     S -- "only on a real PASS" --> ST[("stack-state.json<br/>+ event log")]
     ST --> B["Live board<br/>(optional)"]
 ```
@@ -44,19 +42,22 @@ server rather than a purpose-built chat UI. Whatever AI chat client is already d
 conversation (Claude Desktop, Claude Code, Cursor) becomes the founder-facing interface for free.
 
 **Planner/executor split, as an explicit tool contract:**
-- The **calling agent** (the LLM behind whatever MCP client is connected) is the planner +
-  executor: it reads `list_capabilities()`, matches the founder's plain-language request to a
-  capability, calls `get_provisioning_recipe()` to learn what to run, and executes those steps
-  with its own tool access.
-- **This server** is the gate + state: `record_provisioned()` independently re-verifies — the
+- The **calling agent** (the LLM behind whatever MCP client is connected) is the planner: it
+  reads `list_capabilities()` and matches the founder's plain-language request to a capability.
+- **This server** can also be the executor: `set_up_capability()` runs the capability's
+  `provision.cli` from the catalog against Floci, so the agent needs no shell or AWS access of its
+  own. That matters for clients whose command tools can't reach the local engine (Claude
+  Desktop's are sandboxed away from `localhost:4566`). An agent that needs something custom can
+  still call `get_provisioning_recipe()` and run the steps with its own tools.
+- **This server** is also the gate + state: `record_provisioned()` independently re-verifies — the
   exact same check as `verify_gate.py` — before it will ever touch `stack-state.json`. State can
   only advance on a real, server-checked PASS, never on the calling agent's own claim. This makes
   the verification gate a structural boundary instead of a step an agent could forget to run.
 
-**Isolation model: naming-scope on one shared Floci backend, not per-environment instances.**
+**Isolation model: one shared Floci backend, not per-environment instances.**
 `create_environment`/`destroy_environment`/`list_environments` let two or more agents in
 separate worktrees each provision their own infra without colliding, but they do this by
-namespacing `app_context` and `resource_name` — Floci itself has no per-environment isolated
+recording which `app_context` owns each resource — Floci itself has no per-environment isolated
 backend at this harness's level. See [AgDR-0001](../research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md) for the full trade-off (a per-environment backend
 was considered and rejected as over-scoped for a local dev harness).
 
@@ -70,8 +71,9 @@ docstring holds the authoritative list.
   `destroy_environment`, `list_environments`, `get_verification_history`, `snapshot_environment`,
   `restore_environment`, `describe_environment`.
 - **Single fields** on otherwise founder-safe tools: `_diagnostic_for_you_the_calling_agent` on
-  `record_provisioned` (on FAIL and on `dry_run=True` previews) and on `wire_app_config` (on
-  failure). These carry raw commands and error output for the agent's own debugging.
+  `record_provisioned` (on FAIL and on `dry_run=True` previews), on `set_up_capability` (on
+  failure), and on `wire_app_config` (on failure). These carry raw commands and error output for
+  the agent's own debugging.
 
 ### Running it
 
@@ -149,16 +151,18 @@ Check it with `claude mcp list`; `floci-control-plane` should show as connected.
 
 ### Connecting to Claude Desktop
 
-**Recommended: `./setup.sh`**, which offers to add the server to Claude Desktop's config (after
-backing it up); quit and reopen Claude Desktop afterwards. Note that setting things up needs the
-agent to run the recipe's commands itself, so Claude Code or Cursor is the smoother path; see
-[`mcpb/README.md`](../mcpb/README.md).
+**Easiest: the `.mcpb` Desktop Extension** (macOS only). Download `service-buddy.mcpb` from the
+[latest release](https://github.com/ahmedkeewan/service-buddy/releases/latest) (or build it with
+`./mcpb/build.sh`, which needs Node/npm and `npm install -g @anthropic-ai/mcpb`), double-click it,
+and click Install. See [`mcpb/README.md`](../mcpb/README.md) for what the bundle does and does not
+cover, including why you should skip `./setup.sh`'s Claude Desktop step if you use it.
 
-**Experimental: the `.mcpb` Desktop Extension** (macOS only). Run `./mcpb/build.sh` (requires
-Node/npm and the `mcpb` CLI — `npm install -g @anthropic-ai/mcpb`) to produce
-`mcpb/service-buddy.mcpb`, then double-click it (or drag it onto Claude Desktop) and click
-Install. See [`mcpb/README.md`](../mcpb/README.md) for what the bundle does and does not cover,
-including why you should skip `./setup.sh`'s Claude Desktop step if you use it.
+**Or: `./setup.sh`**, which offers to add the server to Claude Desktop's config (after backing it
+up); quit and reopen Claude Desktop afterwards.
+
+Either way, chat in Desktop's **Chat** tab; the Code tab runs Claude Code, which doesn't load
+Desktop extensions. Desktop's own command tools can't reach the local engine, which is fine: the
+agent uses `set_up_capability`, so the server does the setup itself.
 
 This only wires the MCP server itself into Claude Desktop. **Floci must still be running first**
 (`floci start`, or the one-time `./setup.sh` install) — the `.mcpb` manifest format has no way to
@@ -202,7 +206,7 @@ or `~/.cursor/mcp.json` (global):
 
 ### Tools exposed
 
-**Product tools (called by the agent on the founder's behalf)**: `list_capabilities`, `get_app_state`, `get_provisioning_recipe`,
+**Product tools (called by the agent on the founder's behalf)**: `list_capabilities`, `get_app_state`, `set_up_capability`, `get_provisioning_recipe`,
 `record_provisioned`, `report_unsupported_request`, `check_app_readiness`, `wire_app_config`,
 `whats_needed_to_go_live`.
 

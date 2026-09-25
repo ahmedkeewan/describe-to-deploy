@@ -31,8 +31,17 @@ The easiest way to extend Service Buddy is to add an entry to
 2. Has a `verify.cli` check that exercises the capability for real (write something and read it
    back, not just "the resource exists"), and a `verify.founder_proof` sentence saying what the
    check did in plain language.
-3. Has been run against a local Floci (`aws --endpoint-url=http://localhost:4566`) and passes.
-   Say in the PR what you ran.
+3. Has a `provision.cli` setup command whose output passes its own `verify.cli`, plus a
+   `name_suffix` and `name_max_length` (see [`catalog/README.md`](catalog/README.md)). This is what
+   `set_up_capability` runs, so it's what most users get.
+4. Passes for real against a local Floci. With Floci running, this sets up and verifies every
+   capability in the catalog, yours included:
+
+   ```bash
+   SERVICE_BUDDY_LIVE=1 harness/.venv/bin/python3 -m unittest harness/tests/test_set_up_capability.py
+   ```
+
+   Say in the PR that you ran it.
 
 Requests the server couldn't match are a good source of ideas; see `explicitly_not_covered` in the
 catalog for known gaps.
