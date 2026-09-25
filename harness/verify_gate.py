@@ -50,7 +50,7 @@ def run_check(cli_template: str, resource_name: str) -> tuple[bool, str]:
         .replace("<topicArn>", resource_name)
         .replace("<queueUrl>", resource_name)
         .replace("<secretName>", resource_name)
-        .replace("<domainName>", resource_name)
+        .replace("<domainName>", resource_name).replace("<stateMachineArn>", resource_name)
     )
     try:
         result = subprocess.run(

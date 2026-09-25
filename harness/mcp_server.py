@@ -110,7 +110,7 @@ def _run_verify(cli_template: str, resource_name: str) -> tuple[bool, str]:
         .replace("<topicArn>", resource_name)
         .replace("<queueUrl>", resource_name)
         .replace("<secretName>", resource_name)
-        .replace("<domainName>", resource_name)
+        .replace("<domainName>", resource_name).replace("<stateMachineArn>", resource_name)
     )
     try:
         result = subprocess.run(
@@ -378,7 +378,7 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
                     .replace("<bucketName>", resource_name).replace("<tableName>", resource_name)
                     .replace("<functionName>", resource_name).replace("<topicArn>", resource_name)
                     .replace("<queueUrl>", resource_name).replace("<secretName>", resource_name)
-                    .replace("<domainName>", resource_name),
+                    .replace("<domainName>", resource_name).replace("<stateMachineArn>", resource_name),
                 "output_or_error": detail,
             },
         }
