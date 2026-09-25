@@ -1,5 +1,5 @@
 {
-  "$schema_note": "The intermediate artifact fix #2 introduces between planning and execution. Kept cloud-provider-neutral in shape (see research/history/GAME_PLAN.md's comparison table) so it stays retargetable from Floci to real AWS/GCP after PMF without a redesign. Written by the planner agent, read by the executor agent -- the two never share an underlying conversation.",
+  "$schema_note": "The intermediate artifact the planner/executor split introduces between planning and execution. Kept cloud-provider-neutral in shape (see research/history/GAME_PLAN.md's comparison table) so it stays retargetable from Floci to real AWS/GCP after PMF without a redesign. Written by the planner agent, read by the executor agent -- the two never share an underlying conversation.",
   "example": {
     "app_context": "a short, human-readable label for this app/project, chosen by the planner, stable across follow-up requests",
     "founder_request": "the verbatim request text this plan was built from, kept for traceability",
