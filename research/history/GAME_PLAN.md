@@ -1,6 +1,6 @@
 # Game Plan — Infra-Invisible Agent for Non-Technical Founders
 
-Companion to [README.md](../../README.md) and [VOCAB.md](../../VOCAB.md). Originally written for a one-day
+Companion to [README.md](../../README.md) and [VOCAB.md](../VOCAB.md). Originally written for a one-day
 hackathon (built 2026-09-06); kept here as the design record for [`harness/`](../../harness/) — the
 architecture and build order below are still what a new build would follow.
 

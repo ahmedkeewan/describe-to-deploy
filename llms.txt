@@ -18,18 +18,18 @@ memory) as a discipline distinct from model choice.
 - [AGENTS.md](AGENTS.md): how an AI coding agent connects to and calls this MCP server.
 - [tasks/README.md](tasks/README.md): benchmark results (before/after numbers, including honest
   negative findings) from measuring the harness against a fixed scoring task set.
-- [docs/research-links.md](docs/research-links.md): curated harness-engineering research link pack.
-- [VOCAB.md](VOCAB.md): shared harness-engineering vocabulary.
+- [research/research-links.md](research/research-links.md): curated harness-engineering research link pack.
+- [VOCAB.md](research/VOCAB.md): shared harness-engineering vocabulary.
 
 ## Design decisions
 
-- [docs/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md](docs/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md):
+- [research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md](research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md):
   isolating multiple agents on one shared backend via naming scope, not per-agent infrastructure.
-- [docs/agdr/AgDR-0002-flock-based-state-locking.md](docs/agdr/AgDR-0002-flock-based-state-locking.md):
+- [research/agdr/AgDR-0002-flock-based-state-locking.md](research/agdr/AgDR-0002-flock-based-state-locking.md):
   cross-process state locking for an MCP server where every client spawns its own subprocess.
 
 ## Optional
 
-- [docs/history/GAME_PLAN.md](docs/history/GAME_PLAN.md): archived design rationale from the
+- [research/history/GAME_PLAN.md](research/history/GAME_PLAN.md): archived design rationale from the
   project's original build.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to set up, test, and contribute to this repo.

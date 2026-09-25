@@ -1,7 +1,7 @@
 # Harness Engineering Research Links
 
 A curated link pack and shared vocabulary reference on harness engineering as a discipline. See
-[VOCAB.md](../VOCAB.md) for the vocabulary itself, elaborated from the sources below.
+[VOCAB.md](VOCAB.md) for the vocabulary itself, elaborated from the sources below.
 
 ## Tier 1 — The canon (~2 hrs)
 
