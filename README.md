@@ -18,9 +18,11 @@ actually works before ever telling you it's done. If something isn't working yet
 plainly instead of pretending.
 
 **To try it:** `./setup.sh` from the repo root gets everything running (it checks for and
-installs what it needs, with your confirmation before anything gets installed). Once it's
-running, just talk to it in your normal AI chat app — no commands to memorize, nothing technical
-to learn first.
+installs what it needs, with your confirmation before anything gets installed). On Claude Desktop
+specifically, you can instead install just the MCP server with a double-click — see
+[`mcpb/README.md`](mcpb/README.md) — but Docker + Floci still need `./setup.sh` run once regardless
+of which install path you use. Once it's running, just talk to it in your normal AI chat app — no
+commands to memorize, nothing technical to learn first.
 
 That's the whole idea: you describe what you want, and the harness only ever tells you it's
 ready once it has actually checked.
@@ -64,6 +66,7 @@ discipline.
 | `catalog/` | Product-capability catalog the harness reads (plain-language need → verified recipe) |
 | `interface/` | Founder-facing UI design spec and canvas mockups |
 | `tasks/` | Fixed scoring task set used to measure harness changes |
+| `mcpb/` | `.mcpb` Desktop Extension bundle for one-click Claude Desktop install (build script + manifest) |
 | `docs/` | GitHub Pages founder site, spike memos, and plans |
 | `research/` | Vocabulary, curated research links, AgDRs, and archived planning history — isolated from the product/harness code |
 | `research/research-links.md` | Curated harness-engineering research link pack (Tier 1-6) and next steps |
