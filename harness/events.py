@@ -79,3 +79,44 @@ def read_all() -> list[dict]:
             if line.strip():
                 events.append(json.loads(line))
     return events
+
+
+def query(
+    app_context: str | None = None,
+    capability: str | None = None,
+    since: str | None = None,
+    until: str | None = None,
+) -> list[dict]:
+    """Filterable read over the whole event log (GH-71), for debugging/auditing past runs without
+    needing the live board open at the time they happened. `since`/`until` are ISO-8601 timestamp
+    strings compared lexicographically against each event's `t` field -- safe because `t` is
+    always written by `datetime.now(timezone.utc).isoformat()`, which sorts the same lexically and
+    chronologically.
+
+    A single read of the whole file, same as read_all() -- no lock held across it. This mirrors
+    read_all()'s existing lock-free read; the lock in emit() only needs to cover its own read of
+    the last seq plus its own write, not every reader (GH-24's original concern was two WRITERS
+    computing the same seq, not a reader racing a writer). A line that fails to parse (e.g. the
+    very last line, mid-write by another process at the exact moment of this read) is skipped
+    rather than raising, so a filtered history read can never crash on a benign race."""
+    events = []
+    if not EVENTS_PATH.exists():
+        return events
+    with EVENTS_PATH.open() as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if app_context is not None and event.get("app_context") != app_context:
+                continue
+            if capability is not None and event.get("capability") != capability:
+                continue
+            if since is not None and event.get("t", "") < since:
+                continue
+            if until is not None and event.get("t", "") > until:
+                continue
+            events.append(event)
+    return events
