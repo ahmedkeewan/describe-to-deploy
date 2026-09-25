@@ -3,7 +3,7 @@
 capability_id provisioned in both concurrently, through the real create_environment ->
 get_provisioning_recipe -> record_provisioned flow -- not just the individual pieces each
 already have unit tests for (create_environment's port uniqueness, record_provisioned's
-concurrency safety, the resource-name binding's bypass resistance). Requires the `mcp` package
+concurrency safety, resource ownership across environments). Requires the `mcp` package
 -- run via harness/.venv."""
 import sys
 import tempfile
@@ -46,7 +46,7 @@ class TwoConcurrentEnvironmentsTests(unittest.TestCase):
             patch.object(mcp_server, "STATE_PATH", self.state_path),
             patch.object(mcp_server, "STATE_LOCK_PATH", self.state_lock_path),
             # No live Floci in a unit test -- always PASS, so this exercises the harness's own
-            # concurrency/binding correctness, not infra availability.
+            # concurrency/ownership correctness, not infra availability.
             patch.object(mcp_server, "_run_verify", return_value=(True, "ok")),
             # See _slow_load_state's comment above -- widens the race window deterministically.
             patch.object(mcp_server, "_load_state", _slow_load_state),
@@ -74,7 +74,7 @@ class TwoConcurrentEnvironmentsTests(unittest.TestCase):
 
         def provision(name, env):
             app_context = env["app_context"]
-            resource_name = f"{app_context}::photos"
+            resource_name = f"{app_context}-photos"
 
             # Mirrors the real calling-agent flow: get the recipe first, then record.
             recipe = mcp_server.get_provisioning_recipe(

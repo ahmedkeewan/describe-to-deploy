@@ -100,9 +100,9 @@ class GeneralPlaceholderSubstitutionTests(unittest.TestCase):
         # as regex backreferences instead of literal text: \1 raises re.error (no such group),
         # and \g<0> silently reinjects the original matched placeholder text. Found in review.
         cmd = mcp_server._substitute_placeholders(
-            "aws x --name <scheduleName>", "my-app::sched\\1ule"
+            "aws x --name <scheduleName>", "my-app-sched\\1ule"
         )
-        self.assertEqual(cmd, "aws x --name my-app::sched\\1ule")
+        self.assertEqual(cmd, "aws x --name my-app-sched\\1ule")
 
         cmd2 = mcp_server._substitute_placeholders(
             "aws x --name <scheduleName>", "foo\\g<0>bar"

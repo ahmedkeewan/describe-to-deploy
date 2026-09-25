@@ -23,8 +23,8 @@ status: executed
   server can call any tool, including `create_environment`, `destroy_environment`, and every
   provisioning tool, for any `app_context` it knows or can guess. There is no login, no API key,
   no session concept for a human "founder" using the product today.
-- `app_context` isolates *environments* from each other (AgDR-0001's naming-scope model,
-  enforced by [#29](https://github.com/ahmedkeewan/service-buddy/issues/29)'s resource-name binding) — it was never designed as, and does not function
+- `app_context` isolates *environments* from each other (AgDR-0001's shared-backend model,
+  enforced by resource ownership) — it was never designed as, and does not function
   as, a *permission* boundary between people. Knowing an `app_context` string is sufficient to
   act on it; nothing checks who is asking.
 - Building a real multi-founder permission model would mean adding the harness's first identity
