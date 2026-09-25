@@ -32,7 +32,7 @@ status: executed
 | Option | Pros | Cons |
 |--------|------|------|
 | `fcntl.flock`-based locking helper around both files' read-modify-write cycles (chosen) | Minimal diff. No new dependency. Fixes both files with one mechanism. Matches the harness's small-script style. | Serializes all state writes across every concurrent agent. A slow verify call (up to a 30s timeout) held inside the lock would block every other agent's writes; the design keeps verification outside the locked section to avoid this. |
-| Migrate `stack-state.json` and `events.jsonl` to SQLite (WAL mode) | Real concurrent-write support at scale. Removes the read-whole-file-every-time pattern in `_next_seq()`. | Bigger diff. New dependency and query surface for a harness that is otherwise plain JSON files read by a browser (`interface/live.html` reads `events.jsonl` directly). No demonstrated need yet — the harness is a hackathon-scale tool, not a production multi-tenant service. |
+| Migrate `stack-state.json` and `events.jsonl` to SQLite (WAL mode) | Real concurrent-write support at scale. Removes the read-whole-file-every-time pattern in `_next_seq()`. | Bigger diff. New dependency and query surface for a harness that is otherwise plain JSON files read by a browser (`interface/live.html` reads `events.jsonl` directly). No demonstrated need yet — the harness is a single-user local tool, not a production multi-tenant service. |
 | Leave both files unlocked; document the race as a known limitation | Zero engineering cost | Directly breaks the feature's own goal. Concurrent agents are the whole point of this design, and the race is exactly the kind of state corruption the feature exists to prevent. |
 
 ## Decision
