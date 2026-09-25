@@ -915,8 +915,8 @@
     </p>
 
     <div class="path-toggle">
-      <button type="button" class="path-tab active" data-path="manual" aria-pressed="true">Claude Code &amp; Cursor (recommended)</button>
-      <button type="button" class="path-tab" data-path="desktop" aria-pressed="false">Claude Desktop (experimental)</button>
+      <button type="button" class="path-tab active" data-path="manual" aria-pressed="true">Claude Code &amp; Cursor</button>
+      <button type="button" class="path-tab" data-path="desktop" aria-pressed="false">Claude Desktop (macOS)</button>
     </div>
 
     <div class="steps" data-path-panel="manual">
@@ -953,26 +953,25 @@
         <div>
           <h3>Run setup once</h3>
           <p>Claude Desktop still needs the local engine, so run the command below once in a
-          terminal. It also adds Service Buddy to Claude Desktop's settings.</p>
+          terminal. Answer <em>no</em> when it offers to connect Claude Desktop; the bundle in
+          the next step does that.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
         <div>
-          <h3>Restart Claude Desktop</h3>
-          <p>Quit and reopen it, then describe what you want. Setting things up needs the
-          assistant to run commands on your machine, which Claude Code and Cursor do out of the
-          box, so they're the smoother path today.</p>
+          <h3>Install the bundle</h3>
+          <p>Download <code>service-buddy.mcpb</code> from the
+          <a href="https://github.com/ahmedkeewan/service-buddy/releases/latest">latest release</a>, double-click it, and click Install.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
         <div>
-          <h3>Optional: the one-click bundle</h3>
-          <p>A <code>.mcpb</code> bundle for macOS can be built with
-          <code>./mcpb/build.sh</code> (see <a href="https://github.com/ahmedkeewan/service-buddy/tree/main/mcpb">mcpb/</a>).
-          A prebuilt one will be on the
-          <a href="https://github.com/ahmedkeewan/service-buddy/releases">Releases page</a>.</p>
+          <h3>Describe what you want</h3>
+          <p>Open a new chat in Desktop's <strong>Chat</strong> tab (the Code tab doesn't load
+          extensions) and ask in plain English. Service Buddy sets things up and checks them
+          itself; there's nothing to run.</p>
         </div>
       </div>
     </div>

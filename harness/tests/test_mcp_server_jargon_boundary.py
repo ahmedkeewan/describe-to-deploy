@@ -28,6 +28,7 @@ NON_FOUNDER_SAFE_TOOLS = [
 # field-level exception the module docstring must also name.
 FIELD_LEVEL_EXCEPTION_TOOLS = [
     "record_provisioned",
+    "set_up_capability",
     "wire_app_config",
 ]
 

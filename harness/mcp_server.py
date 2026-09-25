@@ -8,10 +8,11 @@ It is an MCP server rather than a bespoke chat frontend, so a founder's existing
 gate, state, wiring, go-live report -- whose effect tasks/README.md measures.
 
 The architecture is a planner/executor split expressed as a tool contract:
-  - The CALLING AGENT (whatever LLM is driving this MCP client) is the "planner + executor": it
-    reads list_capabilities(), matches the founder's plain-language request to a capability_id,
-    calls get_provisioning_recipe() to learn what to actually run, and executes those commands
-    with its own tool access (bash, or whatever the client provides).
+  - The CALLING AGENT (whatever LLM is driving this MCP client) is the "planner": it reads
+    list_capabilities() and matches the founder's plain-language request to a capability_id.
+  - set_up_capability() lets THIS SERVER be the executor too: it runs the catalog's own setup
+    command against Floci, so the agent needs no shell or AWS access of its own. An agent that
+    needs something custom can still call get_provisioning_recipe() and execute the steps itself.
   - THIS SERVER is the "gate + state": record_provisioned() independently re-verifies via the
     exact same check as harness/verify_gate.py before it will EVER update stack-state.json --
     state can only advance on a real, server-side-checked PASS, never on the calling agent's own
@@ -32,15 +33,17 @@ documents why in its own docstring:
     and app_context-scoped resource state for the developer/agent, not the founder.
   - describe_environment() -- returns AWS service names and cost estimates for the
     developer/agent, not the founder.
-Narrower, field-level exceptions, both named `_diagnostic_for_you_the_calling_agent`:
+Narrower, field-level exceptions, all named `_diagnostic_for_you_the_calling_agent`:
   - record_provisioned() -- its FAIL path and its dry_run=True preview path carry the raw verify
     command (and, on FAIL, its real output).
+  - set_up_capability() -- its failure path carries the setup (or verify) command and raw output.
   - wire_app_config() -- its failure path carries raw stderr from the config writer.
 Unlike the whole-tool exceptions above, these tools' own `founder_message` stays founder-safe in
 every case -- only that one extra, clearly-named field is not. See each tool's own docstring.
 
 Run: source harness/.venv/bin/activate && python3 harness/mcp_server.py
 """
+import hashlib
 import json
 import re
 import secrets
@@ -555,6 +558,102 @@ def _ownership_error(
                     "name -- so the two never share data."
                 }
     return None
+
+
+PROVISION_TIMEOUT_SECONDS = 180
+
+
+def _derive_resource_name(app_context: str, suffix: str, max_length: int) -> str:
+    """A name valid for every service in the catalog: lowercase letters, digits, and hyphens,
+    starting with a letter, within the capability's length limit. Built from app_context so the
+    resource is recognisably this app's; when that would be too long (search domains cap at 28
+    characters), the app part is shortened and a short hash of the full app_context keeps two
+    long-named apps from landing on the same name."""
+    slug = re.sub(r"-+", "-", re.sub(r"[^a-z0-9-]", "-", app_context.lower())).strip("-") or "app"
+    if not slug[0].isalpha():
+        slug = f"app-{slug}"
+    name = f"{slug}-{suffix}"
+    if len(name) <= max_length:
+        return name
+    digest = hashlib.sha256(app_context.encode()).hexdigest()[:4]
+    keep = max_length - len(suffix) - len(digest) - 2
+    return f"{slug[:keep].rstrip('-')}-{digest}-{suffix}"
+
+
+@server.tool()
+def set_up_capability(app_context: str, capability_id: str) -> dict:
+    """Set up a capability end to end, on this server: create the real resource on local Floci,
+    independently verify it, and record it. Prefer this over get_provisioning_recipe +
+    record_provisioned -- it needs no shell or AWS access on your side, so it works in any client,
+    including ones whose own command tools can't reach the local engine.
+
+    `capability_id` comes from list_capabilities(). `app_context` identifies the founder's app (the
+    value create_environment returned, or any consistent slug). The resource is named after the
+    app automatically. Safe to call again: if the capability is already recorded for this app, it
+    is re-verified rather than created twice.
+
+    Returns a founder-safe `founder_message` plus `gate_result` (PASS or FAIL); relay the message
+    as-is or in your own words. On failure, the response also carries
+    `_diagnostic_for_you_the_calling_agent` (the setup command and its raw output), which is
+    not founder-safe: never relay it to the founder."""
+    catalog = _load_catalog()
+    cap = catalog.get(capability_id)
+    if cap is None:
+        return {
+            "gate_result": "FAIL",
+            "founder_message": "That isn't something I know how to set up yet.",
+        }
+
+    existing = _load_state().get(app_context, {}).get("capabilities", {}).get(capability_id)
+    if existing is not None:
+        return record_provisioned(app_context, capability_id, existing["resource_name"])
+
+    provision = cap["provision"]
+    name = _derive_resource_name(app_context, provision["name_suffix"], provision["name_max_length"])
+    command = provision["cli"].replace("<name>", name)
+
+    events_log.emit(
+        "provision.start", capability_id,
+        founder={"label": cap["founder_description"], "status": "setting up…"},
+        dev={"service": cap["aws_service"], "resource_name": name},
+        app_context=app_context,
+    )
+    import os
+    try:
+        result = subprocess.run(
+            command, shell=True, env={**os.environ, **ENV},
+            capture_output=True, text=True, timeout=PROVISION_TIMEOUT_SECONDS,
+        )
+        output = (result.stdout or "").strip()
+        ok, detail = result.returncode == 0 and bool(output), (result.stderr or result.stdout or "").strip()
+    except subprocess.TimeoutExpired:
+        ok, output, detail = False, "", f"setup timed out after {PROVISION_TIMEOUT_SECONDS}s"
+
+    if not ok:
+        events_log.emit(
+            "verify.fail", capability_id,
+            founder={"label": cap["founder_description"], "status": "not working yet"},
+            dev={"cmd": command, "resource_name": name, "detail": detail[:500], "exit": 1},
+            app_context=app_context,
+        )
+        return {
+            "gate_result": "FAIL",
+            "founder_message": (
+                f"I couldn't set up '{cap['founder_description'][:1].lower()}"
+                f"{cap['founder_description'][1:]}' yet -- I won't tell you it's ready until it "
+                "really is."
+            ),
+            "_diagnostic_for_you_the_calling_agent": {
+                "note": "Not for the founder. The setup command that ran, and what it returned.",
+                "command_that_ran": command,
+                "output_or_error": detail[:1000],
+            },
+        }
+
+    # The last line the setup command prints is the resource's name or AWS-assigned ID -- the
+    # value the capability's verify check is written against.
+    resource_name = output.splitlines()[-1].strip()
+    return record_provisioned(app_context, capability_id, resource_name)
 
 
 @server.tool()

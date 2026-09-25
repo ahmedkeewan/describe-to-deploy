@@ -8,14 +8,21 @@ to connect to and call Service Buddy's MCP server. It is not a build/test/contri
 
 `harness/mcp_server.py` is an MCP server that turns a plain-language product request into real,
 verified local infrastructure on [Floci](https://floci.io/), a free AWS emulator that runs in
-Docker on the user's machine. You are the planner and executor: read the tool list below, match
-the founder's request to a capability, get the real steps from `get_provisioning_recipe`, run them
-with your own shell access, then call `record_provisioned`, which independently re-verifies before
-it ever updates state. Your own belief that something worked is never sufficient.
+Docker on the user's machine. You are the planner; the server can be the executor:
 
-The server does not run provisioning commands itself, so your client needs a way to run shell
-commands (Claude Code and Cursor have one). Those commands, and every verification check, use the
-AWS CLI against Floci on `http://localhost:4566`.
+1. Call `list_capabilities()` and match the founder's request to a capability. If nothing matches,
+   call `report_unsupported_request` instead of improvising.
+2. Call `set_up_capability(app_context, capability_id)`. The server creates the real resource,
+   independently verifies it, and records it. Your client needs no shell or AWS access for this.
+3. Relay the returned `founder_message`.
+
+For something the catalog's default setup doesn't cover, you can still do it by hand: get the steps
+from `get_provisioning_recipe`, run them yourself, then call `record_provisioned`, which
+re-verifies before it ever updates state. Either way, your own belief that something worked is
+never sufficient.
+
+The machine running the server needs Floci and the AWS CLI: every setup command and verification
+check runs through the AWS CLI against Floci on `http://localhost:4566`.
 
 ## Connecting
 
@@ -64,6 +71,7 @@ founder. "No" means never relay it. "Yes, except …" means the named field is f
 
 | Tool | Purpose | Founder-safe? |
 |------|---------|---------------|
+| `set_up_capability(app_context, capability_id)` | **Start here.** Creates the capability's real resource on Floci, verifies it, and records it, all server-side. Names the resource after the app. Safe to call again: an already-recorded capability is re-verified, not created twice. | Yes, except `_diagnostic_for_you_the_calling_agent` (present on failure) |
 | `list_capabilities()` | List every product capability this server can build, in plain language. | Yes |
 | `get_app_state(app_context)` | Look up what has already been built and verified for an app. `app_context` is the stable identifier for the founder's app (the value from `create_environment`, or any consistent slug you choose for the app). | Yes |
 | `get_provisioning_recipe(capability_id, resource_name, app_context=None)` | Get the exact technical steps and verification command to build a capability. | **No**: infra detail for your own use |

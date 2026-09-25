@@ -21,7 +21,10 @@ not just copied from AWS docs.
 | `founder_description` | What to say back to the founder. Never mentions the AWS service name — that's the whole point of this catalog. |
 | `aws_service` / `floci_services_flag` | The real service name, for the calling agent only. Never surfaced to the founder. |
 | `depends_on` | Other capability ids this one needs already provisioned (e.g. `background-job` needs `file-storage` for its S3 trigger). The calling agent must provision these first, and the state file must already have them recorded. |
-| `provision.steps` | What the calling agent actually runs, in order (returned by `get_provisioning_recipe`). |
+| `provision.steps` | The setup in plain steps, returned by `get_provisioning_recipe` for an agent doing it by hand. |
+| `provision.cli` | The setup command `set_up_capability` runs server-side against Floci. A shell template: every `<name>` is replaced with a name the server derives from the app (e.g. `photo-demo-files`). Its **last line of stdout** must be the value the `verify.cli` placeholder expects: the resource name, or the ID AWS assigned (a queue URL, an ARN, a pool ID). |
+| `provision.name_suffix` | Short word appended to the app's name to build `<name>` (`files`, `queue`, ...). Lowercase letters only. |
+| `provision.name_max_length` | The service's own name-length limit. When the app name would make `<name>` longer, the server shortens it and adds a short hash so different apps still get different names (search domains, for example, cap at 28 characters). |
 | `provision.state_fields` | What gets written into `stack-state.json` for this capability so a later incremental request can find and reuse it. |
 | `verify` | The real check the verification gate runs before claiming "done." This is the trust mechanism — never skip it, never accept the calling agent's own report as sufficient proof. |
 | `wiring.env_vars` | What gets auto-written into the founder's app config. Names only — values come from `provision` output at runtime. |
