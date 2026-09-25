@@ -95,23 +95,37 @@ def _save_state(state: dict) -> None:
     STATE_PATH.write_text(json.dumps(state, indent=2) + "\n")
 
 
+def _substitute_placeholders(cli_template: str, resource_name: str) -> str:
+    """Single source of truth for substituting a catalog verify.cli's placeholder with the real
+    resource_name. _run_verify, get_provisioning_recipe, and the FAIL-path diagnostic field all
+    need this exact substitution -- extracted here after a bug (GH-77) where <scheduleName>, and
+    then <apiId> (found in review), were each missing from a hardcoded per-name replace() chain
+    that had to be updated by hand for every new placeholder a capability introduced.
+
+    Every capability's verify.cli uses at most one placeholder, always meaning "the one real
+    resource this check is about" -- confirmed by inspecting every entry in
+    catalog/capabilities.json (none combine two distinct placeholders in one command). A single
+    regex substitution of any <word> token is therefore correct for every existing capability and
+    every future one following the same one-placeholder-per-check shape, with no per-name list to
+    keep in sync ever again.
+
+    The identical substitution in harness/verify_gate.py stays a deliberate, separate copy (see
+    _run_verify's docstring) so this server's gate check can never silently diverge from that
+    standalone script without both being edited."""
+    # A plain string replacement arg would let re.sub interpret backslash sequences in
+    # resource_name (\1, \g<0>, ...) as backreferences instead of literal text -- a resource_name
+    # containing one could crash with re.error or silently corrupt the substituted command. A
+    # replacement function's return value is always used literally, with no such interpretation.
+    return re.sub(r"<\w+>", lambda _match: resource_name, cli_template)
+
+
 def _run_verify(cli_template: str, resource_name: str) -> tuple[bool, str]:
     """Identical substitution + execution logic to harness/verify_gate.py -- kept as one
     function there and reused here would be cleaner long-term, but the exact-match duplication
     is intentional for now so this server's gate check can never silently diverge from the
     standalone script's behavior without both being edited."""
     import os
-    cmd = (
-        cli_template
-        .replace("<bucketName>", resource_name)
-        .replace("<tableName>", resource_name)
-        .replace("<functionName>", resource_name)
-        .replace("<userPoolId>", resource_name)
-        .replace("<topicArn>", resource_name)
-        .replace("<queueUrl>", resource_name)
-        .replace("<secretName>", resource_name)
-        .replace("<domainName>", resource_name).replace("<stateMachineArn>", resource_name)
-    )
+    cmd = _substitute_placeholders(cli_template, resource_name)
     try:
         result = subprocess.run(
             cmd, shell=True, env={**os.environ, **ENV},
@@ -308,9 +322,7 @@ def get_provisioning_recipe(capability_id: str, resource_name: str, app_context:
     cap = catalog.get(capability_id)
     if cap is None:
         return {"error": f"'{capability_id}' is not a known capability"}
-    verify_cli = cap["verify"]["cli"]
-    for placeholder in ("bucketName", "tableName", "functionName", "userPoolId", "topicArn", "queueUrl", "secretName", "domainName"):
-        verify_cli = verify_cli.replace(f"<{placeholder}>", resource_name)
+    verify_cli = _substitute_placeholders(cap["verify"]["cli"], resource_name)
 
     events_log.emit(
         "provision.start", capability_id,
@@ -374,11 +386,7 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
             "founder_message": founder_message,
             "_diagnostic_for_you_the_calling_agent": {
                 "note": "Not for the founder. The independent check that just ran, and exactly what it returned.",
-                "command_that_ran": cap["verify"]["cli"].replace("<userPoolId>", resource_name)
-                    .replace("<bucketName>", resource_name).replace("<tableName>", resource_name)
-                    .replace("<functionName>", resource_name).replace("<topicArn>", resource_name)
-                    .replace("<queueUrl>", resource_name).replace("<secretName>", resource_name)
-                    .replace("<domainName>", resource_name).replace("<stateMachineArn>", resource_name),
+                "command_that_ran": _substitute_placeholders(cap["verify"]["cli"], resource_name),
                 "output_or_error": detail,
             },
         }
