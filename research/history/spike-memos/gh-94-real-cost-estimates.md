@@ -1,6 +1,10 @@
-# [Spike] Replace hardcoded cost estimates with real AWS pricing data (GH-94)
+# [Spike] Replace hardcoded cost estimates with real AWS pricing data
 
-**Disposition: PROMOTE.**
+> **Outcome:** shipped as [`harness/pricing.py`](../../../harness/pricing.py). 6 of the 13
+> capabilities are live-priced from the AWS Price List; the rest fall back to labelled estimates.
+> Kept as a record of the investigation ([issue #94](https://github.com/ahmedkeewan/service-buddy/issues/94)).
+
+**Disposition at the time: PROMOTE.**
 
 ## Hypothesis
 
@@ -11,8 +15,8 @@ instead of hardcoded, hand-written rough figures. Suggested source: instances.va
 
 **instances.vantage.sh is not usable here.** It covers EC2, RDS, ElastiCache, Redshift, and
 OpenSearch — all instance/capacity-provisioned services. It does not cover S3, DynamoDB, Lambda,
-Cognito, SES, SQS, SNS, Secrets Manager, SSM, or API Gateway — 11 of this harness's 13
-capabilities. It only overlaps on OpenSearch (the `search` capability), and even there it's a
+Cognito, SES, SQS, SNS, Step Functions, EventBridge Scheduler, Secrets Manager, SSM, or API Gateway — 12 of
+this harness's 13 capabilities. It only overlaps on OpenSearch (the `search` capability), and even there it's a
 comparison UI, not a stable API to build against.
 
 **The real feasible path: AWS's own public Price List Bulk files.** Confirmed live, unauthenticated:
@@ -57,5 +61,5 @@ Promote to a full feature ticket, scoped to:
 
 ## Artifacts
 
-- Ticket: GH-94
+- Issue: [#94](https://github.com/ahmedkeewan/service-buddy/issues/94)
 - Live-verified sources: `pricing.us-east-1.amazonaws.com/offers/v1.0/aws/{AmazonS3,AmazonDynamoDB,AWSLambda}/current/us-east-1/index.json`
