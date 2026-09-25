@@ -17,6 +17,7 @@ capability failed its live check (see the printed report for which, and why).
 """
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -40,18 +41,16 @@ def load_catalog_by_id() -> dict:
 
 def run_check(cli_template: str, resource_name: str) -> tuple[bool, str]:
     """Substitutes the plan's resource_name into the catalog's verify.cli placeholder pattern
-    and actually runs it against live Floci. No LLM judgment involved -- exit code is truth."""
-    cmd = (
-        cli_template
-        .replace("<bucketName>", resource_name)
-        .replace("<tableName>", resource_name)
-        .replace("<functionName>", resource_name)
-        .replace("<userPoolId>", resource_name)
-        .replace("<topicArn>", resource_name)
-        .replace("<queueUrl>", resource_name)
-        .replace("<secretName>", resource_name)
-        .replace("<domainName>", resource_name).replace("<stateMachineArn>", resource_name)
-    )
+    and actually runs it against live Floci. No LLM judgment involved -- exit code is truth.
+
+    Every capability's verify.cli uses at most one placeholder (confirmed by inspecting every
+    entry in catalog/capabilities.json), always meaning the one real resource this check is
+    about -- so a single regex substitution of any <word> token is correct here, and needs no
+    per-placeholder-name list to keep in sync as new capabilities are added (GH-77/GH-66)."""
+    # A plain string replacement arg would let re.sub interpret backslash sequences in
+    # resource_name (\1, \g<0>, ...) as backreferences instead of literal text -- a replacement
+    # function's return value is always used literally, with no such interpretation.
+    cmd = re.sub(r"<\w+>", lambda _match: resource_name, cli_template)
     try:
         result = subprocess.run(
             cmd, shell=True, env=ENV, capture_output=True, text=True, timeout=30
