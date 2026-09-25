@@ -1,4 +1,4 @@
-# Harness Engineering Research
+# Describe to Deploy
 
 **To run the working demo:** `./setup.sh` from the repo root checks for Docker, installs Floci if
 needed (with confirmation), sets up the harness Python environment, and wires the MCP server into
