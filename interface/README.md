@@ -71,7 +71,7 @@ in the UI to put a half-truth.
 
 ## How it maps to harness engineering
 
-| Interface mechanism | Harness concept ([VOCAB.md](../VOCAB.md)) |
+| Interface mechanism | Harness concept ([VOCAB.md](../research/VOCAB.md)) |
 |---|---|
 | UI reads `stack-state.json` / `events.jsonl`, never shared memory | External state as the handoff between components (§4) |
 | Confirmation checklist blocks provisioning until scope is confirmed | Gate — a sensor that blocks rather than reports (§3, §6d) |
@@ -210,7 +210,7 @@ harness (CLI, scoreable)          ui (disposable)
 2. **It is cuttable.** If the UI does not land, the demo degrades to a terminal run rather than
    collapsing.
 3. **It matches the harness vocabulary** — external state as the handoff between components
-   ([VOCAB.md](../VOCAB.md) §4).
+   ([VOCAB.md](../research/VOCAB.md) §4).
 
 ## The journey
 
@@ -452,7 +452,7 @@ on start
       missing → drop the row
 ```
 
-This is [VOCAB.md](../VOCAB.md) §6d — reconcile tracked state against actual state before acting
+This is [VOCAB.md](../research/VOCAB.md) §6d — reconcile tracked state against actual state before acting
 on it — and it is the same principle as the [trust vocabulary](#trust-vocabulary) below: a row is
 green because a check just passed, never because a file said so.
 
@@ -644,7 +644,7 @@ scope needs to shrink.
 
 ## What this looks like in a live run
 
-The interface carries three of the demo beats in [GAME_PLAN.md](../docs/history/GAME_PLAN.md#demo-5-minutes):
+The interface carries three of the demo beats in [GAME_PLAN.md](../research/history/GAME_PLAN.md#demo-5-minutes):
 
 | Beat | What the audience sees | What it proves |
 |---|---|---|
@@ -655,7 +655,7 @@ The interface carries three of the demo beats in [GAME_PLAN.md](../docs/history/
 The demo screen never shows a service name, a port, or an error code. That is checkable live —
 and it is the 5/6 → 0/6 jargon result made visible rather than asserted from a table.
 
-## What this implies for docs/history/GAME_PLAN.md
+## What this implies for research/history/GAME_PLAN.md
 
 1. **The demo's framing should follow the baseline data.** Lead with scope discipline (t5) and
    translation (5/6 jargon leaks), not "the baseline can't do it" — it can, and

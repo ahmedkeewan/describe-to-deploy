@@ -1,8 +1,8 @@
 # Scoring Task Set
 
-The 6 fixed requests from [GAME_PLAN.md](../docs/history/GAME_PLAN.md)'s Scoring section, as a runnable
+The 6 fixed requests from [GAME_PLAN.md](../research/history/GAME_PLAN.md)'s Scoring section, as a runnable
 artifact — see [task-set.json](task-set.json) for the exact wording and success criteria.
-Written before touching the harness, per the same discipline as [KICKOFF_PROMPT.md](../docs/history/KICKOFF_PROMPT.md):
+Written before touching the harness, per the same discipline as [KICKOFF_PROMPT.md](../research/history/KICKOFF_PROMPT.md):
 don't let this get quietly adjusted later to flatter a fix.
 
 ## Test data hygiene
@@ -37,13 +37,13 @@ request would hide the exact thing you're trying to measure.
    `request_text` fresh, in a clean session that hasn't already provisioned this app's storage.
 5. For each task, judge `success_criteria` yourself against real Floci state
    (`aws --endpoint-url=... <service> <list/describe command>`) — never accept the agent's own
-   "done" claim as proof, per the verification-gate design in docs/history/GAME_PLAN.md.
+   "done" claim as proof, per the verification-gate design in research/history/GAME_PLAN.md.
 6. Record every response's text and scan it for infra jargon (service names, ports, ARNs,
    "endpoint," "IAM," etc.) for the jargon-leak metric.
 
 ## Results table template
 
-One row per harness configuration (baseline, then one row per fix from docs/history/GAME_PLAN.md's build
+One row per harness configuration (baseline, then one row per fix from research/history/GAME_PLAN.md's build
 order). Fill in `t1`-`t6` as pass/fail/partial; the last three columns aggregate across all 6.
 
 | Config | t1 | t2 | t3 | t4 | t5 | t6 | Success rate | Avg time | Avg tool calls | Jargon leaks |
@@ -57,7 +57,7 @@ order). Fill in `t1`-`t6` as pass/fail/partial; the last three columns aggregate
 | 6 — + failure escalation | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no doom-loop observed in either adversarial test — see notes** | 5 calls / 55s (fixable case), 5 calls / 94s (genuinely unfixable case) | bounded on its own, no retry-cap needed | n/a |
 | 7 — + auto-wiring | n/a‡ | n/a‡ | **wired + functionally proven** | n/a‡ | n/a‡ | n/a‡ | real app reads only .env, real Floci round trip succeeds | instant (no LLM call) | 1 script, 0 LLM calls | one bad guess caught and fixed before shipping |
 
-\* Fix 2 covers both the "planner tool" and "executor tool" rows from docs/history/GAME_PLAN.md's build order —
+\* Fix 2 covers both the "planner tool" and "executor tool" rows from research/history/GAME_PLAN.md's build order —
 a planner needs something to execute its plan, so both were built and measured together; see the
 fix-2 section below. † t4's executor was skipped at fix-2 due to a sequencing mistake (see the
 fix-2 section). ‡ Fix 4 is a standalone script with no task-specific behavior of its own — it was
@@ -404,7 +404,7 @@ Harness = [harness/go_live_plan.py](../harness/go_live_plan.py). Reads any `stac
 for each matched capability, prints its `founder_description`, the real AWS service it ran on
 locally, and the catalog's existing `cloud_equivalent_note`. No new harness capability was
 required — this only works because [catalog/capabilities.json](../catalog/capabilities.json) and
-the plan schema were kept provider-neutral in shape from fix #2 onward, per docs/history/GAME_PLAN.md's design
+the plan schema were kept provider-neutral in shape from fix #2 onward, per research/history/GAME_PLAN.md's design
 note. Tested against two real artifacts: t3's actual gate-verified plan (3 capabilities, clean
 output naming S3/Lambda/SES equivalents) and t5's fallback plan (correctly reports nothing to
 migrate, no crash). This is a natural closing check: point at `stack-plan.json` from any

@@ -37,13 +37,13 @@ This repo's demo harness is an MCP server (`harness/`) that turns a non-technica
 plain-language product request ("users should be able to upload a photo") into a verified,
 running local infra environment on [Floci](https://floci.io/), using a capability catalog
 (`catalog/`) and a fixed scoring task set (`tasks/`). See [`harness/README.md`](harness/README.md)
-to run it, and [`GAME_PLAN.md`](docs/history/GAME_PLAN.md) for the design behind it.
+to run it, and [`GAME_PLAN.md`](research/history/GAME_PLAN.md) for the design behind it.
 
 **Design patterns worth stealing**, independent of this specific product:
 
-- [AgDR-0001](docs/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md) — isolating multiple
+- [AgDR-0001](research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md) — isolating multiple
   agents on one shared backend via naming scope, not per-agent infrastructure instances.
-- [AgDR-0002](docs/agdr/AgDR-0002-flock-based-state-locking.md) — `fcntl.flock`-based
+- [AgDR-0002](research/agdr/AgDR-0002-flock-based-state-locking.md) — `fcntl.flock`-based
   cross-process state locking for an MCP server where every client spawns its own subprocess.
 
 **The benchmark data is real, including the negative results.** [`tasks/README.md`](tasks/README.md)
@@ -52,8 +52,8 @@ finding (a baseline agent asked to build "real-time chat," an uncataloged capabi
 a full WebSocket stack instead of asking a clarifying question). Jargon leaks alone went from
 5/6 to 0/6 after the capability catalog landed.
 
-**Research reference** ([`docs/research-links.md`](docs/research-links.md) +
-[`VOCAB.md`](VOCAB.md)) — a curated link pack and shared vocabulary on harness engineering as a
+**Research reference** ([`research/research-links.md`](research/research-links.md) +
+[`VOCAB.md`](research/VOCAB.md)) — a curated link pack and shared vocabulary on harness engineering as a
 discipline.
 
 ### Project layout
@@ -64,10 +64,12 @@ discipline.
 | `catalog/` | Product-capability catalog the harness reads (plain-language need → verified recipe) |
 | `interface/` | Founder-facing UI design spec and canvas mockups |
 | `tasks/` | Fixed scoring task set used to measure harness changes |
-| `docs/research-links.md` | Curated harness-engineering research link pack (Tier 1-6) and next steps |
-| `docs/history/GAME_PLAN.md` | Archived: architecture, build order, and design rationale from the original hackathon-day plan |
-| `docs/history/KICKOFF_PROMPT.md` | Archived: historical record of how the baseline was first measured |
-| `VOCAB.md` | Shared harness-engineering vocabulary, elaborated from the research in `docs/research-links.md` |
+| `docs/` | GitHub Pages founder site, spike memos, and plans |
+| `research/` | Vocabulary, curated research links, AgDRs, and archived planning history — isolated from the product/harness code |
+| `research/research-links.md` | Curated harness-engineering research link pack (Tier 1-6) and next steps |
+| `research/history/GAME_PLAN.md` | Archived: architecture, build order, and design rationale from the original hackathon-day plan |
+| `research/history/KICKOFF_PROMPT.md` | Archived: historical record of how the baseline was first measured |
+| `research/VOCAB.md` | Shared harness-engineering vocabulary, elaborated from the research in `research/research-links.md` |
 
 See [LICENSE](LICENSE) for terms, and [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
 
