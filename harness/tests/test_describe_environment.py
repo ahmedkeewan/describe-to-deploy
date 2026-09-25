@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
-"""Regression test for GH-68: describe_environment() reports each of an environment's
-provisioned capabilities alongside a rough, illustrative monthly cost estimate, built from
-catalog/capabilities.json's existing aws_service/cloud_equivalent_note fields."""
+"""Regression test for GH-68 / GH-95: describe_environment() reports each of an environment's
+provisioned capabilities alongside a monthly cost estimate, built from catalog/capabilities.json's
+existing aws_service/cloud_equivalent_note fields. GH-95 added a live-AWS-pricing path for six
+capabilities (pricing.real_monthly_estimate()); every other capability, and any failure of that
+live lookup, falls back to the hand-written APPROX_MONTHLY_COST_USD estimates.
+
+pricing.real_monthly_estimate is mocked to None by default in every test here (forcing the
+fallback path) so this suite never makes a real network call -- see
+test_describe_environment_real_pricing.py for tests that exercise the real-pricing integration
+with a mocked return value."""
 import sys
 import tempfile
 import unittest
@@ -30,6 +37,7 @@ class DescribeEnvironmentTests(unittest.TestCase):
             unittest.mock.patch.object(
                 mcp_server, "STATE_LOCK_PATH", Path(self.tmpdir.name) / ".stack-state.lock"
             ),
+            unittest.mock.patch.object(mcp_server.pricing, "real_monthly_estimate", return_value=None),
         ]
         for p in self._patches:
             p.start()
@@ -63,6 +71,9 @@ class DescribeEnvironmentTests(unittest.TestCase):
         self.assertEqual(item["aws_service"], "s3")
         self.assertIn("approx_monthly_cost_usd", item)
         self.assertIn("cloud_equivalent_note", item)
+        self.assertEqual(
+            item["cost_source"], "hand-written estimate (no live AWS pricing match for this service)"
+        )
 
     def test_every_capability_in_the_catalog_has_a_cost_estimate(self):
         # Pins that APPROX_MONTHLY_COST_USD stays in sync with the catalog -- a capability with
