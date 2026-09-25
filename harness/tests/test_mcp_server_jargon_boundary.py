@@ -21,6 +21,7 @@ NON_FOUNDER_SAFE_TOOLS = [
     "get_verification_history",
     "snapshot_environment",
     "restore_environment",
+    "describe_environment",
 ]
 
 # whats_needed_to_go_live predates GH-30 and documents its non-founder audience without the
@@ -34,6 +35,7 @@ TOOLS_REQUIRING_EXPLICIT_FOUNDER_WORDING = [
     "get_verification_history",
     "snapshot_environment",
     "restore_environment",
+    "describe_environment",
 ]
 
 

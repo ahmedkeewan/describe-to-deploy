@@ -154,6 +154,7 @@ worktrees, not the founder):
 | `get_verification_history(app_context, capability_id, since, until)` | Filterable read over the durable event log — debug or audit past runs without needing the live board open at the time. All filters optional and combine with AND; `since`/`until` are ISO-8601 timestamps. Not founder-facing — each event's `dev` field carries real service names, commands, and exit codes. |
 | `snapshot_environment(name)` | Saves a durable, point-in-time copy of an environment's recorded capabilities. Snapshots RECORDED STATE, not real infrastructure — see AgDR-0003. Returns `{snapshot_id, capabilities_snapshotted}`. |
 | `restore_environment(name, snapshot_id)` | Restores a snapshot's capabilities back into state — but only after freshly re-verifying each one live; a capability that no longer verifies is skipped, not restored. Only restores into the same environment the snapshot came from (AgDR-0003's binding). Returns `{restored, skipped}`. |
+| `describe_environment(name)` | Reports each of an environment's provisioned capabilities alongside a rough, illustrative monthly cost estimate on real AWS — built from the same `aws_service`/`cloud_equivalent_note` fields `go_live_plan.py` already uses. Explicitly labeled as estimates, not a quote. |
 
 Calling `get_provisioning_recipe`/`record_provisioned` with an `app_context` from
 `create_environment` enforces an extra check: `resource_name` must have the exact form
