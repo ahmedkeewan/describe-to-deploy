@@ -60,7 +60,7 @@ class DescribeEnvironmentTests(unittest.TestCase):
     def test_reports_cost_estimate_and_cloud_equivalent_note_per_capability(self):
         env = mcp_server.create_environment("app-a")
         app_context = env["app_context"]
-        resource_name = f"{app_context}::photos"
+        resource_name = f"{app_context}-photos"
         with unittest.mock.patch.object(mcp_server, "_run_verify", return_value=(True, "ok")):
             mcp_server.record_provisioned(app_context, "file-storage", resource_name)
 
@@ -94,7 +94,7 @@ class DescribeEnvironmentTests(unittest.TestCase):
     def test_skips_a_capability_no_longer_in_the_catalog(self):
         env = mcp_server.create_environment("app-a")
         app_context = env["app_context"]
-        resource_name = f"{app_context}::photos"
+        resource_name = f"{app_context}-photos"
         with unittest.mock.patch.object(mcp_server, "_run_verify", return_value=(True, "ok")):
             mcp_server.record_provisioned(app_context, "file-storage", resource_name)
 

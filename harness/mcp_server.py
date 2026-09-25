@@ -73,9 +73,8 @@ ENV = {
     "AWS_DEFAULT_REGION": "us-east-1",
 }
 
-# Lowercase alphanumeric + hyphen, 3-40 chars. This allowlist already excludes `::`, the
-# reserved separator the resource-name-to-environment binding relies on (see
-# _resource_name_binding_error), so no environment name can forge that separator.
+# Lowercase alphanumeric + hyphen, 3-40 chars -- safe to reuse inside real AWS resource names
+# (S3, DynamoDB, Lambda, ...), which is how agents are told to namespace what they create.
 ENVIRONMENT_NAME_RE = re.compile(r"^[a-z0-9-]{3,40}$")
 BOARD_PORT_RANGE = range(7777, 7877)
 
@@ -186,9 +185,14 @@ def _scan_free_board_port(taken_ports: set[int]) -> int | None:
 @server.tool()
 def create_environment(name: str, owner: str | None = None) -> dict:
     """Mint a new, isolated environment so one agent/worktree can provision and verify its own
-    infra without colliding with another agent's environment. Reserves a permanently-unique
-    app_context (never reused, even if `name` is reused after a later destroy_environment call
-    within the same second) and a free board port, both recorded in environments.json.
+    infra without colliding with another agent's environment. Reserves a unique app_context
+    (`name` plus a short random suffix, never one already in use or held by a snapshot) and a
+    free board port, both recorded in environments.json.
+
+    Isolation is by ownership: once a resource is recorded under this environment, any other
+    environment trying to record or restore the same resource is rejected. Name what you create
+    after the environment (e.g. `<name>-photos`) so different environments never pick the same
+    resource by accident.
 
     `owner` is optional, purely descriptive bookkeeping -- e.g. a founder or team-member
     name/identifier, for a human reading list_environments() to see who created what. It is NOT
@@ -219,10 +223,18 @@ def create_environment(name: str, owner: str | None = None) -> dict:
                 f"{BOARD_PORT_RANGE.start}-{BOARD_PORT_RANGE.stop - 1}."
             }
 
-        # Nanosecond timestamp + random suffix, not a plain per-second timestamp -- a same-second
-        # destroy_environment(name) followed by create_environment(name) must never mint the same
-        # app_context, or the new environment would inherit the destroyed one's namespace.
-        app_context = f"{name}-{time.time_ns()}-{secrets.token_hex(2)}"
+        # Short on purpose: agents embed app_context-derived names in real resource names, and
+        # some AWS services cap those tightly (search domains at 28 characters). Uniqueness comes
+        # from checking every app_context still in use -- including ones only a snapshot remembers,
+        # so a recreated environment can never pick up an old environment's snapshots.
+        in_use = (
+            {e["app_context"] for e in envs.values()}
+            | set(_load_state())
+            | {s["app_context"] for s in load_snapshots().values()}
+        )
+        app_context = f"{name}-{secrets.token_hex(3)}"
+        while app_context in in_use:
+            app_context = f"{name}-{secrets.token_hex(3)}"
         envs[name] = {
             "app_context": app_context,
             "board_port": board_port,
@@ -239,8 +251,8 @@ def destroy_environment(name: str) -> dict:
     """Release an environment's board port and remove its entries from environments.json and
     stack-state.json. Does NOT delete any real backend resources those entries pointed to --
     capabilities.json defines no teardown step for any capability, so the underlying Floci
-    resources become unreachable (their resource names are bound to this environment's
-    now-removed app_context) but are never actually deleted. This is a known limitation.
+    resources are left behind, unowned, and are never actually deleted. This is a known
+    limitation.
 
     NOT founder-facing -- the returned name/port are for the developer/agent driving this
     session, never to be relayed to the founder."""
@@ -335,10 +347,10 @@ def restore_environment(name: str, snapshot_id: str) -> dict:
     capability that no longer verifies (its real resource was deleted, or Floci was reset) is
     skipped, not restored, and reported as such.
 
-    Only restores into the SAME environment the snapshot was taken from -- a snapshot's
-    capabilities carry resource_name values prefixed with the snapshot's own app_context, so
-    restoring into a different environment would break that binding. If `name`'s current
-    app_context doesn't match the snapshot's, this returns an error instead of restoring.
+    Only restores into the SAME environment the snapshot was taken from -- restoring into a
+    different one would claim resources another environment owns. If `name`'s current
+    app_context doesn't match the snapshot's, this returns an error instead of restoring. A
+    capability whose resource has since been recorded by a different environment is skipped.
 
     Returns {restored, skipped}. NOT founder-facing -- never relay capability ids or snapshot
     ids to the founder."""
@@ -354,8 +366,8 @@ def restore_environment(name: str, snapshot_id: str) -> dict:
         return {"error": f"No snapshot with id '{snapshot_id}'."}
     if snapshot["app_context"] != app_context:
         return {
-            "error": "This snapshot belongs to a different environment's app_context -- "
-            "restoring it here would violate the resource-name-to-environment binding."
+            "error": "This snapshot belongs to a different environment -- restoring it here "
+            "would claim resources that environment owns."
         }
 
     catalog = _load_catalog()
@@ -380,6 +392,16 @@ def restore_environment(name: str, snapshot_id: str) -> dict:
         now = datetime.now(timezone.utc).isoformat()
         with locked(STATE_LOCK_PATH):
             state = _load_state()
+            # Ownership is re-checked under the lock: another environment may have recorded the
+            # same resource while the verify checks above were running.
+            for capability_id in list(restored):
+                resource_name = snapshot["capabilities"][capability_id]["resource_name"]
+                if _ownership_error(app_context, capability_id, resource_name, state, catalog):
+                    restored.remove(capability_id)
+                    skipped.append({
+                        "capability_id": capability_id,
+                        "reason": "now owned by a different environment",
+                    })
             state.setdefault(app_context, {"created": now, "capabilities": {}})
             for capability_id in restored:
                 entry = snapshot["capabilities"][capability_id]
@@ -496,29 +518,42 @@ def get_app_state(app_context: str) -> dict:
     }
 
 
-def _registered_app_contexts() -> set[str]:
-    return {info["app_context"] for info in load_environments().values()}
+def _ownership_error(
+    app_context: str | None,
+    capability_id: str,
+    resource_name: str,
+    state: dict | None = None,
+    catalog: dict | None = None,
+) -> dict | None:
+    """Resource ownership: a resource (its AWS service plus the name or ID the verify check
+    uses) belongs to the first app_context that records it. Any other app_context recording or
+    restoring the same resource is rejected, so two environments on the one shared backend can
+    never silently share -- and overwrite -- each other's data (see research/agdr/AgDR-0001).
 
-
-def _resource_name_binding_error(app_context: str | None, resource_name: str) -> dict | None:
-    """Resource-name binding: when `app_context` belongs to a registered environment, `resource_name`
-    must split on the first `::` into a segment EXACTLY equal to that `app_context` -- not
-    merely a prefix. A naive `resource_name.startswith(app_context)` check is defeatable: an
-    environment can be named after another environment's full app_context, making a prefix
-    check pass across environments. Exact equality on the pre-`::` segment closes that hole
-    (see research/agdr/AgDR-0001).
-
-    An app_context with no matching registered environment (single-app usage without
-    create_environment) is deliberately unaffected, so that usage keeps working. Returns None
-    when the call may proceed, or the error dict to return as-is."""
-    if app_context is None or app_context not in _registered_app_contexts():
+    Ownership is read from stack-state.json itself rather than a separate registry, so it can't
+    drift from what's recorded. No naming convention is imposed: resource names and AWS-assigned
+    IDs (queue URLs, ARNs, pool IDs) all work. Returns None when the call may proceed, or the
+    error dict to return as-is. Pass `state` when already holding the state lock."""
+    if app_context is None:
         return None
-    prefix, sep, _ = resource_name.partition("::")
-    if sep != "::" or prefix != app_context:
-        return {
-            "error": "resource_name must be prefixed with this environment's app_context, "
-            "separated by '::'."
-        }
+    catalog = _load_catalog() if catalog is None else catalog
+    cap = catalog.get(capability_id)
+    if cap is None:
+        return None
+    state = _load_state() if state is None else state
+    for other_context, app in state.items():
+        if other_context == app_context:
+            continue
+        for other_cap_id, info in app.get("capabilities", {}).items():
+            if (
+                info.get("resource_name") == resource_name
+                and catalog.get(other_cap_id, {}).get("aws_service") == cap["aws_service"]
+            ):
+                return {
+                    "error": "That resource is already recorded by a different app or "
+                    "environment. Use a different name -- e.g. prefix it with this environment's "
+                    "name -- so the two never share data."
+                }
     return None
 
 
@@ -531,9 +566,9 @@ def get_provisioning_recipe(capability_id: str, resource_name: str, app_context:
     in executing the work with your own tools, never for repeating to the founder. If
     capability_id isn't in list_capabilities(), do not call this -- use
     report_unsupported_request instead."""
-    binding_error = _resource_name_binding_error(app_context, resource_name)
-    if binding_error is not None:
-        return binding_error
+    ownership_error = _ownership_error(app_context, capability_id, resource_name)
+    if ownership_error is not None:
+        return ownership_error
 
     catalog = _load_catalog()
     cap = catalog.get(capability_id)
@@ -576,9 +611,9 @@ def record_provisioned(
     live board's event log. Useful right before the real call, when you want to double-check the
     invocation rather than fire it live. A dry run can never itself produce a PASS -- it never
     ran anything real to justify one."""
-    binding_error = _resource_name_binding_error(app_context, resource_name)
-    if binding_error is not None:
-        return binding_error
+    ownership_error = _ownership_error(app_context, capability_id, resource_name)
+    if ownership_error is not None:
+        return ownership_error
 
     catalog = _load_catalog()
     cap = catalog.get(capability_id)
@@ -637,6 +672,11 @@ def record_provisioned(
 
     with locked(STATE_LOCK_PATH):
         state = _load_state()
+        # The authoritative ownership check: under the lock, so two agents verifying the same
+        # resource concurrently can't both record it.
+        ownership_error = _ownership_error(app_context, capability_id, resource_name, state, catalog)
+        if ownership_error is not None:
+            return ownership_error
         state.setdefault(app_context, {"created": now, "capabilities": {}})
         state[app_context]["capabilities"][capability_id] = {
             "resource_name": resource_name,

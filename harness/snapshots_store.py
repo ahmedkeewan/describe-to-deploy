@@ -5,8 +5,7 @@ environment's stack-state.json entry, recorded by snapshot_environment() and con
 restore_environment() (see research/agdr/AgDR-0003).
 
 Snapshots are scoped to ONE environment's own app_context -- they are not a mechanism for
-seeding a second, independent environment (a true clone would violate the
-resource-name-to-environment binding). restore_environment() re-verifies each
+seeding a second, independent environment (a true clone would give one resource two owners). restore_environment() re-verifies each
 snapshotted capability live before writing it back to stack-state.json, so a snapshot only ever
 resurrects state that still checks out for real right now.
 

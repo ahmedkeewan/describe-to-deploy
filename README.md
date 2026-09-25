@@ -144,7 +144,8 @@ Floci before it updates any state. The agent's own belief that something worked 
 **Design decisions worth stealing**, written up as short agent decision records (AgDRs):
 
 - [AgDR-0001](research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md): isolating
-  multiple agents on one shared backend through naming scope, not per-agent infrastructure.
+  multiple agents on one shared backend by recording which environment owns each resource, not
+  per-agent infrastructure.
 - [AgDR-0002](research/agdr/AgDR-0002-flock-based-state-locking.md): `fcntl.flock`-based
   cross-process state locking for an MCP server where every client spawns its own subprocess.
 - [AgDR-0003](research/agdr/AgDR-0003-snapshot-restore-not-clone.md): environment snapshots save

@@ -44,7 +44,7 @@ class DescribeEnvironmentRealPricingTests(unittest.TestCase):
     def _provision(self, name, capability_id):
         env = mcp_server.create_environment(name)
         app_context = env["app_context"]
-        resource_name = f"{app_context}::x"
+        resource_name = f"{app_context}-x"
         with unittest.mock.patch.object(mcp_server, "_run_verify", return_value=(True, "ok")):
             mcp_server.record_provisioned(app_context, capability_id, resource_name)
         return app_context

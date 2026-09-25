@@ -31,13 +31,13 @@ class RecordProvisionedDiagnosticFieldDocsTests(unittest.TestCase):
              patch.object(mcp_server, "locked"), \
              patch.object(mcp_server, "_load_state", return_value={}), \
              patch.object(mcp_server, "_save_state"):
-            result = mcp_server.record_provisioned("app-x", "file-storage", "app-x::photos")
+            result = mcp_server.record_provisioned("app-x", "file-storage", "app-x-photos")
         self.assertEqual(result["gate_result"], "PASS")
         self.assertNotIn("_diagnostic_for_you_the_calling_agent", result)
 
     def test_diagnostic_field_is_present_and_labeled_on_fail(self):
         with patch.object(mcp_server, "_run_verify", return_value=(False, "not found")):
-            result = mcp_server.record_provisioned("app-x", "file-storage", "app-x::photos")
+            result = mcp_server.record_provisioned("app-x", "file-storage", "app-x-photos")
         self.assertEqual(result["gate_result"], "FAIL")
         diagnostic = result["_diagnostic_for_you_the_calling_agent"]
         self.assertIn("Not for the founder", diagnostic["note"])

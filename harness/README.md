@@ -224,15 +224,16 @@ worktrees, not the founder):
 | `restore_environment(name, snapshot_id)` | Restores a snapshot's capabilities back into state — but only after freshly re-verifying each one live; a capability that no longer verifies is skipped, not restored. Only restores into the same environment the snapshot came from ([AgDR-0003](../research/agdr/AgDR-0003-snapshot-restore-not-clone.md)). Returns `{restored, skipped}`. |
 | `describe_environment(name)` | Reports each of an environment's provisioned capabilities alongside a monthly cost estimate on real AWS. For six capabilities (DynamoDB, SQS, SNS, Step Functions, S3, Lambda) this is computed live from AWS's own public Price List data — see `pricing.py` — against a documented light-usage assumption; every other capability falls back to a hand-written estimate. Either way, explicitly labeled as an estimate, not a quote. |
 
-Calling `get_provisioning_recipe`/`record_provisioned` with an `app_context` from
-`create_environment` enforces an extra check: `resource_name` must have the exact form
-`{app_context}::{suffix}` — a `::`-delimited exact match, not a plain prefix — or the call is
-rejected before any provisioning or verify command runs. Exact match matters because environment
-names are free-form, so a naive prefix check can be spoofed by naming one environment after
-another's full `app_context`; the `::` split closes that. This is what stops one environment from
-recording a false PASS using another environment's resource.
-Calling these tools the way they've always worked — with any other `app_context` string — is
-unaffected.
+Environments share one Floci backend, so they're kept apart by **resource ownership**: a resource
+(its AWS service plus the name or ID its check uses) belongs to the first `app_context` that
+records it. `get_provisioning_recipe`, `record_provisioned`, and `restore_environment` reject any
+other `app_context` that tries to use the same resource, before any provisioning or verify command
+runs, and `record_provisioned` re-checks under the state lock so two agents racing for one
+resource can't both record it. This is what stops one environment from recording a false PASS on,
+or overwriting, another environment's resource. There's no naming format to follow — plain names,
+queue URLs, and ARNs all work — but naming resources after the environment (`<name>-photos`) keeps
+two environments from reaching for the same one. See
+[AgDR-0001](../research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md).
 
 Every tool was tested directly (Python function calls) and over the real MCP protocol (stdio,
 `ClientSession`) against live Floci state, not just imported and assumed to work — including a

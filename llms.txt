@@ -20,7 +20,7 @@ engineering (Agent = Model + Harness), in `research/`.
 
 ## Design decisions
 
-- [AgDR-0001: shared backend naming scope isolation](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md): isolating multiple agents on one shared backend via naming scope, not per-agent infrastructure.
+- [AgDR-0001: shared backend naming scope isolation](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md): isolating multiple agents on one shared backend by resource ownership, not per-agent infrastructure.
 - [AgDR-0002: flock-based state locking](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0002-flock-based-state-locking.md): cross-process state locking for an MCP server where every client spawns its own subprocess.
 - [AgDR-0003: snapshot/restore, not clone](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0003-snapshot-restore-not-clone.md): environment snapshots save recorded state and re-verify it live on restore.
 - [AgDR-0004: ownership metadata, not enforcement](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0004-multi-founder-metadata-not-enforcement.md): environment owners are recorded, not enforced.

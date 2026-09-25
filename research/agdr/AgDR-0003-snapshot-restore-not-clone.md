@@ -13,7 +13,7 @@ status: executed
 > AgDR-0001's naming-scope isolation on one shared Floci backend, I decided to implement
 > snapshot/restore of an environment's recorded stack-state.json entries rather than a true
 > `clone_environment` that duplicates provisioned resources under a new `app_context`, to give
-> agents an undo-style safety net without violating the resource-name-to-environment binding,
+> agents an undo-style safety net without letting two environments own the same resource,
 > accepting that a restored capability is only re-admitted to state after a fresh live
 > re-verification, not blindly copied.
 
@@ -22,23 +22,22 @@ status: executed
 - [#67](https://github.com/ahmedkeewan/service-buddy/issues/67)'s original framing asked for a `clone_environment(name, new_name)` tool "to fork an
   existing environment's provisioned state for a new agent," or a snapshot/restore pair.
 - AgDR-0001 already established that Floci is one shared backend with no per-environment
-  isolation; environments are kept apart only by naming discipline — `app_context` prefixes on
-  `resource_name`, enforced by the exact `::`-delimited binding check in
-  `_resource_name_binding_error()`.
+  isolation; environments are kept apart by resource ownership — a resource belongs to the
+  `app_context` that recorded it (`_ownership_error()`; originally a `::` naming rule, see
+  AgDR-0001's amendment).
 - A literal clone (copy every `stack-state.json` entry from `app_context` A to a new
-  `app_context` B) would produce state entries whose `resource_name` values are still prefixed
-  with A, not B. Any later call through B would fail the binding check [#29](https://github.com/ahmedkeewan/service-buddy/issues/29) built specifically
-  to prevent one environment from claiming another's resources — the clone would either be
-  rejected outright, or (if the binding check were loosened to allow it) would let two
+  `app_context` B) would give B state entries for resources A already owns. The ownership check
+  exists specifically to prevent one environment from claiming another's resources — the clone
+  would either be rejected outright, or (if the check were loosened to allow it) would let two
   environments believe they own the same real bucket/table/etc., which is the exact
-  false-provenance failure AgDR-0001's binding control exists to close.
+  false-provenance failure AgDR-0001's control exists to close.
 
 ## Options Considered
 
 | Option | Pros | Cons |
 |--------|------|------|
-| Snapshot/restore of recorded state, re-verified on restore (chosen) | Never violates the resource-name binding — restore only ever writes state under the *same* `app_context` it was snapshotted from. Re-verification on restore keeps the harness's core "never trust an unchecked claim" guarantee intact even when reintroducing older state. | Not a true fork — doesn't help two *different* agents share a starting point, only lets one environment roll its own recorded state back to an earlier point. |
-| True clone_environment(name, new_name), copying resource_name as-is | Matches the literal ticket wording; gives a new environment head-start state. | Breaks the resource-name-to-environment binding ([#29](https://github.com/ahmedkeewan/service-buddy/issues/29)) the moment the clone's `app_context` differs from the original's. Either the binding check has to be weakened (reopening the false-PASS vulnerability that check was built to close), or the clone's copied entries are permanently unusable through any tool that enforces the binding. |
+| Snapshot/restore of recorded state, re-verified on restore (chosen) | Never gives a resource two owners — restore only ever writes state under the *same* `app_context` it was snapshotted from. Re-verification on restore keeps the harness's core "never trust an unchecked claim" guarantee intact even when reintroducing older state. | Not a true fork — doesn't help two *different* agents share a starting point, only lets one environment roll its own recorded state back to an earlier point. |
+| True clone_environment(name, new_name), copying resource_name as-is | Matches the literal ticket wording; gives a new environment head-start state. | Gives the clone state entries for resources the original already owns. Either the ownership check has to be weakened (reopening the false-PASS vulnerability it was built to close), or the clone's copied entries are rejected by every tool that enforces ownership. |
 | True clone_environment that also re-provisions real resources under the new app_context | Gives a genuinely independent working copy with valid bindings. | This is not a clone, it's a full re-provision — the same cost as building from scratch, defeating the "quick fork" motivation. No demonstrated need for this heavier feature yet. |
 
 ## Decision
@@ -46,7 +45,7 @@ status: executed
 Chosen: **snapshot/restore of recorded state, scoped to a single environment's own
 `app_context`, with restore forcing a fresh live re-verification per capability before it's
 written back to `stack-state.json`.** This is the only option that doesn't require touching or
-weakening the resource-name binding, and it keeps the "state can only advance on a genuine,
+weakening resource ownership, and it keeps the "state can only advance on a genuine,
 freshly-checked PASS" contract (`record_provisioned()`'s existing guarantee) true for restored
 state as well as newly-provisioned state.
 
@@ -55,7 +54,7 @@ state as well as newly-provisioned state.
 - `snapshot_environment(name)` and `restore_environment(name, snapshot_id)` operate on one
   environment's own recorded state — they are not a mechanism for seeding a *second*,
   independent environment with a head start. A future ticket could revisit true multi-agent
-  forking, but it would need to solve the resource-name-binding problem above first (most likely
+  forking, but it would need to solve the resource-ownership problem above first (most likely
   via the heavier "clone that re-provisions" option this AgDR rejected as premature).
 - A capability present in a snapshot but no longer verifying live (the real resource was deleted,
   or Floci was reset) is silently excluded from what `restore_environment` writes back, with the
