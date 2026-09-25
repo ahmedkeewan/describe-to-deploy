@@ -1,0 +1,8 @@
+[project]
+name = "floci-control-plane-mcpb"
+version = "1.0.0"
+description = "MCPB-bundled server half of describe-to-deploy's Floci control-plane harness."
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0",
+]
