@@ -4,6 +4,11 @@ A brief for producing visual designs of the interface specified in [README.md](R
 Self-contained: everything needed to draw the screens is in this file. Copy is verbatim from
 [founder-copy.md](founder-copy.md) and must not be rewritten.
 
+> **Status:** this describes a designed surface that has not been built. What founders use
+> today is chat (Claude Desktop, Claude Code, Cursor) talking to the MCP server in
+> [`harness/`](../harness/). See [README.md](README.md#status-a-designed-surface-not-a-shipped-one)
+> for why this folder is kept and what would need deciding before any of it gets built.
+
 ---
 
 ## What this product is
