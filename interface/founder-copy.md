@@ -61,8 +61,8 @@ The five without a round-trip sentence fall back to the weaker one. That is hone
 founder can see it is weaker — which is the point.
 
 **A note the interface depends on.** As of 2026-09-05 every check in the catalog is an existence
-check, so only the left column is currently earnable. The recorded fix-0 baseline was *stronger*
-than this — it verified photo storage with a byte-identical round trip
+check, so only the left column is currently earnable. The recorded baseline — a bare agent with
+no harness — was *stronger* than this: it verified photo storage with a byte-identical round trip
 ([tasks/README.md](../tasks/README.md)) — so shipping existence-only checks would regress on
 proof strength against the very baseline being compared to. Whoever owns the catalog should add
 round-trip checks for at least the four capabilities exercised by `t1`–`t4`.
