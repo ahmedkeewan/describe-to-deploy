@@ -20,18 +20,20 @@ two separate agent prompts:
     agent could accidentally skip.
 
 Jargon boundary: every string this server returns is built to be founder-safe (plain language,
-no AWS/Floci service names, no ARNs, no ports), EXCEPT the five tools below. Each documents why
+no AWS/Floci service names, no ARNs, no ports), EXCEPT the seven tools below. Each documents why
 in its own docstring:
   - whats_needed_to_go_live() -- the one technical/graduation report in this whole harness.
   - get_provisioning_recipe() -- returns steps, an endpoint, and credentials for the calling
     agent's own tool use; never for the founder.
   - create_environment(), destroy_environment(), list_environments() -- return an app_context
     and/or a board port for the developer/agent managing environments, not the founder.
+  - get_verification_history() -- returns raw event-log entries whose `dev` field carries real
+    service names, commands, and exit codes; never relay one to the founder as-is.
 One narrower, field-level exception: record_provisioned()'s FAIL path and its dry_run=True
 preview path both also return `_diagnostic_for_you_the_calling_agent`, an explicitly-labeled,
 non-founder-safe field carrying the raw verify command (and, on FAIL, its real output). Unlike
-the five tools above, record_provisioned()'s own `founder_message` stays founder-safe in every
-case -- only that one extra, clearly-named field is not. See its own docstring.
+the tools above, record_provisioned()'s own `founder_message` stays founder-safe in every case --
+only that one extra, clearly-named field is not. See its own docstring.
 
 Run: source harness/.venv/bin/activate && python3 harness/mcp_server.py
 """
@@ -236,6 +238,28 @@ def list_environments() -> list[dict]:
     founder."""
     envs = load_environments()
     return [{"name": name, **info} for name, info in envs.items()]
+
+
+@server.tool()
+def get_verification_history(
+    app_context: str | None = None,
+    capability_id: str | None = None,
+    since: str | None = None,
+    until: str | None = None,
+) -> list[dict]:
+    """Query the durable event log for what changed and when, without needing the live board open
+    at the time it happened (GH-71). Filters are all optional and combine with AND: app_context
+    narrows to one environment/product, capability_id to one capability, since/until (ISO-8601
+    timestamps, e.g. "2026-09-25T00:00:00Z") to a time range. With no filters, returns the entire
+    history.
+
+    NOT founder-facing -- each event's `dev` field carries real service names, commands, and exit
+    codes (the interface's "Details for a developer" panel data). Never relay a raw event to the
+    founder; each event's `founder` field is the plain-language version if you need to summarize
+    one for them."""
+    return events_log.query(
+        app_context=app_context, capability=capability_id, since=since, until=until
+    )
 
 
 @server.tool()
