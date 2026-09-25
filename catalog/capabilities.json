@@ -20,7 +20,10 @@
           "create-user-pool",
           "create-user-pool-client (no secret, for a web/mobile app)"
         ],
-        "state_fields": ["userPoolId", "clientId"]
+        "state_fields": [
+          "userPoolId",
+          "clientId"
+        ]
       },
       "verify": {
         "cli": "CID=$(aws cognito-idp list-user-pool-clients --user-pool-id <userPoolId> --query 'UserPoolClients[0].ClientId' --output text) && U=\"gatecheck-$(date +%s%N)@example.com\" && aws cognito-idp sign-up --client-id \"$CID\" --username \"$U\" --password 'GateCheck123!' > /dev/null && aws cognito-idp admin-confirm-sign-up --user-pool-id <userPoolId> --username \"$U\" > /dev/null && aws cognito-idp initiate-auth --client-id \"$CID\" --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=\"$U\",PASSWORD='GateCheck123!' > /dev/null && aws cognito-idp admin-delete-user --user-pool-id <userPoolId> --username \"$U\"",
@@ -29,9 +32,13 @@
         "hardened_note": "Upgraded 2026-09-05 per interface/founder-copy.md's round-trip standard -- discovers the pool's client via list-user-pool-clients since the plan only carries userPoolId, not clientId."
       },
       "wiring": {
-        "env_vars": ["COGNITO_USER_POOL_ID", "COGNITO_CLIENT_ID", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "COGNITO_USER_POOL_ID",
+          "COGNITO_CLIENT_ID",
+          "AWS_ENDPOINT_URL"
+        ]
       },
-      "cloud_equivalent_note": "Same Cognito User Pool concept in real AWS — no redesign needed to retarget after PMF."
+      "cloud_equivalent_note": "Same Cognito User Pool concept in real AWS \u2014 no redesign needed to retarget after PMF."
     },
     {
       "id": "file-storage",
@@ -46,8 +53,12 @@
       "aws_service": "s3",
       "floci_services_flag": "s3",
       "provision": {
-        "steps": ["create bucket named after the app, e.g. <app-slug>-uploads"],
-        "state_fields": ["bucketName"]
+        "steps": [
+          "create bucket named after the app, e.g. <app-slug>-uploads"
+        ],
+        "state_fields": [
+          "bucketName"
+        ]
       },
       "verify": {
         "cli": "K=__gate_check__/$(date +%s%N); echo gate-check-$K > /tmp/__gate_check__.txt && aws s3 cp /tmp/__gate_check__.txt s3://<bucketName>/$K && aws s3 cp s3://<bucketName>/$K /tmp/__gate_check_out__.txt && cmp -s /tmp/__gate_check__.txt /tmp/__gate_check_out__.txt && aws s3 rm s3://<bucketName>/$K",
@@ -56,7 +67,10 @@
         "hardened_note": "Upgraded 2026-09-05 after fix-4 testing showed the original `aws s3 ls` check would NOT have caught the S3 Object Lock collision found in tasks/task-set.json t6 -- listing a bucket succeeds even when every write/delete in it is blocked. The delete step here is specifically what would have caught it."
       },
       "wiring": {
-        "env_vars": ["S3_BUCKET_NAME", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "S3_BUCKET_NAME",
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same S3 bucket concept in real AWS."
     },
@@ -73,8 +87,12 @@
       "aws_service": "dynamodb",
       "floci_services_flag": "dynamodb",
       "provision": {
-        "steps": ["create-table with a partition key inferred from the request, e.g. 'id'"],
-        "state_fields": ["tableName"]
+        "steps": [
+          "create-table with a partition key inferred from the request, e.g. 'id'"
+        ],
+        "state_fields": [
+          "tableName"
+        ]
       },
       "verify": {
         "cli": "K=\"gatecheck-$(date +%s%N)\" && aws dynamodb put-item --table-name <tableName> --item \"{\\\"id\\\":{\\\"S\\\":\\\"$K\\\"}}\" > /dev/null && aws dynamodb get-item --table-name <tableName> --key \"{\\\"id\\\":{\\\"S\\\":\\\"$K\\\"}}\" | grep -q \"$K\" && aws dynamodb delete-item --table-name <tableName> --key \"{\\\"id\\\":{\\\"S\\\":\\\"$K\\\"}}\"",
@@ -83,7 +101,10 @@
         "hardened_note": "Upgraded 2026-09-05 per interface/founder-copy.md's round-trip standard."
       },
       "wiring": {
-        "env_vars": ["DYNAMODB_TABLE_NAME", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "DYNAMODB_TABLE_NAME",
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same DynamoDB table concept in real AWS."
     },
@@ -98,13 +119,17 @@
       "founder_description": "Runs a small piece of work in the background (like resizing a photo) without making the user wait.",
       "aws_service": "lambda",
       "floci_services_flag": "lambda",
-      "depends_on": ["file-storage"],
+      "depends_on": [
+        "file-storage"
+      ],
       "provision": {
         "steps": [
           "create-function from a small starter handler",
           "wire an S3 event notification (ObjectCreated) to invoke it"
         ],
-        "state_fields": ["functionName"]
+        "state_fields": [
+          "functionName"
+        ]
       },
       "verify": {
         "cli": "aws lambda invoke --function-name <functionName> --payload '{}' --cli-binary-format raw-in-base64-out /tmp/__gate_lambda_out__.json > /tmp/__gate_lambda_meta__.json && ! grep -q FunctionError /tmp/__gate_lambda_meta__.json",
@@ -113,7 +138,9 @@
         "hardened_note": "Upgraded 2026-09-05 per interface/founder-copy.md's round-trip standard."
       },
       "wiring": {
-        "env_vars": ["AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same Lambda + S3 event-notification pattern in real AWS."
     },
@@ -130,8 +157,12 @@
       "floci_service_name": "email",
       "floci_services_flag": "email",
       "provision": {
-        "steps": ["verify-email-identity for a sender address"],
-        "state_fields": ["senderIdentity"]
+        "steps": [
+          "verify-email-identity for a sender address"
+        ],
+        "state_fields": [
+          "senderIdentity"
+        ]
       },
       "verify": {
         "cli": "FROM=$(aws ses list-identities --query 'Identities[0]' --output text) && aws ses send-email --from \"$FROM\" --destination \"ToAddresses=test@example.com\" --message \"Subject={Data=Verification check},Body={Text={Data=test}}\"",
@@ -140,7 +171,10 @@
         "hardened_note": "Upgraded 2026-09-05 per interface/founder-copy.md's round-trip standard."
       },
       "wiring": {
-        "env_vars": ["SES_SENDER_ADDRESS", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "SES_SENDER_ADDRESS",
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same SES identity concept in real AWS."
     },
@@ -156,10 +190,16 @@
       "founder_description": "Runs something automatically on a schedule, like a weekly digest email.",
       "aws_service": "scheduler",
       "floci_services_flag": "scheduler",
-      "depends_on": ["background-job"],
+      "depends_on": [
+        "background-job"
+      ],
       "provision": {
-        "steps": ["create-schedule targeting an existing Lambda function"],
-        "state_fields": ["scheduleName"]
+        "steps": [
+          "create-schedule targeting an existing Lambda function"
+        ],
+        "state_fields": [
+          "scheduleName"
+        ]
       },
       "verify": {
         "cli": "aws scheduler get-schedule --name <scheduleName>",
@@ -167,7 +207,9 @@
         "founder_proof": "checked that the schedule is set and active"
       },
       "wiring": {
-        "env_vars": ["AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same EventBridge Scheduler concept in real AWS."
     },
@@ -183,8 +225,12 @@
       "aws_service": "sqs",
       "floci_services_flag": "sqs",
       "provision": {
-        "steps": ["create-queue"],
-        "state_fields": ["queueUrl"]
+        "steps": [
+          "create-queue"
+        ],
+        "state_fields": [
+          "queueUrl"
+        ]
       },
       "verify": {
         "cli": "aws sqs get-queue-attributes --queue-url <queueUrl> --attribute-names All",
@@ -192,7 +238,10 @@
         "founder_proof": "checked that the work queue is up and ready"
       },
       "wiring": {
-        "env_vars": ["SQS_QUEUE_URL", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "SQS_QUEUE_URL",
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same SQS queue concept in real AWS."
     },
@@ -208,8 +257,12 @@
       "aws_service": "sns",
       "floci_services_flag": "sns",
       "provision": {
-        "steps": ["create-topic"],
-        "state_fields": ["topicArn"]
+        "steps": [
+          "create-topic"
+        ],
+        "state_fields": [
+          "topicArn"
+        ]
       },
       "verify": {
         "cli": "aws sns get-topic-attributes --topic-arn <topicArn>",
@@ -217,7 +270,10 @@
         "founder_proof": "checked that the notification sender is up and ready"
       },
       "wiring": {
-        "env_vars": ["SNS_TOPIC_ARN", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "SNS_TOPIC_ARN",
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same SNS topic concept in real AWS."
     },
@@ -233,8 +289,12 @@
       "aws_service": "secretsmanager",
       "floci_services_flag": "secretsmanager",
       "provision": {
-        "steps": ["create-secret with the value provided by the founder"],
-        "state_fields": ["secretName"]
+        "steps": [
+          "create-secret with the value provided by the founder"
+        ],
+        "state_fields": [
+          "secretName"
+        ]
       },
       "verify": {
         "cli": "aws secretsmanager describe-secret --secret-id <secretName>",
@@ -242,7 +302,9 @@
         "founder_proof": "checked that the secure storage is up and ready"
       },
       "wiring": {
-        "env_vars": ["AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same Secrets Manager concept in real AWS."
     },
@@ -258,8 +320,12 @@
       "aws_service": "ssm",
       "floci_services_flag": "ssm",
       "provision": {
-        "steps": ["put-parameter for each setting"],
-        "state_fields": ["parameterPrefix"]
+        "steps": [
+          "put-parameter for each setting"
+        ],
+        "state_fields": [
+          "parameterPrefix"
+        ]
       },
       "verify": {
         "cli": "aws ssm describe-parameters",
@@ -267,7 +333,9 @@
         "founder_proof": "checked that the settings store is up and answering"
       },
       "wiring": {
-        "env_vars": ["AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same Parameter Store concept in real AWS."
     },
@@ -282,13 +350,17 @@
       "founder_description": "Gives your app a backend it can call over the internet to do server-side logic.",
       "aws_service": "apigateway",
       "floci_services_flag": "apigateway,lambda",
-      "depends_on": ["background-job"],
+      "depends_on": [
+        "background-job"
+      ],
       "provision": {
         "steps": [
           "create-rest-api",
           "wire routes to Lambda functions created for this app"
         ],
-        "state_fields": ["apiId"]
+        "state_fields": [
+          "apiId"
+        ]
       },
       "verify": {
         "cli": "aws apigateway get-rest-api --rest-api-id <apiId>",
@@ -296,7 +368,10 @@
         "founder_proof": "checked that the backend is up and answering"
       },
       "wiring": {
-        "env_vars": ["API_BASE_URL", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "API_BASE_URL",
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same API Gateway + Lambda concept in real AWS."
     },
@@ -311,8 +386,12 @@
       "aws_service": "es",
       "floci_services_flag": "es",
       "provision": {
-        "steps": ["create-elasticsearch-domain (small, single-node)"],
-        "state_fields": ["domainName"]
+        "steps": [
+          "create-elasticsearch-domain (small, single-node)"
+        ],
+        "state_fields": [
+          "domainName"
+        ]
       },
       "verify": {
         "cli": "aws es describe-elasticsearch-domain --domain-name <domainName>",
@@ -320,18 +399,53 @@
         "founder_proof": "checked that search is up and ready"
       },
       "wiring": {
-        "env_vars": ["SEARCH_ENDPOINT", "AWS_ENDPOINT_URL"]
+        "env_vars": [
+          "SEARCH_ENDPOINT",
+          "AWS_ENDPOINT_URL"
+        ]
       },
       "cloud_equivalent_note": "Same OpenSearch/Elasticsearch concept in real AWS."
+    },
+    {
+      "id": "multi-step-workflow",
+      "phrases": [
+        "run a multi-step process",
+        "do these steps in order",
+        "a workflow that runs step by step",
+        "chain a few actions together",
+        "an onboarding flow with several steps"
+      ],
+      "founder_description": "Runs a multi-step process in order -- like sending a welcome email, then waiting a day, then checking if they've logged in.",
+      "aws_service": "stepfunctions",
+      "floci_services_flag": "stepfunctions",
+      "provision": {
+        "steps": [
+          "create-state-machine from a small starter definition (a linear chain of steps)"
+        ],
+        "state_fields": [
+          "stateMachineArn"
+        ]
+      },
+      "verify": {
+        "cli": "EXEC=$(aws stepfunctions start-execution --state-machine-arn <stateMachineArn> --input '{}' --query executionArn --output text) && for i in 1 2 3 4 5; do STATUS=$(aws stepfunctions describe-execution --execution-arn \"$EXEC\" --query status --output text); [ \"$STATUS\" != \"RUNNING\" ] && break; sleep 1; done && [ \"$STATUS\" = \"SUCCEEDED\" ]",
+        "success_criteria": "a real execution with test input actually completes (SUCCEEDED), not just that the state machine is registered",
+        "founder_proof": "ran the whole process once end-to-end and every step finished"
+      },
+      "wiring": {
+        "env_vars": [
+          "AWS_ENDPOINT_URL"
+        ]
+      },
+      "cloud_equivalent_note": "Same Step Functions state machine concept in real AWS -- no redesign needed to retarget after PMF."
     }
   ],
   "explicitly_not_covered": {
-    "note": "Requests matching these (or anything else outside the list above) must hit the conservative fallback rule in catalog/README.md — never a free-form floci-cli guess.",
+    "note": "Requests matching these (or anything else outside the list above) must hit the conservative fallback rule in catalog/README.md \u2014 never a free-form floci-cli guess.",
     "examples": [
       "real-time chat / websockets (no managed WebSocket emulation verified yet)",
       "video encoding/transcoding",
       "machine learning / AI inference beyond bedrock-runtime passthrough",
-      "payments processing (out of scope for local infra entirely — always a real, hosted provider)"
+      "payments processing (out of scope for local infra entirely \u2014 always a real, hosted provider)"
     ]
   }
 }
