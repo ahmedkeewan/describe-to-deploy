@@ -20,7 +20,7 @@ two separate agent prompts:
     agent could accidentally skip.
 
 Jargon boundary: every string this server returns is built to be founder-safe (plain language,
-no AWS/Floci service names, no ARNs, no ports), EXCEPT the nine tools below. Each documents why
+no AWS/Floci service names, no ARNs, no ports), EXCEPT the ten tools below. Each documents why
 in its own docstring:
   - whats_needed_to_go_live() -- the one technical/graduation report in this whole harness.
   - get_provisioning_recipe() -- returns steps, an endpoint, and credentials for the calling
@@ -31,6 +31,8 @@ in its own docstring:
     service names, commands, and exit codes; never relay one to the founder as-is.
   - snapshot_environment(), restore_environment() -- return a snapshot_id, capability_id list,
     and app_context-scoped resource state for the developer/agent, not the founder.
+  - describe_environment() -- returns AWS service names and cost estimates for the
+    developer/agent, not the founder.
 One narrower, field-level exception: record_provisioned()'s FAIL path and its dry_run=True
 preview path both also return `_diagnostic_for_you_the_calling_agent`, an explicitly-labeled,
 non-founder-safe field carrying the raw verify command (and, on FAIL, its real output). Unlike
@@ -75,6 +77,28 @@ ENV = {
 # technical design's Error responses table.
 ENVIRONMENT_NAME_RE = re.compile(r"^[a-z0-9-]{3,40}$")
 BOARD_PORT_RANGE = range(7777, 7877)
+
+# Rough, illustrative monthly cost ranges for LIGHT early-stage usage on real AWS, keyed by
+# aws_service (GH-68). These are commonly-cited free-tier/pricing figures, not a quote -- actual
+# cost depends on usage volume, region, and AWS's own pricing changes over time. Only used by
+# describe_environment() to give a developer/agent a rough sense of what "going live" (see
+# go_live_plan.py/whats_needed_to_go_live()) would cost, never surfaced to the founder as a
+# precise number.
+APPROX_MONTHLY_COST_USD = {
+    "cognito-idp": "~$0 under ~50k monthly active users (Cognito's free tier), then usage-based",
+    "s3": "~$0-5 for light storage + request volume (mostly covered by the free tier initially)",
+    "dynamodb": "~$0-5 on-demand pricing for light usage (free tier covers the first 25GB storage)",
+    "lambda": "~$0 for light usage (1M free requests/month)",
+    "ses": "~$0-a few dollars for light usage (about $0.10 per 1,000 emails after the free tier)",
+    "scheduler": "~$0 for light usage (1M free EventBridge invocations/month)",
+    "sqs": "~$0 for light usage (1M free requests/month)",
+    "sns": "~$0 for light usage (1M free requests/month for many message types)",
+    "secretsmanager": "~$0.40/month per secret, plus a small per-API-call cost",
+    "ssm": "~$0 for standard-tier parameters",
+    "apigateway": "~$0-5 for light usage (1M free API calls/month for the first 12 months)",
+    "es": "~$25-50+/month minimum -- typically the most expensive capability here; managed search domains aren't covered by the same free tier as the others",
+    "stepfunctions": "~$0 for light usage (4,000 free state transitions/month)",
+}
 
 server = MCPServer(
     name="floci-control-plane",
@@ -361,6 +385,52 @@ def restore_environment(name: str, snapshot_id: str) -> dict:
             _save_state(state)
 
     return {"restored": restored, "skipped": skipped}
+
+
+@server.tool()
+def describe_environment(name: str) -> dict:
+    """Report each of an environment's currently-provisioned capabilities alongside a rough,
+    illustrative estimate of what it would cost per month on real AWS (GH-68) -- built from the
+    same aws_service/cloud_equivalent_note fields go_live_plan.py and whats_needed_to_go_live()
+    already use, just with a cost figure attached. These are ROUGH ESTIMATES for light,
+    early-stage usage, not a quote -- actual cost depends on real usage volume, region, and AWS's
+    own pricing over time. Always relay them with that caveat, never as a guaranteed number.
+
+    NOT founder-facing -- service names, cost figures, and cloud_equivalent_note text are all
+    developer/agent-facing detail."""
+    envs = load_environments()
+    env = envs.get(name)
+    if env is None:
+        return {"error": f"No environment named '{name}'."}
+    app_context = env["app_context"]
+
+    state = _load_state()
+    capabilities = state.get(app_context, {}).get("capabilities", {})
+    catalog = _load_catalog()
+
+    line_items = []
+    for capability_id, entry in capabilities.items():
+        cap = catalog.get(capability_id)
+        if cap is None:
+            continue
+        line_items.append({
+            "capability_id": capability_id,
+            "aws_service": cap["aws_service"],
+            "approx_monthly_cost_usd": APPROX_MONTHLY_COST_USD.get(
+                cap["aws_service"], "no estimate available for this service"
+            ),
+            "cloud_equivalent_note": cap["cloud_equivalent_note"],
+        })
+
+    return {
+        "environment": name,
+        "capabilities": line_items,
+        "caveat": (
+            "These are rough, illustrative estimates for light early-stage usage on real AWS -- "
+            "not a quote. Actual cost depends on real usage volume, region, and AWS's own "
+            "pricing over time."
+        ),
+    }
 
 
 @server.tool()
