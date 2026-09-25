@@ -1,26 +1,62 @@
 # Describe to Deploy
 
-**To run the working demo:** `./setup.sh` from the repo root checks for Docker, installs Floci if
-needed (with confirmation), sets up the harness Python environment, and wires the MCP server into
-Claude Desktop, Claude Code, and Cursor. See [`harness/README.md`](harness/README.md) for what it
-does and the manual steps it automates.
+This repo has two parts: a working demo harness (an MCP server that turns a plain-language
+product request into real, verified infrastructure) and a research reference on harness
+engineering as a discipline.
 
-**Working definition (consensus across sources):** `Agent = Model + Harness`. The harness is everything around the model: system prompt, tools/skills/MCP, sandbox/filesystem, orchestration (subagents, routing), hooks/middleware (compaction, doom-loop detection, verification), memory/state across context windows, and permissions. Harness changes alone have moved Terminal-Bench 2.0 scores by 10-14 points with the same model.
+Jump to the section that's for you:
 
-## What's in this repo
+- [For Founders](#for-founders) — you want to try the demo or use the harness on your own idea
+- [For Engineers](#for-engineers) — you want to understand or extend the harness
+- [For AI Agents](#for-ai-agents) — you're an AI coding agent working with this repo
 
-This repo has two parts:
+## For Founders
 
-1. **A working demo harness** — an MCP server (`harness/`) that turns a non-technical founder's
-   plain-language product request ("users should be able to upload a photo") into a verified,
-   running local infra environment on [Floci](https://floci.io/), using a capability catalog
-   (`catalog/`) and a fixed scoring task set (`tasks/`). See [`harness/README.md`](harness/README.md)
-   to run it, and [`GAME_PLAN.md`](docs/history/GAME_PLAN.md) for the design behind it.
-2. **A research reference** ([`docs/research-links.md`](docs/research-links.md) +
-   [`VOCAB.md`](VOCAB.md)) — a curated link pack and shared vocabulary on harness engineering as a
-   discipline.
+Describe what you want in plain English — "let people sign up," "store the photos users
+upload," "run something on a schedule" — and the harness sets it up for you, then checks that it
+actually works before ever telling you it's done. If something isn't working yet, it says so
+plainly instead of pretending.
 
-## Project layout
+**To try it:** `./setup.sh` from the repo root gets everything running (it checks for and
+installs what it needs, with your confirmation before anything gets installed). Once it's
+running, just talk to it in your normal AI chat app — no commands to memorize, nothing technical
+to learn first.
+
+That's the whole idea: you describe what you want, and the harness only ever tells you it's
+ready once it has actually checked.
+
+## For Engineers
+
+**Working definition (consensus across sources):** `Agent = Model + Harness`. The harness is
+everything around the model: system prompt, tools/skills/MCP, sandbox/filesystem, orchestration
+(subagents, routing), hooks/middleware (compaction, doom-loop detection, verification),
+memory/state across context windows, and permissions. Harness changes alone have moved
+Terminal-Bench 2.0 scores by 10-14 points with the same model.
+
+This repo's demo harness is an MCP server (`harness/`) that turns a non-technical founder's
+plain-language product request ("users should be able to upload a photo") into a verified,
+running local infra environment on [Floci](https://floci.io/), using a capability catalog
+(`catalog/`) and a fixed scoring task set (`tasks/`). See [`harness/README.md`](harness/README.md)
+to run it, and [`GAME_PLAN.md`](docs/history/GAME_PLAN.md) for the design behind it.
+
+**Design patterns worth stealing**, independent of this specific product:
+
+- [AgDR-0001](docs/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md) — isolating multiple
+  agents on one shared backend via naming scope, not per-agent infrastructure instances.
+- [AgDR-0002](docs/agdr/AgDR-0002-flock-based-state-locking.md) — `fcntl.flock`-based
+  cross-process state locking for an MCP server where every client spawns its own subprocess.
+
+**The benchmark data is real, including the negative results.** [`tasks/README.md`](tasks/README.md)
+tracks before/after numbers across every harness change — including the one deliberate negative
+finding (a baseline agent asked to build "real-time chat," an uncataloged capability, freelanced
+a full WebSocket stack instead of asking a clarifying question). Jargon leaks alone went from
+5/6 to 0/6 after the capability catalog landed.
+
+**Research reference** ([`docs/research-links.md`](docs/research-links.md) +
+[`VOCAB.md`](VOCAB.md)) — a curated link pack and shared vocabulary on harness engineering as a
+discipline.
+
+### Project layout
 
 | Path | What it is |
 |---|---|
@@ -34,3 +70,10 @@ This repo has two parts:
 | `VOCAB.md` | Shared harness-engineering vocabulary, elaborated from the research in `docs/research-links.md` |
 
 See [LICENSE](LICENSE) for terms, and [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
+
+## For AI Agents
+
+If you're an AI coding agent wiring up or calling this MCP server, see
+[AGENTS.md](AGENTS.md) for the tool list and connection details. If you're an AI
+crawler or answering a question about this repo, see [llms.txt](llms.txt) for a
+machine-readable summary.
