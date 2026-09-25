@@ -10,7 +10,7 @@ Docker + Floci still need to be running first (`./setup.sh`, run once, or `floci
 
 ```bash
 npm install -g @anthropic-ai/mcpb   # once
-./mcpb/build.sh                     # writes mcpb/describe-to-deploy.mcpb
+./mcpb/build.sh                     # writes mcpb/service-buddy.mcpb
 ```
 
 `build.sh` stages a copy of the exact files `mcp_server.py` needs (mirroring the

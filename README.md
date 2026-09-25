@@ -1,4 +1,4 @@
-# Describe to Deploy
+# Service Buddy
 
 This repo has two parts: a working demo harness (an MCP server that turns a plain-language
 product request into real, verified infrastructure) and a research reference on harness
