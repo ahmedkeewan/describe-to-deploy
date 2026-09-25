@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness Engineering Research</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666666;
+    --card-bg: #f7f7f8;
+    --border: #e2e2e5;
+    --accent: #2563eb;
+    --pass-bg: #ecfdf3;
+    --pass-fg: #067647;
+    --working-bg: #fff8e6;
+    --working-fg: #92660b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e0e10;
+      --fg: #eaeaea;
+      --muted: #9a9a9a;
+      --card-bg: #17171a;
+      --border: #2a2a2e;
+      --pass-bg: #0e2a1c;
+      --pass-fg: #4ade80;
+      --working-bg: #2a2410;
+      --working-fg: #facc15;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+  h1 { font-size: 1.75rem; margin-bottom: 0.25em; }
+  .tagline { color: var(--muted); font-size: 1.05rem; margin-top: 0; }
+  .promise {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 32px 0 8px;
+  }
+  .board {
+    margin-top: 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg);
+  }
+  .board-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .row {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .row.visible { opacity: 1; transform: translateY(0); }
+  .row:last-child { border-bottom: none; }
+  .row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .row-label { font-weight: 500; }
+  .status-pill {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .status-pill.working { background: var(--working-bg); color: var(--working-fg); }
+  .status-pill.pass { background: var(--pass-bg); color: var(--pass-fg); }
+  .row-proof { font-size: 0.9rem; color: var(--muted); }
+  #replay-btn {
+    margin-top: 16px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  #replay-btn:hover { background: var(--card-bg); }
+  section { margin-top: 48px; }
+  h2 { font-size: 1.15rem; }
+  a { color: var(--accent); }
+  .note {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Harness Engineering Research</h1>
+  <p class="tagline">Describe what you want in plain English. It only tells you it's ready once it's actually checked.</p>
+
+  <p class="promise">Watch a real run, captured live</p>
+  <p>
+    This is a genuine, previously-recorded run of the harness building a multi-step request
+    ("resize an uploaded photo, then send a confirmation email") &mdash; three linked
+    capabilities, each independently checked before it's shown as working. Nothing here is
+    staged copy; it's the real founder-facing messages the harness produced.
+  </p>
+
+  <div class="board" id="board">
+    <div class="board-header">
+      <span>Live board</span>
+      <span id="board-status">watching&hellip;</span>
+    </div>
+    <div id="rows"></div>
+  </div>
+  <button id="replay-btn">Replay demo</button>
+
+  <section>
+    <h2>Ready to use it on your own idea?</h2>
+    <p>
+      Run <code>./setup.sh</code> from the
+      <a href="https://github.com/ahmedkeewan/harness-engineering-research">repo root</a> to get
+      it running for real &mdash; it checks for and installs what it needs, with your
+      confirmation before anything gets installed. See the
+      <a href="https://github.com/ahmedkeewan/harness-engineering-research#for-founders">README's
+      Founders section</a> for the full picture.
+    </p>
+  </section>
+
+  <section>
+    <h2>For engineers</h2>
+    <p>
+      This is the founder-facing side of a larger project. See the
+      <a href="https://github.com/ahmedkeewan/harness-engineering-research">main repository</a>
+      for the architecture, design decisions, and benchmark data.
+    </p>
+    <p class="note">
+      Design patterns worth stealing:
+      <a href="https://github.com/ahmedkeewan/harness-engineering-research/blob/main/docs/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md">shared-backend naming-scope isolation</a>
+      &middot;
+      <a href="https://github.com/ahmedkeewan/harness-engineering-research/blob/main/docs/agdr/AgDR-0002-flock-based-state-locking.md">flock-based state locking</a>
+    </p>
+  </section>
+</main>
+
+<script>
+(function () {
+  const rowsEl = document.getElementById("rows");
+  const statusEl = document.getElementById("board-status");
+  const replayBtn = document.getElementById("replay-btn");
+  let events = [];
+  let playing = false;
+
+  const CAPABILITY_ORDER = [];
+  const rowElements = {};
+
+  function ensureRow(capability, label) {
+    if (rowElements[capability]) return rowElements[capability];
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <div class="row-top">
+        <span class="row-label">${label}</span>
+        <span class="status-pill working">setting up&hellip;</span>
+      </div>
+      <div class="row-proof"></div>
+    `;
+    rowsEl.appendChild(row);
+    rowElements[capability] = row;
+    CAPABILITY_ORDER.push(capability);
+    requestAnimationFrame(() => row.classList.add("visible"));
+    return row;
+  }
+
+  function applyEvent(event) {
+    const { capability, founder } = event;
+    const row = ensureRow(capability, founder.label);
+    const pill = row.querySelector(".status-pill");
+    const proof = row.querySelector(".row-proof");
+    pill.textContent = founder.status;
+    pill.className = "status-pill " + (founder.status === "working" ? "pass" : "working");
+    proof.textContent = founder.proof || "";
+  }
+
+  function reset() {
+    rowsEl.innerHTML = "";
+    for (const key of Object.keys(rowElements)) delete rowElements[key];
+    CAPABILITY_ORDER.length = 0;
+    statusEl.textContent = "watching…";
+  }
+
+  function play() {
+    if (playing) return;
+    playing = true;
+    reset();
+    let i = 0;
+    function step() {
+      if (i >= events.length) {
+        statusEl.textContent = "all working";
+        playing = false;
+        return;
+      }
+      applyEvent(events[i]);
+      i += 1;
+      setTimeout(step, 900);
+    }
+    step();
+  }
+
+  fetch("assets/demo-events.json")
+    .then((r) => r.json())
+    .then((data) => {
+      events = data;
+      play();
+    })
+    .catch(() => {
+      statusEl.textContent = "demo data unavailable";
+    });
+
+  replayBtn.addEventListener("click", play);
+})();
+</script>
+</body>
+</html>
