@@ -27,11 +27,11 @@ in its own docstring:
     agent's own tool use; never for the founder.
   - create_environment(), destroy_environment(), list_environments() -- return an app_context
     and/or a board port for the developer/agent managing environments, not the founder.
-One narrower, field-level exception: record_provisioned()'s FAIL path also returns
-`_diagnostic_for_you_the_calling_agent`, an explicitly-labeled, non-founder-safe field carrying
-the raw verify command and its output. Unlike the five tools above, record_provisioned()'s own
-`founder_message` stays founder-safe in every case -- only that one extra, clearly-named field is
-not. See its own docstring.
+One narrower, field-level exception: record_provisioned()'s FAIL path and its dry_run=True
+preview path both also return `_diagnostic_for_you_the_calling_agent`, an explicitly-labeled,
+non-founder-safe field carrying the raw verify command (and, on FAIL, its real output). Unlike
+the five tools above, record_provisioned()'s own `founder_message` stays founder-safe in every
+case -- only that one extra, clearly-named field is not. See its own docstring.
 
 Run: source harness/.venv/bin/activate && python3 harness/mcp_server.py
 """
@@ -341,7 +341,9 @@ def get_provisioning_recipe(capability_id: str, resource_name: str, app_context:
 
 
 @server.tool()
-def record_provisioned(app_context: str, capability_id: str, resource_name: str) -> dict:
+def record_provisioned(
+    app_context: str, capability_id: str, resource_name: str, dry_run: bool = False
+) -> dict:
     """Call this after you've actually run the provisioning steps. This server independently
     re-verifies for real against live Floci -- your own belief that it worked is not sufficient
     and is not trusted. State is only ever updated on a genuine, freshly-checked PASS. Returns a
@@ -349,7 +351,13 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
     technical detail that isn't in it. On FAIL only, the response also carries
     `_diagnostic_for_you_the_calling_agent`: the raw verify command and its real output, for your
     own debugging. That field can contain AWS/Floci jargon (an ARN, a bucket or table name, raw
-    CLI output) -- it is not founder-safe and must never be relayed to the founder."""
+    CLI output) -- it is not founder-safe and must never be relayed to the founder.
+
+    Pass dry_run=True to preview the exact command this call would run and what it would check,
+    WITHOUT executing anything against live Floci and WITHOUT touching stack-state.json or the
+    live board's event log. Useful right before the real call, when you want to double-check the
+    invocation rather than fire it live. A dry run can never itself produce a PASS -- it never
+    ran anything real to justify one."""
     binding_error = _resource_name_binding_error(app_context, resource_name)
     if binding_error is not None:
         return binding_error
@@ -358,6 +366,24 @@ def record_provisioned(app_context: str, capability_id: str, resource_name: str)
     cap = catalog.get(capability_id)
     if cap is None:
         return {"gate_result": "FAIL", "founder_message": "That isn't something I can verify."}
+
+    if dry_run:
+        return {
+            "dry_run": True,
+            "gate_result": "NOT_RUN",
+            "founder_message": (
+                "Just double-checking before I confirm anything's ready -- nothing has actually "
+                "been checked yet."
+            ),
+            "_diagnostic_for_you_the_calling_agent": {
+                "note": "PREVIEW ONLY -- not executed. This is the exact command a real "
+                "(non-dry-run) call would run, and what it would check.",
+                "command_that_would_run": _substitute_placeholders(
+                    cap["verify"]["cli"], resource_name
+                ),
+                "success_criteria": cap["verify"]["success_criteria"],
+            },
+        }
 
     events_log.emit(
         "verify.start", capability_id,
