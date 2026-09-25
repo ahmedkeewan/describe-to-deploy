@@ -10,6 +10,7 @@ stack-plan.json
 stack-state.json
 events.jsonl
 environments.json
+environment-snapshots.json
 *.lock
 
 # Local env
