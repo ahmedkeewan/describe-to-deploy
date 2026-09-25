@@ -137,6 +137,11 @@ or `~/.cursor/mcp.json` (global):
 `record_provisioned`, `report_unsupported_request`, `check_app_readiness`, `wire_app_config`,
 `whats_needed_to_go_live`.
 
+`record_provisioned` accepts an optional `dry_run=True` flag: it returns the exact verify
+command and success criteria a real call would use, without executing anything against live
+Floci or touching `stack-state.json` — a way to double-check the invocation right before firing
+it for real. A dry run can never itself produce `PASS`/`FAIL`; its `gate_result` is `NOT_RUN`.
+
 **Environment-management tools** (for the developer running multiple agents in parallel
 worktrees, not the founder):
 
