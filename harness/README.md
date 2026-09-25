@@ -102,7 +102,7 @@ python3 -m unittest discover -s harness/tests
 ### Connecting to Claude Desktop
 
 **Recommended: the `.mcpb` Desktop Extension (GH-92).** Run `./mcpb/build.sh` (requires the
-`mcpb` CLI — `npm install -g @anthropic-ai/mcpb`) to produce `mcpb/describe-to-deploy.mcpb`, then
+`mcpb` CLI — `npm install -g @anthropic-ai/mcpb`) to produce `mcpb/service-buddy.mcpb`, then
 double-click it (or drag it onto Claude Desktop) and click Install — no terminal, no JSON editing,
 no path substitution. See [`mcpb/README.md`](../mcpb/README.md) for what the bundle does and does
 not cover.
