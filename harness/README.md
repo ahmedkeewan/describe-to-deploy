@@ -15,6 +15,7 @@ measured against, including the honest negative findings, not just the wins.
 | `verify_gate.py` | Computational verification gate. Zero LLM calls — reads a `stack-plan.json`, re-runs each capability's real `verify.cli` against live Floci, exits 0 only on a genuine pass. |
 | `auto_wire.py` | Writes real config values into a founder's app `.env`, idempotently, only for capabilities safely derivable from the plan (never guessed). |
 | `go_live_plan.py` | Reads a plan and names the real AWS equivalent per capability, using the catalog's existing `cloud_equivalent_note` — no migration performed. |
+| `pricing.py` | Fetches AWS's public, unauthenticated Price List data for `describe_environment()`'s cost estimates — six capabilities covered by attribute-based SKU matching, everything else falls back to a hand-written estimate (see AgDR/spike memo for GH-94/GH-95). |
 | `stack-plan.schema.json` | Schema for the intermediate plan artifact a planner produces and an executor consumes. |
 | `stack-state.schema.json` / `stack-state.json` | Schema and live data for the durable, `app_context`-keyed record of what's been provisioned. |
 | `events.py` | Two-channel (founder/dev) event log the live board tails, `seq`-numbered and locked the same way as `stack-state.json`. |
@@ -154,7 +155,7 @@ worktrees, not the founder):
 | `get_verification_history(app_context, capability_id, since, until)` | Filterable read over the durable event log — debug or audit past runs without needing the live board open at the time. All filters optional and combine with AND; `since`/`until` are ISO-8601 timestamps. Not founder-facing — each event's `dev` field carries real service names, commands, and exit codes. |
 | `snapshot_environment(name)` | Saves a durable, point-in-time copy of an environment's recorded capabilities. Snapshots RECORDED STATE, not real infrastructure — see AgDR-0003. Returns `{snapshot_id, capabilities_snapshotted}`. |
 | `restore_environment(name, snapshot_id)` | Restores a snapshot's capabilities back into state — but only after freshly re-verifying each one live; a capability that no longer verifies is skipped, not restored. Only restores into the same environment the snapshot came from (AgDR-0003's binding). Returns `{restored, skipped}`. |
-| `describe_environment(name)` | Reports each of an environment's provisioned capabilities alongside a rough, illustrative monthly cost estimate on real AWS — built from the same `aws_service`/`cloud_equivalent_note` fields `go_live_plan.py` already uses. Explicitly labeled as estimates, not a quote. |
+| `describe_environment(name)` | Reports each of an environment's provisioned capabilities alongside a monthly cost estimate on real AWS. For six capabilities (DynamoDB, SQS, SNS, Step Functions, S3, Lambda) this is computed live from AWS's own public Price List data — see `pricing.py` — against a documented light-usage assumption; every other capability falls back to a hand-written estimate. Either way, explicitly labeled as an estimate, not a quote. |
 
 Calling `get_provisioning_recipe`/`record_provisioned` with an `app_context` from
 `create_environment` enforces an extra check: `resource_name` must have the exact form
