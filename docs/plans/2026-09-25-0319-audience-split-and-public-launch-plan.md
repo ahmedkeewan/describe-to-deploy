@@ -43,8 +43,8 @@ interview" near the end of this document.
 - The repo is currently **private**. GitHub Pages only serves publicly from a **public** repo on
   the free plan — every other piece of this plan depends on that flip.
 - **Before flipping to public**: run a scan for secrets, credentials, and any leaked references
-  to the private ApexYard ops-fork/portfolio workflow used to build this repo (session history,
-  commit messages, code comments) — confirmed explicitly as a required pre-check, not optional.
+  to the private tooling workspace this repo was built from (session history, commit messages,
+  code comments) — confirmed explicitly as a required pre-check, not optional.
 - As part of the same visibility change: update the GitHub repo's **About description, topics,
   and social-preview image** — first impressions should be right from day one, not a later
   afterthought.
