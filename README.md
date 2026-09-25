@@ -25,6 +25,13 @@ language: "Done and verified — people can upload a photo and get it back later
 things it knows how to set up today, and if you ask for something outside that list it tells you
 so rather than guessing.
 
+![One request, three services, each one re-checked before it reports back](docs/assets/demo-dependency-chain.gif)
+
+One request needing three separate services, replayed from a real run against a live machine.
+The events are the captured ones — [`docs/assets/demo-events.json`](docs/assets/demo-events.json)
+— and [`docs/assets/render-demo-gif.py`](docs/assets/render-demo-gif.py) regenerates the image
+from them.
+
 ### The numbers
 
 We put it on a fixed set of six founder requests and measured what changed against the same
