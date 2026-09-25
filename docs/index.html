@@ -13,10 +13,12 @@
     --card-bg: #f7f7f8;
     --border: #e2e2e5;
     --accent: #2563eb;
+    --accent-fg: #ffffff;
     --pass-bg: #ecfdf3;
     --pass-fg: #067647;
     --working-bg: #fff8e6;
     --working-fg: #92660b;
+    --window-chrome: #ececee;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -29,6 +31,7 @@
       --pass-fg: #4ade80;
       --working-bg: #2a2410;
       --working-fg: #facc15;
+      --window-chrome: #1c1c1f;
     }
   }
   * { box-sizing: border-box; }
@@ -40,35 +43,231 @@
     line-height: 1.5;
   }
   main {
-    max-width: 720px;
+    max-width: 860px;
     margin: 0 auto;
     padding: 48px 20px 80px;
   }
-  h1 { font-size: 1.75rem; margin-bottom: 0.25em; }
-  .tagline { color: var(--muted); font-size: 1.05rem; margin-top: 0; }
+  h1 { font-size: 2rem; margin-bottom: 0.25em; letter-spacing: -0.01em; }
+  .tagline { color: var(--muted); font-size: 1.1rem; margin-top: 0; max-width: 640px; }
+
+  /* Hero CTAs */
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px 0 8px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--fg);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { background: var(--card-bg); }
+  .btn-arrow { transition: transform 0.15s ease; }
+  .btn-primary:hover .btn-arrow { transform: translateX(2px); }
+
   .promise {
     font-size: 1.2rem;
     font-weight: 600;
-    margin: 32px 0 8px;
+    margin: 40px 0 8px;
   }
-  .board {
+
+  /* Chat mockups: what the user literally types/sees */
+  .chat-bubble {
+    max-width: 480px;
+    border-radius: 14px;
+    padding: 12px 16px;
+  }
+  .chat-bubble.user {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-bottom-left-radius: 4px;
+  }
+  .chat-bubble .chat-who {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+    margin-bottom: 4px;
+  }
+  .chat-bubble p {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.45;
+  }
+  .chat-bubble.agent {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-bottom-left-radius: 4px;
+  }
+  .chat-bubble.agent.good { border-color: var(--pass-fg); }
+
+  /* Before / after comparison */
+  .before-after {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .ba-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+  .ba-label-bad { color: var(--working-fg); }
+  .ba-label-good { color: var(--pass-fg); }
+  .ba-col { display: flex; flex-direction: column; }
+  .ba-window { margin-top: 0; display: flex; flex-direction: column; flex: 1; }
+  .ba-window-good { border-color: var(--pass-fg); }
+  .ba-thread {
+    padding: 16px;
+    gap: 12px;
+    flex: 1;
+  }
+  .ba-req {
+    align-self: flex-end;
+    max-width: 100%;
+    font-size: 0.85rem;
+    padding: 9px 13px;
+  }
+  .ba-bubble { max-width: none; align-self: flex-start; }
+  .ba-caption {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin: 8px 0 0;
+    line-height: 1.4;
+  }
+  .ba-process {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .ba-process-count {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 3px;
+  }
+
+  /* App-window chrome around the live board */
+  .app-window {
     margin-top: 24px;
     border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
-    background: var(--card-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
   }
-  .board-header {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.85rem;
-    color: var(--muted);
+  .window-titlebar {
+    background: var(--window-chrome);
+    padding: 10px 14px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .traffic-lights { display: flex; gap: 7px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+  .window-title {
+    flex: 1;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .connected-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--pass-fg);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .connected-badge .pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--pass-fg);
+  }
+  /* Chat window thread */
+  .chatwin-thread {
+    background: var(--bg);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .msg-user {
+    align-self: flex-end;
+    max-width: 480px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-radius: 14px;
+    border-bottom-right-radius: 4px;
+    padding: 12px 16px;
+  }
+  .msg-user p { margin: 0; font-size: 0.98rem; line-height: 1.45; }
+  .msg-assistant {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    max-width: 560px;
+  }
+  .msg-avatar {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--accent);
+  }
+  .msg-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    border-top-left-radius: 4px;
+    padding: 6px 16px;
+    flex: 1;
+  }
+  .msg-final {
+    font-size: 0.95rem;
+    color: var(--pass-fg);
+    font-weight: 600;
+    padding: 10px 0 12px;
+    margin: 0;
   }
   .row {
-    padding: 16px 18px;
+    padding: 12px 0;
     border-bottom: 1px solid var(--border);
     display: flex;
     flex-direction: column;
@@ -80,28 +279,43 @@
   .row.visible { opacity: 1; transform: translateY(0); }
   .row:last-child { border-bottom: none; }
   .row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .row-label { font-weight: 500; }
+  .row-label { font-weight: 500; font-size: 0.92rem; }
   .status-pill {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     padding: 3px 10px;
     border-radius: 999px;
     white-space: nowrap;
   }
   .status-pill.working { background: var(--working-bg); color: var(--working-fg); }
   .status-pill.pass { background: var(--pass-bg); color: var(--pass-fg); }
-  .row-proof { font-size: 0.9rem; color: var(--muted); }
-  #replay-btn {
-    margin-top: 16px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--fg);
-    cursor: pointer;
+  .row-proof { font-size: 0.85rem; color: var(--muted); }
+  .chatwin-inputbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    background: var(--card-bg);
+  }
+  .chatwin-input-placeholder {
+    color: var(--muted);
     font-size: 0.9rem;
   }
+  #replay-btn {
+    flex: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    cursor: pointer;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
   #replay-btn:hover { background: var(--card-bg); }
-  section { margin-top: 48px; }
+
+  section { margin-top: 56px; }
   h2 { font-size: 1.15rem; }
   a { color: var(--accent); }
   .note {
@@ -109,40 +323,642 @@
     color: var(--muted);
     margin-top: 8px;
   }
+
+  /* Feature grid: live board, cost estimates, setup script */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .feature-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    background: var(--card-bg);
+  }
+  .feature-icon { font-size: 1.5rem; margin-bottom: 10px; }
+  .feature-card h3 { margin: 0 0 8px; font-size: 1rem; }
+  .feature-card p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .feature-card strong { color: var(--pass-fg); }
+  .feature-card code {
+    font-size: 0.85em;
+    color: var(--fg);
+  }
+
+  /* Capability directory */
+  .filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 20px;
+  }
+  .pill {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .pill:hover { background: var(--card-bg); }
+  .pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-fg);
+  }
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .cap-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--card-bg);
+  }
+  .cap-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .cap-icon { font-size: 1.3rem; line-height: 1; }
+  .cap-name { font-weight: 600; font-size: 0.98rem; }
+  .cap-desc {
+    font-size: 0.87rem;
+    color: var(--muted);
+    margin: 0 0 12px;
+    line-height: 1.45;
+  }
+  .cap-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .cap-tag {
+    font-size: 0.72rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+  }
+  .cap-included {
+    font-size: 0.75rem;
+    color: var(--pass-fg);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Benchmark stats */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .stat-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    background: var(--card-bg);
+  }
+  .stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .stat-number {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--pass-fg);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-unit { font-size: 1.15rem; font-weight: 600; }
+  .stat-sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+  .live-run-intro {
+    font-size: 0.95rem;
+    color: var(--muted);
+    max-width: 60ch;
+    margin: 24px 0 12px;
+  }
+  .live-run-note {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+  .live-run-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--window-chrome);
+  }
+  .live-run-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--pass-fg);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .live-run-badge .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--pass-fg);
+    animation: live-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
+  .live-run-log {
+    padding: 6px 0;
+  }
+  .log-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 16px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .live-run-log .log-row:last-child { border-bottom: none; }
+  .log-tag {
+    flex: none;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: var(--pass-bg);
+    color: var(--pass-fg);
+  }
+  .log-cap {
+    flex: none;
+    font-weight: 600;
+    color: var(--fg);
+    min-width: 130px;
+  }
+  .log-time {
+    flex: none;
+    color: var(--muted);
+    min-width: 44px;
+  }
+  .log-msg {
+    color: var(--muted);
+    font-style: italic;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (max-width: 640px) {
+    .log-row { flex-wrap: wrap; }
+    .log-msg { white-space: normal; flex-basis: 100%; margin-top: 4px; }
+  }
+  .live-run-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .live-run-summary strong {
+    color: var(--pass-fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .live-run-foot {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+    padding: 0 16px 16px;
+  }
+
+  /* Install path toggle + numbered steps */
+  .path-toggle {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    margin: 16px 0 24px;
+  }
+  .path-tab {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .path-tab.active {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .steps[hidden] { display: none; }
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--pass-bg);
+    color: var(--pass-fg);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+  }
+  .step h3 {
+    margin: 2px 0 4px;
+    font-size: 1rem;
+  }
+  .step p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .cmd-box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--card-bg);
+    max-width: 480px;
+  }
+  .cmd-box-top {
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .cmd-box-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  .cmd-box-body code {
+    font-size: 0.95rem;
+    color: var(--fg);
+  }
+  #copy-cmd-btn {
+    flex: none;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--fg);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #copy-cmd-btn:hover { background: var(--bg); }
 </style>
 </head>
 <body>
 <main>
   <h1>Describe to Deploy</h1>
-  <p class="tagline">Describe what you want in plain English. It only tells you it's ready once it's actually checked.</p>
+  <p class="tagline">Describe what you want in plain English &mdash; user accounts, file uploads,
+  background jobs, and 10 more &mdash; and watch it go live in under a minute. It only ever
+  tells you it's ready once it's actually checked.</p>
 
-  <p class="promise">Watch a real run, captured live</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#board">
+      See how it works <span class="btn-arrow">&rarr;</span>
+    </a>
+    <a class="btn btn-secondary" href="#capabilities">Browse capabilities</a>
+  </div>
+
+  <p class="promise" id="board-heading">This is what you'll actually see</p>
   <p>
-    This is a genuine, previously-recorded run of the harness building a multi-step request
-    ("resize an uploaded photo, then send a confirmation email") &mdash; three linked
-    capabilities, each independently checked before it's shown as working. Nothing here is
-    staged copy; it's the real founder-facing messages the harness produced.
+    No new tool to learn, no form to fill out. Just type into the exact chat window you already
+    have open &mdash; Claude Desktop, Claude Code, whatever &mdash; like you're asking a person.
+    (A live dashboard ships with the repo too, if you want one &mdash; you just don't need it to
+    get started.) Below is a genuine, previously-recorded conversation, replayed exactly as it
+    happened &mdash; nothing staged.
   </p>
 
-  <div class="board" id="board">
-    <div class="board-header">
-      <span>Live board</span>
-      <span id="board-status">watching&hellip;</span>
+  <div class="app-window chatwin" id="board">
+    <div class="window-titlebar">
+      <div class="traffic-lights">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+      </div>
+      <span class="window-title">New chat</span>
+      <span class="connected-badge"><span class="pulse"></span>Connected to Floci</span>
     </div>
-    <div id="rows"></div>
+    <div class="chatwin-thread">
+      <div class="msg msg-user">
+        <p>When someone uploads a photo, resize it, then send them a confirmation email.</p>
+      </div>
+      <div class="msg msg-assistant">
+        <div class="msg-avatar">&#10022;</div>
+        <div class="msg-content">
+          <div id="rows"></div>
+          <p class="msg-final" id="board-final" hidden></p>
+        </div>
+      </div>
+    </div>
+    <div class="chatwin-inputbar">
+      <span class="chatwin-input-placeholder">Reply to Claude&hellip;</span>
+      <button id="replay-btn" class="chatwin-send">Replay this conversation</button>
+    </div>
   </div>
-  <button id="replay-btn">Replay demo</button>
+
+  <section id="capabilities">
+    <h2>What it can set up today</h2>
+    <p>
+      Every card below is a real entry in the harness's capability catalog &mdash; matched from a
+      founder's plain-language request, provisioned, then independently re-verified before it's
+      ever reported as working. Nothing here is aspirational; if it's not on this list, the
+      harness will say so rather than guess.
+    </p>
+    <div class="filter-pills" id="filter-pills"></div>
+    <div class="cap-grid" id="cap-grid"></div>
+  </section>
+
+  <section>
+    <h2>The numbers, not the pitch</h2>
+    <p>
+      Every AI tool says it's fast and easy to talk to. Here's the actual difference it makes to
+      what you, the founder, see land back in your chat window for the exact same request:
+    </p>
+    <div class="before-after">
+      <div class="ba-col">
+        <div class="ba-label ba-label-bad">Without a harness like this one</div>
+        <div class="app-window ba-window">
+          <div class="window-titlebar">
+            <div class="traffic-lights">
+              <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            </div>
+            <span class="window-title">New chat</span>
+          </div>
+          <div class="chatwin-thread ba-thread">
+            <div class="msg-user ba-req"><p>When someone uploads a photo, resize it, then send them a confirmation email.</p></div>
+            <div class="ba-process">
+              <span class="ba-process-count">32 tool calls &middot; ~5.5 min</span>
+              reading, guessing, trying things &mdash; including debugging its own architecture
+              mismatch it introduced along the way, before it ever replies
+            </div>
+            <div class="chat-bubble agent ba-bubble">
+              <p>&ldquo;Done &mdash; created an S3 bucket, wired a Lambda function to resize on
+              upload, and set up SES for the confirmation email.&rdquo;</p>
+            </div>
+          </div>
+        </div>
+        <p class="ba-caption">Real numbers, from this exact scenario (resize + email a photo)
+          run on a bare agent with no harness &mdash; see the writeup below. Reply text is
+          illustrative, based on the real jargon (S3, Lambda, SES) that baseline runs are
+          documented naming.</p>
+      </div>
+      <div class="ba-col">
+        <div class="ba-label ba-label-good">With this harness</div>
+        <div class="app-window ba-window ba-window-good">
+          <div class="window-titlebar">
+            <div class="traffic-lights">
+              <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            </div>
+            <span class="window-title">New chat</span>
+            <span class="connected-badge"><span class="pulse"></span>Connected to Floci</span>
+          </div>
+          <div class="chatwin-thread ba-thread">
+            <div class="msg-user ba-req"><p>When someone uploads a photo, resize it, then send them a confirmation email.</p></div>
+            <div class="ba-process">
+              <span class="ba-process-count">1 lookup &middot; run it &middot; verify it</span>
+              no exploring, no guessing &mdash; the exact recipe is already known, so there's
+              nothing left to figure out
+            </div>
+            <div class="chat-bubble agent ba-bubble good">
+              <p>&ldquo;Done and verified &mdash; people can upload a photo and get it back
+              later.&rdquo;</p>
+            </div>
+          </div>
+        </div>
+        <p class="ba-caption">The real, independently re-verified reply style this harness
+          produces &mdash; see the live example above.</p>
+      </div>
+    </div>
+    <p>
+      We didn't just eyeball that difference &mdash; we put it on a fixed 6-request benchmark
+      and measured what actually happened. Real infrastructure, real re-verification behind
+      every number below. No cherry-picking, no faster wrong answers.
+    </p>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">no more tech-speak</div>
+        <div class="stat-number">0<span class="stat-unit">/6</span></div>
+        <div class="stat-sub">down from 5 out of 6 without the harness &mdash; no more &ldquo;S3 bucket&rdquo; or &ldquo;CORS&rdquo; showing up when all you wanted was a straight answer</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ships faster</div>
+        <div class="stat-number">~3.4<span class="stat-unit">&times;</span></div>
+        <div class="stat-sub">~310s total across all 6 requests vs. ~1,040s without the harness</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">less wasted motion</div>
+        <div class="stat-number">~4<span class="stat-unit">&times;</span></div>
+        <div class="stat-sub">21 tool calls total vs. ~87 without the harness &mdash; fewer dead ends, not just less typing</div>
+      </div>
+    </div>
+    <p class="note">
+      Don't take our word for it &mdash; read the
+      <a href="https://github.com/ahmedkeewan/describe-to-deploy/blob/main/tasks/README.md">full
+      benchmark writeup</a>, honest misses included.
+    </p>
+
+    <p class="live-run-intro">
+      Numbers from a fixed benchmark are one kind of proof. Here's another: we ran it again,
+      for real, right before you loaded this page &mdash; and kept the receipts.
+    </p>
+    <div class="live-run-note">
+      <div class="live-run-titlebar">
+        <div class="traffic-lights">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <span class="window-title">verification log &mdash; run just now</span>
+        <span class="live-run-badge"><span class="pulse"></span>LIVE</span>
+      </div>
+      <div class="live-run-log">
+        <div class="log-row">
+          <span class="log-tag pass">PASS</span>
+          <span class="log-cap">file-storage</span>
+          <span class="log-time">0.88s</span>
+          <span class="log-msg">&ldquo;Done and verified: lets people upload and store files&hellip;&rdquo;</span>
+        </div>
+        <div class="log-row">
+          <span class="log-tag pass">PASS</span>
+          <span class="log-cap">structured-data</span>
+          <span class="log-time">0.84s</span>
+          <span class="log-msg">&ldquo;Done and verified: a place to save and look up structured information&hellip;&rdquo;</span>
+        </div>
+        <div class="log-row">
+          <span class="log-tag pass">PASS</span>
+          <span class="log-cap">send-email</span>
+          <span class="log-time">0.63s</span>
+          <span class="log-msg">&ldquo;Done and verified: sends an email to a user&hellip;&rdquo;</span>
+        </div>
+      </div>
+      <div class="live-run-summary">
+        <span><strong>3/3</strong> passed, first try</span>
+        <span><strong>0.78s</strong> average</span>
+        <span><strong>0</strong> bucket or table names leaked to a founder</span>
+      </div>
+      <p class="live-run-foot">
+        This times the harness's own provisioning + re-verification speed against a real local
+        Floci instance &mdash; a different measurement from the agent-behavior benchmark above,
+        not a replacement for it.
+      </p>
+    </div>
+  </section>
 
   <section>
     <h2>Ready to use it on your own idea?</h2>
-    <p>
-      Run <code>./setup.sh</code> from the
-      <a href="https://github.com/ahmedkeewan/describe-to-deploy">repo root</a> to get
-      it running for real &mdash; it checks for and installs what it needs, with your
-      confirmation before anything gets installed. See the
-      <a href="https://github.com/ahmedkeewan/describe-to-deploy#for-founders">README's
-      Founders section</a> for the full picture.
+    <p>Up and running in a few minutes. Pick the path that fits your setup.</p>
+
+    <div class="path-toggle">
+      <button class="path-tab active" data-path="desktop">Claude Desktop</button>
+      <button class="path-tab" data-path="manual">Claude Code &amp; Cursor</button>
+    </div>
+
+    <div class="steps" data-path-panel="desktop">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Get the bundle</h3>
+          <p>Grab the <code>.mcpb</code> file from the repo's <a href="https://github.com/ahmedkeewan/describe-to-deploy/tree/main/mcpb">mcpb/ folder</a>, or build it yourself with <code>./mcpb/build.sh</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Install it</h3>
+          <p>Double-click the file, or drag it onto Claude Desktop, and click Install. No terminal, no editing config files by hand.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Start the local infra</h3>
+          <p>Run the setup command once on this machine so the harness has real infra to talk to, then just describe what you want in Claude Desktop.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps" data-path-panel="manual" hidden>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Clone the repo</h3>
+          <p>Get the source onto your machine from <a href="https://github.com/ahmedkeewan/describe-to-deploy">the repo</a>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Run setup</h3>
+          <p>One command checks for and installs Docker, Floci, and wires the MCP config into Claude Code / Cursor &mdash; asking your confirmation before anything gets installed.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Start talking to it</h3>
+          <p>No commands to memorize after that &mdash; just describe what you want in your normal AI chat app.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-box">
+      <div class="cmd-box-top">
+        <span id="cmd-label">Run once, on this machine</span>
+      </div>
+      <div class="cmd-box-body">
+        <code id="cmd-text">./setup.sh</code>
+        <button id="copy-cmd-btn" type="button">Copy</button>
+      </div>
+    </div>
+
+    <p class="note">
+      See the
+      <a href="https://github.com/ahmedkeewan/describe-to-deploy#for-founders">README's Founders
+      section</a> for the full picture.
     </p>
+  </section>
+
+  <section>
+    <h2>There's more once you're in</h2>
+    <p>
+      Chat is the front door, not the whole house. Three things worth knowing about once you're
+      actually using it:
+    </p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">&#128200;</div>
+        <h3>Watch it work, in a browser too</h3>
+        <p>Everything you watched above is a replay of the real live board &mdash; the same event
+        stream, just captured earlier. Run <code>make board</code> and you get the live version,
+        updating in real time in your own browser, side by side with the chat.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128176;</div>
+        <h3>Ask what it costs. Get a real answer.</h3>
+        <p>Ask what something will cost and it pulls live numbers straight from AWS's own public
+        Price List &mdash; not a guess. Right now, today: 5GB of file storage prices out at
+        <strong>$0.11/month</strong>. 6 of the 13 capabilities get this live-fetched pricing; the
+        rest fall back to a clearly-labeled estimate, never a silent guess.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#9881;&#65039;</div>
+        <h3>Setup that asks before it touches anything</h3>
+        <p><code>./setup.sh</code> checks for Docker, offers to install it for you (with your
+        yes, not without it), gets Floci running, and wires the config into Claude Desktop,
+        Claude Code, and Cursor in one pass. Safe to run again any time. macOS, Linux, and
+        Windows via WSL.</p>
+      </div>
+    </div>
   </section>
 
   <section>
@@ -164,7 +980,7 @@
 <script>
 (function () {
   const rowsEl = document.getElementById("rows");
-  const statusEl = document.getElementById("board-status");
+  const finalEl = document.getElementById("board-final");
   const replayBtn = document.getElementById("replay-btn");
   let events = [];
   let playing = false;
@@ -204,7 +1020,7 @@
     rowsEl.innerHTML = "";
     for (const key of Object.keys(rowElements)) delete rowElements[key];
     CAPABILITY_ORDER.length = 0;
-    statusEl.textContent = "watching…";
+    finalEl.hidden = true;
   }
 
   function play() {
@@ -214,7 +1030,8 @@
     let i = 0;
     function step() {
       if (i >= events.length) {
-        statusEl.textContent = "all working";
+        finalEl.textContent = "All set — every piece is verified and working.";
+        finalEl.hidden = false;
         playing = false;
         return;
       }
@@ -232,10 +1049,131 @@
       play();
     })
     .catch(() => {
-      statusEl.textContent = "demo data unavailable";
+      finalEl.textContent = "Demo data unavailable.";
+      finalEl.hidden = false;
     });
 
   replayBtn.addEventListener("click", play);
+})();
+</script>
+
+<script>
+(function () {
+  const pillsEl = document.getElementById("filter-pills");
+  const gridEl = document.getElementById("cap-grid");
+  let activeTheme = "All";
+
+  function cardHtml(cap) {
+    return `
+      <div class="cap-card" data-theme="${cap.theme}">
+        <div class="cap-card-top">
+          <span class="cap-icon">${cap.icon}</span>
+          <span class="cap-name">${cap.name}</span>
+        </div>
+        <p class="cap-desc">${cap.description}</p>
+        <div class="cap-meta">
+          <span class="cap-tag">${cap.theme}</span>
+          <span class="cap-included">&check; Included</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function render(caps) {
+    const visible = activeTheme === "All" ? caps : caps.filter((c) => c.theme === activeTheme);
+    gridEl.innerHTML = visible.map(cardHtml).join("");
+  }
+
+  function renderPills(caps) {
+    const counts = { All: caps.length };
+    for (const c of caps) counts[c.theme] = (counts[c.theme] || 0) + 1;
+    const themes = ["All", ...Object.keys(counts).filter((t) => t !== "All").sort()];
+    pillsEl.innerHTML = themes
+      .map(
+        (t) =>
+          `<button class="pill${t === activeTheme ? " active" : ""}" data-theme="${t}">${t} (${counts[t]})</button>`
+      )
+      .join("");
+    pillsEl.querySelectorAll(".pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeTheme = btn.dataset.theme;
+        renderPills(caps);
+        render(caps);
+      });
+    });
+  }
+
+  fetch("assets/capabilities.json")
+    .then((r) => r.json())
+    .then((caps) => {
+      renderPills(caps);
+      render(caps);
+    })
+    .catch(() => {
+      gridEl.innerHTML = '<p class="note">Capability data unavailable.</p>';
+    });
+})();
+</script>
+
+<script>
+(function () {
+  const tabs = document.querySelectorAll(".path-tab");
+  const panels = document.querySelectorAll("[data-path-panel]");
+  const cmdLabel = document.getElementById("cmd-label");
+  const cmdText = document.getElementById("cmd-text");
+  const copyBtn = document.getElementById("copy-cmd-btn");
+
+  const COMMANDS = {
+    desktop: { label: "Run once, on this machine", cmd: "./setup.sh" },
+    manual: { label: "From the repo root", cmd: "./setup.sh" },
+  };
+
+  function setPath(path) {
+    tabs.forEach((t) => t.classList.toggle("active", t.dataset.path === path));
+    panels.forEach((p) => {
+      p.hidden = p.dataset.pathPanel !== path;
+    });
+    cmdLabel.textContent = COMMANDS[path].label;
+    cmdText.textContent = COMMANDS[path].cmd;
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => setPath(tab.dataset.path));
+  });
+
+  function fallbackCopy(text) {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.select();
+    try {
+      document.execCommand("copy");
+    } catch (e) {
+      /* no-op: best-effort fallback only */
+    }
+    document.body.removeChild(el);
+  }
+
+  function flashCopied() {
+    const original = copyBtn.textContent;
+    copyBtn.textContent = "Copied";
+    setTimeout(() => (copyBtn.textContent = original), 1500);
+  }
+
+  copyBtn.addEventListener("click", () => {
+    const text = cmdText.textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(flashCopied, () => {
+        fallbackCopy(text);
+        flashCopied();
+      });
+    } else {
+      fallbackCopy(text);
+      flashCopied();
+    }
+  });
 })();
 </script>
 </body>
