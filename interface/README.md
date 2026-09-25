@@ -212,7 +212,7 @@ browser.
 | Rejected | Why |
 |---|---|
 | CLI / TUI | A founder who cannot debug will not work in a terminal. Also weak for live status and a clickable checklist. |
-| Desktop app (Electron/Tauri) | Right for a real product — proper icon, no localhost. A packaging project this build has no time for. |
+| Desktop app (Electron/Tauri) | Right for a real product — proper icon, no localhost. A packaging project that is out of scope at this stage. |
 | Inside an existing agent client | Cannot control founder-facing rendering, which is the distinctive part of this project. |
 
 Precedent: Floci already ships `floci-ui` as a local web UI, so a Floci user is already in this
@@ -236,7 +236,7 @@ harness (CLI, scoreable)          ui (disposable)
 
 1. **Scoring stays intact.** [tasks/task-set.json](../tasks/task-set.json) measures the
    CLI. The UI sits outside the measurement path and cannot contaminate the before/after numbers.
-2. **It is cuttable.** If the UI does not land, the demo degrades to a terminal run rather than
+2. **It is cuttable.** If the UI does not land, the product degrades to a terminal run rather than
    collapsing.
 3. **It matches the harness vocabulary** — external state as the handoff between components
    ([VOCAB.md](../research/VOCAB.md) §4).
@@ -346,8 +346,8 @@ Rules:
   disclosure. Seeing *what was actually checked*, in words they understand, is the founder's only
   defence against false confidence. This is the product.
 - **The sidebar renders `stack-state.json`, not the conversation.** An incremental request visibly
-  *updates a row* rather than appending one, so state carrying over is something an audience can
-  see rather than something the presenter narrates.
+  *updates a row* rather than appending one, so state carrying over is visible on screen rather
+  than something the founder has to be told about.
 - **No modes, no keyboard shortcuts, no hidden panes.** Every affordance is a labelled button.
   Anything a founder must be told about is a design failure.
 
@@ -564,8 +564,8 @@ channels:**
 The founder pane renders `event.founder` and nothing else. The model never writes into
 `founder` — those strings come from [capabilities.json](../catalog/capabilities.json).
 
-This turns the game plan's **jargon-leak metric from a behaviour we hope for into a property of
-the interface**. Given the baseline leaked infra terms in 5 of 6 responses, this is the single
+This turns the **jargon-leak metric from a behaviour we hope for into a property of the
+interface**. Given the baseline leaked infra terms in 5 of 6 responses, this is the single
 highest-value structural change in the design. A leak would require a service name to be
 committed into a catalog field — a code review away, not a sampling accident. It is Hashimoto's
 rule ([README.md](../README.md) Tier 1) applied to the UI layer: engineer the harness so
@@ -623,8 +623,8 @@ harness provisioned. It also catches the false-confidence case where an app cons
 with an explicit cloud endpoint, ignores the local wiring, and fails while the emulator check
 still passes.
 
-Build the default path first. The project path is a bonus and stays cuttable; auto-wiring
-remains late in the build order, where the game plan already has it.
+Build the default path first. The project path is a bonus and stays cuttable, and auto-wiring
+stays late in the build order.
 
 ## How this sits on the harness as it exists today
 
@@ -673,37 +673,39 @@ scope needs to shrink.
 
 ## What this looks like in a live run
 
-The interface carries three of the demo beats in [GAME_PLAN.md](../research/history/GAME_PLAN.md#demo-5-minutes):
+Three moments in a run carry the whole design:
 
-| Beat | What the audience sees | What it proves |
+| Moment | What the founder sees | What it proves |
 |---|---|---|
 | **The ask** | A plain-English sentence typed in, and a checklist of plain-English capabilities coming back | Translation works, and scope is stated before anything runs |
 | **The board filling in** | Rows moving `setting up…` → `working`, each with the sentence describing what was actually checked | Claims are backed by real checks, not the agent's say-so |
 | **The failure case (t6)** | A row that says `not working yet` and stays there | The strongest moment: it declines to claim success it cannot back up |
 
-The demo screen never shows a service name, a port, or an error code. That is checkable live —
-and it is the 5/6 → 0/6 jargon result made visible rather than asserted from a table.
+The founder pane never shows a service name, a port, or an error code. That is checkable by
+anyone running it — and it is the 5/6 → 0/6 jargon result made visible rather than asserted from
+a table.
 
-## What this implies for research/history/GAME_PLAN.md
+## What this design commits to
 
-1. **The demo's framing should follow the baseline data.** Lead with scope discipline (t5) and
-   translation (5/6 jargon leaks), not "the baseline can't do it" — it can, and
+1. **The claim follows the baseline data.** The case for the harness is scope discipline (t5) and
+   translation (5 of 6 jargon leaks), not "the baseline can't do it" — it can, and
    [tasks/README.md](../tasks/README.md) warns explicitly against overstating the gap.
-2. **The checklist gate deserves its own line in the architecture table.** It is currently
-   implicit in the planner, but it is the mechanism that prevents t5's overreach, and it is
-   founder-visible.
+2. **The checklist gate is a first-class mechanism, not a planner detail.** It has its own line in
+   [How it maps to harness engineering](#how-it-maps-to-harness-engineering) because it is the
+   mechanism that prevents t5's overreach, and it is the only one of them the founder can see.
 3. **Auto-wiring stays optional and late.** It applies only when a project happens to be
    present, and none of `t1`–`t6` require it.
 
 ## Known limitations
 
-Stated plainly, because a submission that hides these is easier to catch out than one that names
-them. Reviewed and corrected 2026-09-11 against the code as it stands — several items below were
-originally written as forward-looking design notes and have since been built; this list keeps
+Stated plainly, because documentation that hides these is easier to catch out than documentation
+that names them. Reviewed and corrected 2026-09-11 against the code as it stands — several items
+below were originally written as forward-looking design notes and have since been built; this list keeps
 only what's still actually true.
 
-- **Launching is a terminal command.** There is exactly one technical step, and the pitch should
-  not claim zero. In a real product this is a downloadable app; the browser UI is unchanged.
+- **Launching is a terminal command.** There is exactly one technical step, and no description of
+  this project should claim zero. In a real product this is a downloadable app; the browser UI is
+  unchanged.
   Running `source harness/.venv/bin/activate && python3 harness/web_server.py` (per that module's
   own docstring) is that one step today.
 - **Verification strength is mixed across the catalog, not uniform.** 5 of 13 capabilities
