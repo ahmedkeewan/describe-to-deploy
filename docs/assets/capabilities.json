@@ -1,0 +1,106 @@
+[
+  {
+    "id": "user-accounts",
+    "name": "User Accounts",
+    "description": "Lets people create an account, log in, and reset their password securely.",
+    "theme": "Auth & Users",
+    "icon": "\ud83d\udd10",
+    "aws_service": "cognito-idp"
+  },
+  {
+    "id": "file-storage",
+    "name": "File Storage",
+    "description": "Lets people upload and store files (like photos), and get them back later.",
+    "theme": "Data & Storage",
+    "icon": "\ud83d\udcc1",
+    "aws_service": "s3"
+  },
+  {
+    "id": "structured-data",
+    "name": "Structured Data",
+    "description": "A place to save and look up structured information, like user profiles or orders.",
+    "theme": "Data & Storage",
+    "icon": "\ud83d\uddc3\ufe0f",
+    "aws_service": "dynamodb"
+  },
+  {
+    "id": "background-job",
+    "name": "Background Job",
+    "description": "Runs a small piece of work in the background (like resizing a photo) without making the user wait.",
+    "theme": "Compute & Workflow",
+    "icon": "\u2699\ufe0f",
+    "aws_service": "lambda"
+  },
+  {
+    "id": "send-email",
+    "name": "Send Email",
+    "description": "Sends an email to a user, like a confirmation or welcome message.",
+    "theme": "Messaging & Events",
+    "icon": "\u2709\ufe0f",
+    "aws_service": "ses"
+  },
+  {
+    "id": "scheduled-task",
+    "name": "Scheduled Task",
+    "description": "Runs something automatically on a schedule, like a weekly digest email.",
+    "theme": "Compute & Workflow",
+    "icon": "\u23f0",
+    "aws_service": "scheduler"
+  },
+  {
+    "id": "background-queue",
+    "name": "Background Queue",
+    "description": "Lines up work to be done in the background so nothing gets lost or slows the app down.",
+    "theme": "Messaging & Events",
+    "icon": "\ud83d\udccb",
+    "aws_service": "sqs"
+  },
+  {
+    "id": "push-notifications",
+    "name": "Push Notifications",
+    "description": "Sends an alert or notification out to users or to other parts of the app when something happens.",
+    "theme": "Messaging & Events",
+    "icon": "\ud83d\udd14",
+    "aws_service": "sns"
+  },
+  {
+    "id": "app-secrets",
+    "name": "App Secrets",
+    "description": "Stores sensitive values (like a third-party API key) safely instead of hardcoding them in the app.",
+    "theme": "Config & Secrets",
+    "icon": "\ud83d\udd11",
+    "aws_service": "secretsmanager"
+  },
+  {
+    "id": "app-settings",
+    "name": "App Settings",
+    "description": "Stores small configuration values the app can read, like feature flags or simple settings.",
+    "theme": "Config & Secrets",
+    "icon": "\ud83c\udf9b\ufe0f",
+    "aws_service": "ssm"
+  },
+  {
+    "id": "backend-api",
+    "name": "Backend API",
+    "description": "Gives your app a backend it can call over the internet to do server-side logic.",
+    "theme": "Compute & Workflow",
+    "icon": "\ud83c\udf10",
+    "aws_service": "apigateway"
+  },
+  {
+    "id": "search",
+    "name": "Search",
+    "description": "Lets users search through content in your app.",
+    "theme": "Search",
+    "icon": "\ud83d\udd0d",
+    "aws_service": "es"
+  },
+  {
+    "id": "multi-step-workflow",
+    "name": "Multi-Step Workflow",
+    "description": "Runs a multi-step process in order -- like checking a signup, sending a welcome email, then logging the result.",
+    "theme": "Compute & Workflow",
+    "icon": "\ud83d\udd01",
+    "aws_service": "stepfunctions"
+  }
+]
