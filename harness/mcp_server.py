@@ -185,11 +185,17 @@ def _scan_free_board_port(taken_ports: set[int]) -> int | None:
 
 
 @server.tool()
-def create_environment(name: str) -> dict:
+def create_environment(name: str, owner: str | None = None) -> dict:
     """Mint a new, isolated environment so one agent/worktree can provision and verify its own
     infra without colliding with another agent's environment. Reserves a permanently-unique
     app_context (never reused, even if `name` is reused after a later destroy_environment call
     within the same second) and a free board port, both recorded in environments.json.
+
+    `owner` is optional, purely descriptive bookkeeping (GH-69, AgDR-0004) -- e.g. a founder or
+    team-member name/identifier, for a human reading list_environments()/describe_environment()
+    to see who created what. It is NOT a permission check: this harness has no authentication or
+    identity system, and any connected MCP client can still act on any app_context it knows,
+    regardless of the recorded owner. Never represent `owner` as an access-control feature.
 
     NOT founder-facing -- the returned app_context and board_port are for the developer/agent
     driving this session. Never relay either value to the founder; see AgDR-0001 and the
@@ -222,6 +228,7 @@ def create_environment(name: str) -> dict:
             "app_context": app_context,
             "board_port": board_port,
             "created": datetime.now(timezone.utc).isoformat(),
+            "owner": owner,
         }
         save_environments(envs)
 
