@@ -148,7 +148,7 @@ worktrees, not the founder):
 
 | Tool | Purpose |
 |------|---------|
-| `create_environment(name)` | Mints a unique, permanently non-reused `app_context` and a free board port for one agent/worktree. Returns `{app_context, board_port}`. |
+| `create_environment(name, owner=None)` | Mints a unique, permanently non-reused `app_context` and a free board port for one agent/worktree. Returns `{app_context, board_port}`. `owner` is optional, purely descriptive bookkeeping (see AgDR-0004) — not a permission check; this harness has no authentication. |
 | `destroy_environment(name)` | Releases the board port and removes the environment's entries. Does not delete real backend resources — `capabilities.json` defines no teardown step for any capability (see AgDR-0001). |
 | `list_environments()` | Lists every currently registered environment: name, `app_context`, board port, creation time. |
 | `get_verification_history(app_context, capability_id, since, until)` | Filterable read over the durable event log — debug or audit past runs without needing the live board open at the time. All filters optional and combine with AND; `since`/`until` are ISO-8601 timestamps. Not founder-facing — each event's `dev` field carries real service names, commands, and exit codes. |
