@@ -17,15 +17,63 @@ upload," "run something on a schedule" — and the harness sets it up for you, t
 actually works before ever telling you it's done. If something isn't working yet, it says so
 plainly instead of pretending.
 
-**To try it:** `./setup.sh` from the repo root gets everything running (it checks for and
-installs what it needs, with your confirmation before anything gets installed). On Claude Desktop
-specifically, you can instead install just the MCP server with a double-click — see
-[`mcpb/README.md`](mcpb/README.md) — but Docker + Floci still need `./setup.sh` run once regardless
-of which install path you use. Once it's running, just talk to it in your normal AI chat app — no
-commands to memorize, nothing technical to learn first.
+There's no new tool to learn and no form to fill in. You type into the same chat window you
+already have open, the way you'd ask a person, and you get an answer back in the same plain
+language: "Done and verified — people can upload a photo and get it back later." There are 13
+things it knows how to set up today, and if you ask for something outside that list it tells you
+so rather than guessing.
+
+### The numbers
+
+We put it on a fixed set of six founder requests and measured what changed against the same
+agent with no harness at all:
+
+- Tech-speak in the replies: 0 out of 6 requests leaked it, down from 5 out of 6 without the
+  harness. No server names or acronyms when all you asked for was a straight answer.
+- Speed: about 3.4× faster end to end — roughly 310 seconds total across all six requests,
+  versus roughly 1,040 seconds without the harness.
+- Wasted motion: about 4× less — 21 steps total versus roughly 87. Fewer dead ends, not just
+  less typing.
+
+[`tasks/README.md`](tasks/README.md) has the full writeup, including the honest misses.
+
+Benchmarks are one kind of proof. Here's another: the three most common requests were run again
+for real against a live machine, each one set up and then independently re-checked from
+scratch. All 3 passed on the first try, averaging about 0.78 seconds each, with zero internal
+names or tech-speak in any of the replies a founder would see.
+
+### Getting it running
+
+Two paths, both a few minutes:
+
+- **Claude Desktop, no terminal.** Grab the ready-made bundle from
+  [`mcpb/`](mcpb/README.md), double-click it (or drag it onto Claude Desktop), and click
+  Install.
+- **Claude Code or Cursor.** Clone the repo and run `./setup.sh` from the root. One command
+  checks for and installs everything it needs and wires itself into your chat app — asking your
+  confirmation before anything gets installed.
+
+Either way, `./setup.sh` needs to run once on the machine, so the harness has something real and
+local to set things up on. After that there are no commands to memorize — you just describe what
+you want.
+
+### Once you're in
+
+- **A live dashboard, if you want one.** `make board` opens a board in your browser that updates
+  in real time as things get set up, side by side with the chat. You don't need it to get
+  started.
+- **Real cost answers.** Ask what something will cost and it pulls live numbers from the
+  provider's own published price list rather than guessing. As of 2026-09-25, 5GB of file storage
+  priced out at $0.11/month. 6 of the 13 capabilities get live-fetched pricing; the rest fall back
+  to a clearly labelled estimate, never a silent guess.
+- **Setup that asks first.** `./setup.sh` never installs anything without your yes, is safe to
+  run again any time, and works on macOS, Linux, and Windows via WSL.
 
 That's the whole idea: you describe what you want, and the harness only ever tells you it's
 ready once it has actually checked.
+
+There's a fuller walkthrough, with a real recorded conversation and the live verification log,
+at [ahmedkeewan.github.io/service-buddy](https://ahmedkeewan.github.io/service-buddy/).
 
 ## For Engineers
 
