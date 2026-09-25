@@ -6,11 +6,9 @@ Every event carries `founder` (plain language, safe to render directly) and `dev
 names, commands, exit codes -- rendered only behind the explicit "Details for a developer" panel).
 Append-only, one JSON object per line, so the UI can tail it live over SSE.
 
-This is the missing piece interface/README.md names explicitly: the "events.jsonl with founder/dev
-channels" work, which depends on the executor tool. The executor here is the MCP server's tools
-(harness/mcp_server.py) -- each call that changes state also appends an event, so a browser
-tailing this file sees the same actions in real time that Claude (as the calling agent) is taking
-through the MCP tools.
+Writers are the MCP server's tools (harness/mcp_server.py): each call that changes state also
+appends an event, so a browser tailing this file sees the same actions in real time that the
+calling agent is taking through the MCP tools.
 """
 import json
 import itertools
@@ -48,7 +46,7 @@ def emit(kind: str, capability: str | None, founder: dict, dev: dict | None = No
     else (interface/README.md's "Details for a developer" panel). `app_context` lets the UI
     filter the activity feed per product once more than one exists on the same board.
 
-    Locked with the same fcntl.flock helper GH-24 introduced for stack-state.json.
+    Locked with the same fcntl.flock helper (state_lock.locked) that guards stack-state.json.
     `_next_seq()` reads the whole file and computes `last + 1`, and each MCP client runs its own
     process, so two processes could previously compute the same seq (the old threading.Lock only
     serialized within one process). The lock has to cover both `_next_seq()`'s read and the
@@ -87,7 +85,7 @@ def query(
     since: str | None = None,
     until: str | None = None,
 ) -> list[dict]:
-    """Filterable read over the whole event log (GH-71), for debugging/auditing past runs without
+    """Filterable read over the whole event log, for debugging/auditing past runs without
     needing the live board open at the time they happened. `since`/`until` are ISO-8601 timestamp
     strings compared lexicographically against each event's `t` field -- safe because `t` is
     always written by `datetime.now(timezone.utc).isoformat()`, which sorts the same lexically and
@@ -95,7 +93,7 @@ def query(
 
     A single read of the whole file, same as read_all() -- no lock held across it. This mirrors
     read_all()'s existing lock-free read; the lock in emit() only needs to cover its own read of
-    the last seq plus its own write, not every reader (GH-24's original concern was two WRITERS
+    the last seq plus its own write, not every reader (the concern is two WRITERS
     computing the same seq, not a reader racing a writer). A line that fails to parse (e.g. the
     very last line, mid-write by another process at the exact moment of this read) is skipped
     rather than raising, so a filtered history read can never crash on a benign race."""

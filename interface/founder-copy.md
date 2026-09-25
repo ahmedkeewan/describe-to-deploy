@@ -3,10 +3,12 @@
 Every word the founder can ever read, in one place. Companion to [README.md](README.md), which
 explains the interface these strings live in.
 
-Kept here rather than in [catalog/](../catalog/) so the wording can be reviewed as a whole — the
-[language rule](README.md#the-language-rule) is only checkable if all the strings sit side by
-side. Whoever owns the catalog is free to adopt these into `capabilities.json` as
-`verify.founder_proof`; until then this file is the source of truth for founder-facing wording.
+The shipped strings live in [capabilities.json](../catalog/capabilities.json)
+(`founder_description` and `verify.founder_proof`), and the catalog wins wherever the two differ.
+This file is the design draft and the wording reference for new strings. It's kept as one page
+because the [language rule](README.md#the-language-rule) is only checkable when all the strings
+sit side by side. Some screens below (the confirmation checklist, the failure actions) are design
+only; see the [README's status table](README.md#status-whats-built-and-whats-design).
 
 **The rule these all obey:** understandable by someone who has never heard of cloud
 infrastructure. No service names, no infra nouns, no protocols, no file paths, no error codes.
@@ -56,16 +58,16 @@ Two levels, because the two kinds of check prove genuinely different things:
 | app settings | "checked that the settings store is up and answering" | — |
 | backend | "checked that the backend is up and answering" | — |
 | search | "checked that search is up and ready" | — |
+| multi-step process | — | "ran the whole process once end-to-end and every step finished" |
 
 The five without a round-trip sentence fall back to the weaker one. That is honest, and the
 founder can see it is weaker — which is the point.
 
-**A note the interface depends on.** As of 2026-09-05 every check in the catalog is an existence
-check, so only the left column is currently earnable. The recorded baseline — a bare agent with
-no harness — was *stronger* than this: it verified photo storage with a byte-identical round trip
-([tasks/README.md](../tasks/README.md)) — so shipping existence-only checks would regress on
-proof strength against the very baseline being compared to. Whoever owns the catalog should add
-round-trip checks for at least the four capabilities exercised by `t1`–`t4`.
+**What ships today.** Six capabilities run a real functional check and show the right-hand
+sentence: user accounts, file storage, saved information, background work, sending email, and the
+multi-step process. The other seven, including the work queue and stored secrets, run an
+existence check and show the left-hand sentence. The catalog's `verify.founder_proof` is the
+authoritative wording.
 
 ---
 

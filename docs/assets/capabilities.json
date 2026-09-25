@@ -5,7 +5,8 @@
     "description": "Lets people create an account, log in, and reset their password securely.",
     "theme": "Auth & Users",
     "icon": "\ud83d\udd10",
-    "aws_service": "cognito-idp"
+    "aws_service": "cognito-idp",
+    "proof": "created a test account, signed in as them, then deleted it"
   },
   {
     "id": "file-storage",
@@ -13,7 +14,8 @@
     "description": "Lets people upload and store files (like photos), and get them back later.",
     "theme": "Data & Storage",
     "icon": "\ud83d\udcc1",
-    "aws_service": "s3"
+    "aws_service": "s3",
+    "proof": "stored a test file, read it back unchanged, then removed it"
   },
   {
     "id": "structured-data",
@@ -21,7 +23,8 @@
     "description": "A place to save and look up structured information, like user profiles or orders.",
     "theme": "Data & Storage",
     "icon": "\ud83d\uddc3\ufe0f",
-    "aws_service": "dynamodb"
+    "aws_service": "dynamodb",
+    "proof": "saved a test record, looked it back up, then removed it"
   },
   {
     "id": "background-job",
@@ -29,7 +32,8 @@
     "description": "Runs a small piece of work in the background (like resizing a photo) without making the user wait.",
     "theme": "Compute & Workflow",
     "icon": "\u2699\ufe0f",
-    "aws_service": "lambda"
+    "aws_service": "lambda",
+    "proof": "ran it once with test input and it finished successfully"
   },
   {
     "id": "send-email",
@@ -37,7 +41,8 @@
     "description": "Sends an email to a user, like a confirmation or welcome message.",
     "theme": "Messaging & Events",
     "icon": "\u2709\ufe0f",
-    "aws_service": "ses"
+    "aws_service": "ses",
+    "proof": "sent a test email and confirmed it went out"
   },
   {
     "id": "scheduled-task",
@@ -45,7 +50,8 @@
     "description": "Runs something automatically on a schedule, like a weekly digest email.",
     "theme": "Compute & Workflow",
     "icon": "\u23f0",
-    "aws_service": "scheduler"
+    "aws_service": "scheduler",
+    "proof": "checked that the schedule is set and active"
   },
   {
     "id": "background-queue",
@@ -53,7 +59,8 @@
     "description": "Lines up work to be done in the background so nothing gets lost or slows the app down.",
     "theme": "Messaging & Events",
     "icon": "\ud83d\udccb",
-    "aws_service": "sqs"
+    "aws_service": "sqs",
+    "proof": "checked that the work queue is up and ready"
   },
   {
     "id": "push-notifications",
@@ -61,7 +68,8 @@
     "description": "Sends an alert or notification out to users or to other parts of the app when something happens.",
     "theme": "Messaging & Events",
     "icon": "\ud83d\udd14",
-    "aws_service": "sns"
+    "aws_service": "sns",
+    "proof": "checked that the notification sender is up and ready"
   },
   {
     "id": "app-secrets",
@@ -69,7 +77,8 @@
     "description": "Stores sensitive values (like a third-party API key) safely instead of hardcoding them in the app.",
     "theme": "Config & Secrets",
     "icon": "\ud83d\udd11",
-    "aws_service": "secretsmanager"
+    "aws_service": "secretsmanager",
+    "proof": "checked that the secure storage is up and ready"
   },
   {
     "id": "app-settings",
@@ -77,7 +86,8 @@
     "description": "Stores small configuration values the app can read, like feature flags or simple settings.",
     "theme": "Config & Secrets",
     "icon": "\ud83c\udf9b\ufe0f",
-    "aws_service": "ssm"
+    "aws_service": "ssm",
+    "proof": "checked that the settings store is up and answering"
   },
   {
     "id": "backend-api",
@@ -85,7 +95,8 @@
     "description": "Gives your app a backend it can call over the internet to do server-side logic.",
     "theme": "Compute & Workflow",
     "icon": "\ud83c\udf10",
-    "aws_service": "apigateway"
+    "aws_service": "apigateway",
+    "proof": "checked that the backend is up and answering"
   },
   {
     "id": "search",
@@ -93,7 +104,8 @@
     "description": "Lets users search through content in your app.",
     "theme": "Search",
     "icon": "\ud83d\udd0d",
-    "aws_service": "es"
+    "aws_service": "es",
+    "proof": "checked that search is up and ready"
   },
   {
     "id": "multi-step-workflow",
@@ -101,6 +113,7 @@
     "description": "Runs a multi-step process in order -- like checking a signup, sending a welcome email, then logging the result.",
     "theme": "Compute & Workflow",
     "icon": "\ud83d\udd01",
-    "aws_service": "stepfunctions"
+    "aws_service": "stepfunctions",
+    "proof": "ran the whole process once end-to-end and every step finished"
   }
 ]

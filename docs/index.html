@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Service Buddy</title>
+<meta name="description" content="Describe what your app needs in plain English and get real, verified infrastructure running on your own machine. An open-source MCP server for Claude Code, Cursor, and Claude Desktop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ahmedkeewan.github.io/service-buddy/">
+<meta property="og:title" content="Service Buddy">
+<meta property="og:description" content="Plain-English requests in, verified local infrastructure out. Nothing is called done until it has been re-checked.">
+<meta property="og:image" content="https://ahmedkeewan.github.io/service-buddy/assets/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Service Buddy">
+<meta name="twitter:description" content="Plain-English requests in, verified local infrastructure out. Nothing is called done until it has been re-checked.">
+<meta name="twitter:image" content="https://ahmedkeewan.github.io/service-buddy/assets/social-preview.png">
 <style>
   :root {
     color-scheme: light dark;
@@ -434,12 +446,6 @@
     border-radius: 6px;
     padding: 2px 7px;
   }
-  .cap-included {
-    font-size: 0.75rem;
-    color: var(--pass-fg);
-    font-weight: 600;
-    white-space: nowrap;
-  }
 
   /* Benchmark stats */
   .stat-row {
@@ -497,24 +503,6 @@
     padding: 10px 14px;
     border-bottom: 1px solid var(--border);
     background: var(--window-chrome);
-  }
-  .live-run-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.72rem;
-    color: var(--pass-fg);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-  }
-  .live-run-badge .pulse {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--pass-fg);
-    animation: live-pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes live-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.25; }
   }
   .live-run-log {
     padding: 6px 0;
@@ -645,7 +633,7 @@
     border-radius: var(--radius-card);
     overflow: hidden;
     background: var(--card-bg);
-    max-width: 480px;
+    max-width: 760px;
   }
   .cmd-box-top {
     padding: 10px 16px;
@@ -675,29 +663,67 @@
     cursor: pointer;
   }
   #copy-cmd-btn:hover { background: var(--bg); }
+  .cmd-box-body code {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .cap-proof {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .cap-proof strong { color: var(--fg); font-weight: 500; }
+  .prereqs {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  .ba-illustrative {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 0.72rem;
+    color: var(--muted);
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-top: 6px;
+  }
+  .site-footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
 </style>
 </head>
 <body>
 <main>
   <h1>Service Buddy</h1>
-  <p class="tagline">Describe what you want in plain English &mdash; user accounts, file uploads,
-  background jobs, and 10 more &mdash; and watch it go live in under a minute. It only ever
-  tells you it's ready once it's actually checked.</p>
+  <p class="tagline">Tell Claude what your app needs in plain English &mdash; user accounts, file
+  uploads, background jobs, and 10 more &mdash; and it sets them up for real on your own machine,
+  usually in under a minute. It only tells you something is ready once it has actually checked.</p>
 
   <div class="cta-row">
     <a class="btn btn-primary" href="#board">
       See how it works <span class="btn-arrow">&rarr;</span>
     </a>
     <a class="btn btn-secondary" href="#capabilities">Browse capabilities</a>
+    <a class="btn btn-secondary" href="https://github.com/ahmedkeewan/service-buddy">View on GitHub</a>
   </div>
 
   <p class="promise" id="board-heading">This is what you'll actually see</p>
   <p>
-    No new tool to learn, no form to fill out. Just type into the exact chat window you already
-    have open &mdash; Claude Desktop, Claude Code, whatever &mdash; like you're asking a person.
-    (A live dashboard ships with the repo too, if you want one &mdash; you just don't need it to
-    get started.) Below is a genuine, previously-recorded conversation, replayed exactly as it
-    happened &mdash; nothing staged.
+    No new tool to learn, no form to fill out. You type into the chat window you already use
+    &mdash; Claude Code, Cursor, or Claude Desktop &mdash; the way you'd ask a person. Everything
+    runs on <a href="https://floci.io/">Floci</a>, a free emulator of AWS that runs in Docker on
+    your own machine, so nothing touches a real cloud account or costs money. Below is a recorded
+    conversation, replayed exactly as it happened.
   </p>
 
   <div class="app-window chatwin" id="board">
@@ -731,13 +757,16 @@
   <section id="capabilities">
     <h2>What it can set up today</h2>
     <p>
-      Every card below is a real entry in the harness's capability catalog &mdash; matched from a
-      founder's plain-language request, provisioned, then independently re-verified before it's
-      ever reported as working. Nothing here is aspirational; if it's not on this list, the
-      harness will say so rather than guess.
+      These are the 13 things Service Buddy can set up today. Each one comes with a tested recipe
+      and its own check, shown on the card, which has to pass before you're told it works. Ask
+      for something that isn't on this list and it tells you so rather than improvising.
     </p>
     <div class="filter-pills" id="filter-pills"></div>
     <div class="cap-grid" id="cap-grid"></div>
+    <p class="note">
+      Missing something you need?
+      <a href="https://github.com/ahmedkeewan/service-buddy/issues/new?template=feature_request.md">Request a capability</a>.
+    </p>
   </section>
 
   <section>
@@ -748,7 +777,7 @@
     </p>
     <div class="before-after">
       <div class="ba-col">
-        <div class="ba-label ba-label-bad">Without a harness like this one</div>
+        <div class="ba-label ba-label-bad">A plain AI agent, on its own</div>
         <div class="app-window ba-window">
           <div class="window-titlebar">
             <div class="traffic-lights">
@@ -767,15 +796,15 @@
               <p>&ldquo;Done &mdash; created an S3 bucket, wired a Lambda function to resize on
               upload, and set up SES for the confirmation email.&rdquo;</p>
             </div>
+            <span class="ba-illustrative">Illustrative reply &middot; real step count and time</span>
           </div>
         </div>
-        <p class="ba-caption">Real numbers, from this exact scenario (resize + email a photo)
-          run on a bare agent with no harness &mdash; see the writeup below. Reply text is
-          illustrative, based on the real jargon (S3, Lambda, SES) that baseline runs are
-          documented naming.</p>
+        <p class="ba-caption">The step count and time are measured from this exact request run on
+          an agent with no Service Buddy. The reply wording is illustrative, built from the jargon
+          (S3, Lambda, SES) those runs actually used.</p>
       </div>
       <div class="ba-col">
-        <div class="ba-label ba-label-good">With this harness</div>
+        <div class="ba-label ba-label-good">With Service Buddy</div>
         <div class="app-window ba-window ba-window-good">
           <div class="window-titlebar">
             <div class="traffic-lights">
@@ -792,46 +821,47 @@
               nothing left to figure out
             </div>
             <div class="chat-bubble agent ba-bubble good">
-              <p>&ldquo;Done and verified &mdash; people can upload a photo and get it back
-              later.&rdquo;</p>
+              <p>&ldquo;Done and verified &mdash; photos people upload get resized, and each
+              person gets a confirmation email.&rdquo;</p>
             </div>
           </div>
         </div>
-        <p class="ba-caption">The real, independently re-verified reply style this harness
-          produces &mdash; see the live example above.</p>
+        <p class="ba-caption">Summarises the recorded run replayed at the top of this page: three
+          pieces, each re-checked before the reply.</p>
       </div>
     </div>
     <p>
-      We didn't just eyeball that difference &mdash; we put it on a fixed 6-request benchmark
-      and measured what actually happened. Real infrastructure, real re-verification behind
-      every number below. No cherry-picking, no faster wrong answers.
+      We didn't just eyeball that difference. We ran a fixed set of 6 founder requests, one run
+      each, with and without Service Buddy, against real local infrastructure, and measured what
+      happened.
     </p>
     <div class="stat-row">
       <div class="stat-card">
         <div class="stat-label">no more tech-speak</div>
         <div class="stat-number">0<span class="stat-unit">/6</span></div>
-        <div class="stat-sub">down from 5 out of 6 without the harness &mdash; no more &ldquo;S3 bucket&rdquo; or &ldquo;CORS&rdquo; showing up when all you wanted was a straight answer</div>
+        <div class="stat-sub">down from 5 out of 6 without it &mdash; no more &ldquo;S3 bucket&rdquo; or &ldquo;CORS&rdquo; showing up when all you wanted was a straight answer</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">ships faster</div>
-        <div class="stat-number">~3.4<span class="stat-unit">&times;</span></div>
-        <div class="stat-sub">~310s total across all 6 requests vs. ~1,040s without the harness</div>
+        <div class="stat-number">~3<span class="stat-unit">&times;</span></div>
+        <div class="stat-sub">~310s total across all 6 requests vs. ~1,040s without it</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">less wasted motion</div>
         <div class="stat-number">~4<span class="stat-unit">&times;</span></div>
-        <div class="stat-sub">21 tool calls total vs. ~87 without the harness &mdash; fewer dead ends, not just less typing</div>
+        <div class="stat-sub">21 tool calls total vs. ~87 without it &mdash; fewer dead ends, not just less typing</div>
       </div>
     </div>
     <p class="note">
-      Don't take our word for it &mdash; read the
-      <a href="https://github.com/ahmedkeewan/service-buddy/blob/main/tasks/README.md">full
-      benchmark writeup</a>, honest misses included.
+      A small benchmark (6 requests, one run each), so read it as a direction, not a guarantee.
+      The <a href="https://github.com/ahmedkeewan/service-buddy/blob/main/tasks/README.md">full
+      benchmark writeup</a> has every number, honest misses included.
     </p>
 
     <p class="live-run-intro">
-      Numbers from a fixed benchmark are one kind of proof. Here's another: we ran it again,
-      for real, right before you loaded this page &mdash; and kept the receipts.
+      Numbers from a fixed benchmark are one kind of proof. Here's another: the three most
+      common requests, set up and then re-checked from scratch against a real local engine.
+      Recorded on 2026-09-25.
     </p>
     <div class="live-run-note">
       <div class="live-run-titlebar">
@@ -840,8 +870,7 @@
           <span class="dot yellow"></span>
           <span class="dot green"></span>
         </div>
-        <span class="window-title">verification log &mdash; run just now</span>
-        <span class="live-run-badge"><span class="pulse"></span>LIVE</span>
+        <span class="window-title">verification log &mdash; recorded 2026-09-25</span>
       </div>
       <div class="live-run-log">
         <div class="log-row">
@@ -869,84 +898,98 @@
         <span><strong>0</strong> bucket or table names leaked to a founder</span>
       </div>
       <p class="live-run-foot">
-        This times the harness's own provisioning + re-verification speed against a real local
-        Floci instance &mdash; a different measurement from the agent-behavior benchmark above,
-        not a replacement for it.
+        This times Service Buddy's own set-up and re-check speed against a real local Floci
+        instance. It measures something different from the benchmark above and doesn't replace
+        it.
       </p>
     </div>
   </section>
 
-  <section>
+  <section id="get-started">
     <h2>Ready to use it on your own idea?</h2>
-    <p>Up and running in a few minutes. Pick the path that fits your setup.</p>
+    <p>Up and running in a few minutes, on your own machine.</p>
+    <p class="prereqs">
+      <strong>You need:</strong> macOS, Linux, or Windows via WSL &middot; Docker running (setup
+      can install Colima for you) &middot; Python 3.11+ &middot; the AWS CLI (used locally, no AWS
+      account needed) &middot; git.
+    </p>
 
     <div class="path-toggle">
-      <button class="path-tab active" data-path="desktop">Claude Desktop</button>
-      <button class="path-tab" data-path="manual">Claude Code &amp; Cursor</button>
+      <button type="button" class="path-tab active" data-path="manual" aria-pressed="true">Claude Code &amp; Cursor (recommended)</button>
+      <button type="button" class="path-tab" data-path="desktop" aria-pressed="false">Claude Desktop (experimental)</button>
     </div>
 
-    <div class="steps" data-path-panel="desktop">
+    <div class="steps" data-path-panel="manual">
       <div class="step">
         <div class="step-num">1</div>
         <div>
-          <h3>Get the bundle</h3>
-          <p>Grab the <code>.mcpb</code> file from the repo's <a href="https://github.com/ahmedkeewan/service-buddy/tree/main/mcpb">mcpb/ folder</a>, or build it yourself with <code>./mcpb/build.sh</code>.</p>
+          <h3>Clone and run setup</h3>
+          <p>Run the command below once. It checks for Docker and Floci, offers to install what's
+          missing (it asks first), creates its own Python environment, and connects itself to
+          Claude Code and Cursor.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
         <div>
-          <h3>Install it</h3>
-          <p>Double-click the file, or drag it onto Claude Desktop, and click Install. No terminal, no editing config files by hand.</p>
+          <h3>Open your chat app in that folder</h3>
+          <p>Start Claude Code (or open the folder in Cursor) inside <code>service-buddy</code>
+          and approve the server when asked.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
         <div>
-          <h3>Start the local infra</h3>
-          <p>Run the setup command once on this machine so the harness has real infra to talk to, then just describe what you want in Claude Desktop.</p>
+          <h3>Describe what you want</h3>
+          <p>Try &ldquo;Let people sign up and upload a profile photo.&rdquo; No commands to
+          memorize after that.</p>
         </div>
       </div>
     </div>
 
-    <div class="steps" data-path-panel="manual" hidden>
+    <div class="steps" data-path-panel="desktop" hidden>
       <div class="step">
         <div class="step-num">1</div>
         <div>
-          <h3>Clone the repo</h3>
-          <p>Get the source onto your machine from <a href="https://github.com/ahmedkeewan/service-buddy">the repo</a>.</p>
+          <h3>Run setup once</h3>
+          <p>Claude Desktop still needs the local engine, so run the command below once in a
+          terminal. It also adds Service Buddy to Claude Desktop's settings.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
         <div>
-          <h3>Run setup</h3>
-          <p>One command checks for and installs Docker, Floci, and wires the MCP config into Claude Code / Cursor &mdash; asking your confirmation before anything gets installed.</p>
+          <h3>Restart Claude Desktop</h3>
+          <p>Quit and reopen it, then describe what you want. Setting things up needs the
+          assistant to run commands on your machine, which Claude Code and Cursor do out of the
+          box, so they're the smoother path today.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
         <div>
-          <h3>Start talking to it</h3>
-          <p>No commands to memorize after that &mdash; just describe what you want in your normal AI chat app.</p>
+          <h3>Optional: the one-click bundle</h3>
+          <p>A <code>.mcpb</code> bundle for macOS can be built with
+          <code>./mcpb/build.sh</code> (see <a href="https://github.com/ahmedkeewan/service-buddy/tree/main/mcpb">mcpb/</a>).
+          A prebuilt one will be on the
+          <a href="https://github.com/ahmedkeewan/service-buddy/releases">Releases page</a>.</p>
         </div>
       </div>
     </div>
 
     <div class="cmd-box">
       <div class="cmd-box-top">
-        <span id="cmd-label">Run once, on this machine</span>
+        <span id="cmd-label">Run once, in a terminal</span>
       </div>
       <div class="cmd-box-body">
-        <code id="cmd-text">./setup.sh</code>
-        <button id="copy-cmd-btn" type="button">Copy</button>
+        <code id="cmd-text">git clone https://github.com/ahmedkeewan/service-buddy.git &amp;&amp; cd service-buddy &amp;&amp; ./setup.sh</code>
+        <button id="copy-cmd-btn" type="button" aria-live="polite">Copy</button>
       </div>
     </div>
 
     <p class="note">
-      See the
-      <a href="https://github.com/ahmedkeewan/service-buddy#for-founders">README's Founders
-      section</a> for the full picture.
+      The <a href="https://github.com/ahmedkeewan/service-buddy#readme">README</a> has the full
+      setup guide, troubleshooting, and how to uninstall.
     </p>
   </section>
 
@@ -965,9 +1008,10 @@
           </svg>
         </div>
         <h3>Watch it work, in a browser too</h3>
-        <p>Everything you watched above is a replay of the real live board &mdash; the same event
-        stream, just captured earlier. Run <code>make board</code> and you get the live version,
-        updating in real time in your own browser, side by side with the chat.</p>
+        <p>The conversation at the top of this page is a replay of a real run. Run
+        <code>make board</code> and you get a live status page at
+        <code>localhost:7777</code> that updates in your browser as things get set up, side by
+        side with the chat. You don't need it to get started.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon" aria-hidden="true">
@@ -977,10 +1021,10 @@
           </svg>
         </div>
         <h3>Ask what it costs. Get a real answer.</h3>
-        <p>Ask what something will cost and it pulls live numbers straight from AWS's own public
-        Price List &mdash; not a guess. Last verified 2026-09-25: 5GB of file storage priced out
-        at <strong>$0.11/month</strong>. 6 of the 13 capabilities get this live-fetched pricing;
-        the rest fall back to a clearly-labeled estimate, never a silent guess.</p>
+        <p>Ask what something would cost on real AWS and it pulls live numbers from AWS's public
+        price list instead of guessing. On 2026-09-25, 5&nbsp;GB of file storage priced out at
+        <strong>$0.11/month</strong>. 6 of the 13 capabilities get live prices; the rest show a
+        clearly labelled estimate.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon" aria-hidden="true">
@@ -989,11 +1033,11 @@
             <path d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/>
           </svg>
         </div>
-        <h3>Setup that asks before it touches anything</h3>
-        <p><code>./setup.sh</code> checks for Docker, offers to install it for you (with your
-        yes, not without it), gets Floci running, and wires the config into Claude Desktop,
-        Claude Code, and Cursor in one pass. Safe to run again any time. macOS, Linux, and
-        Windows via WSL.</p>
+        <h3>Setup that asks before installing anything</h3>
+        <p><code>./setup.sh</code> checks for Docker and Floci, offers to install whatever is
+        missing (only with your yes), and connects Service Buddy to Claude Code, Cursor, and
+        Claude Desktop in one pass. Safe to run again any time. macOS, Linux, and Windows via
+        WSL.</p>
       </div>
     </div>
   </section>
@@ -1001,9 +1045,13 @@
   <section>
     <h2>For engineers</h2>
     <p>
-      This is the founder-facing side of a larger project. See the
-      <a href="https://github.com/ahmedkeewan/service-buddy">main repository</a>
-      for the architecture, design decisions, and benchmark data.
+      Service Buddy is an open-source MCP server (MIT licensed). The
+      <a href="https://github.com/ahmedkeewan/service-buddy/blob/main/harness/README.md">harness README</a>
+      covers the architecture and tools,
+      <a href="https://github.com/ahmedkeewan/service-buddy/blob/main/AGENTS.md">AGENTS.md</a>
+      is for AI coding agents connecting to it, and the
+      <a href="https://github.com/ahmedkeewan/service-buddy">repository</a> has the design
+      decisions and benchmark data.
     </p>
     <p class="note">
       Design patterns worth stealing:
@@ -1012,6 +1060,12 @@
       <a href="https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0002-flock-based-state-locking.md">flock-based state locking</a>
     </p>
   </section>
+
+  <footer class="site-footer">
+    <a href="https://github.com/ahmedkeewan/service-buddy">GitHub</a> &middot;
+    <a href="https://github.com/ahmedkeewan/service-buddy/issues">Issues</a> &middot;
+    MIT License
+  </footer>
 </main>
 
 <script>
@@ -1067,7 +1121,7 @@
     let i = 0;
     function step() {
       if (i >= events.length) {
-        finalEl.textContent = "All set — every piece is verified and working.";
+        finalEl.textContent = "Done and verified — photos people upload get resized, and each person gets a confirmation email.";
         finalEl.hidden = false;
         playing = false;
         return;
@@ -1130,10 +1184,10 @@
           <span class="cap-icon" aria-hidden="true">${THEME_ICONS[cap.theme] || ""}</span>
           <span class="cap-name">${cap.name}</span>
         </div>
-        <p class="cap-desc">${cap.description}</p>
+        <p class="cap-desc">${cap.description.replace(/ -- /g, " &mdash; ")}</p>
+        <p class="cap-proof"><strong>How it's checked:</strong> ${cap.proof}</p>
         <div class="cap-meta">
           <span class="cap-tag">${cap.theme}</span>
-          <span class="cap-included">&check; Included</span>
         </div>
       </div>
     `;
@@ -1151,7 +1205,7 @@
     pillsEl.innerHTML = themes
       .map(
         (t) =>
-          `<button class="pill${t === activeTheme ? " active" : ""}" data-theme="${t}">${t} (${counts[t]})</button>`
+          `<button type="button" class="pill${t === activeTheme ? " active" : ""}" data-theme="${t}" aria-pressed="${t === activeTheme}">${t} (${counts[t]})</button>`
       )
       .join("");
     pillsEl.querySelectorAll(".pill").forEach((btn) => {
@@ -1159,6 +1213,7 @@
         activeTheme = btn.dataset.theme;
         renderPills(caps);
         render(caps);
+        pillsEl.querySelector(`.pill[data-theme="${activeTheme}"]`).focus();
       });
     });
   }
@@ -1183,13 +1238,20 @@
   const cmdText = document.getElementById("cmd-text");
   const copyBtn = document.getElementById("copy-cmd-btn");
 
+  // Both paths run the same one-time setup; only the surrounding steps differ.
+  const SETUP_CMD =
+    "git clone https://github.com/ahmedkeewan/service-buddy.git && cd service-buddy && ./setup.sh";
   const COMMANDS = {
-    desktop: { label: "Run once, on this machine", cmd: "./setup.sh" },
-    manual: { label: "From the repo root", cmd: "./setup.sh" },
+    desktop: { label: "Run once, in a terminal", cmd: SETUP_CMD },
+    manual: { label: "Run once, in a terminal", cmd: SETUP_CMD },
   };
 
   function setPath(path) {
-    tabs.forEach((t) => t.classList.toggle("active", t.dataset.path === path));
+    tabs.forEach((t) => {
+      const on = t.dataset.path === path;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-pressed", String(on));
+    });
     panels.forEach((p) => {
       p.hidden = p.dataset.pathPanel !== path;
     });

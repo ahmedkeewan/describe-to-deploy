@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-The Floci control-plane harness, exposed as an MCP server.
+Service Buddy's MCP server: turns a plain-language product request into verified local
+infrastructure on Floci.
 
-Delivery surface decision (2026-09-05): expose this as MCP tools rather than build a bespoke
-chat frontend. A founder's existing AI chat client (Claude Desktop, Claude Code) becomes the UI
-for free; this server supplies the harness -- catalog, gate, state, wiring, go-live report --
-that the experiments in tasks/README.md already validated.
+It is an MCP server rather than a bespoke chat frontend, so a founder's existing AI chat client
+(Claude Desktop, Claude Code, Cursor) is the UI; this server supplies the harness -- catalog,
+gate, state, wiring, go-live report -- whose effect tasks/README.md measures.
 
-Architecture mirrors the planner/executor split, now as an explicit tool contract instead of
-two separate agent prompts:
+The architecture is a planner/executor split expressed as a tool contract:
   - The CALLING AGENT (whatever LLM is driving this MCP client) is the "planner + executor": it
     reads list_capabilities(), matches the founder's plain-language request to a capability_id,
     calls get_provisioning_recipe() to learn what to actually run, and executes those commands
@@ -20,9 +19,9 @@ two separate agent prompts:
     agent could accidentally skip.
 
 Jargon boundary: every string this server returns is built to be founder-safe (plain language,
-no AWS/Floci service names, no ARNs, no ports), EXCEPT the ten tools below. Each documents why
-in its own docstring:
-  - whats_needed_to_go_live() -- the one technical/graduation report in this whole harness.
+no AWS/Floci service names, no ARNs, no ports), EXCEPT the tools and fields below. Each tool
+documents why in its own docstring:
+  - whats_needed_to_go_live() -- a technical go-live report naming real cloud services.
   - get_provisioning_recipe() -- returns steps, an endpoint, and credentials for the calling
     agent's own tool use; never for the founder.
   - create_environment(), destroy_environment(), list_environments() -- return an app_context
@@ -33,11 +32,12 @@ in its own docstring:
     and app_context-scoped resource state for the developer/agent, not the founder.
   - describe_environment() -- returns AWS service names and cost estimates for the
     developer/agent, not the founder.
-One narrower, field-level exception: record_provisioned()'s FAIL path and its dry_run=True
-preview path both also return `_diagnostic_for_you_the_calling_agent`, an explicitly-labeled,
-non-founder-safe field carrying the raw verify command (and, on FAIL, its real output). Unlike
-the tools above, record_provisioned()'s own `founder_message` stays founder-safe in every case --
-only that one extra, clearly-named field is not. See its own docstring.
+Narrower, field-level exceptions, both named `_diagnostic_for_you_the_calling_agent`:
+  - record_provisioned() -- its FAIL path and its dry_run=True preview path carry the raw verify
+    command (and, on FAIL, its real output).
+  - wire_app_config() -- its failure path carries raw stderr from the config writer.
+Unlike the whole-tool exceptions above, these tools' own `founder_message` stays founder-safe in
+every case -- only that one extra, clearly-named field is not. See each tool's own docstring.
 
 Run: source harness/.venv/bin/activate && python3 harness/mcp_server.py
 """
@@ -74,13 +74,13 @@ ENV = {
 }
 
 # Lowercase alphanumeric + hyphen, 3-40 chars. This allowlist already excludes `::`, the
-# reserved separator the resource-name-to-environment binding (GH-29) relies on -- see the
-# technical design's Error responses table.
+# reserved separator the resource-name-to-environment binding relies on (see
+# _resource_name_binding_error), so no environment name can forge that separator.
 ENVIRONMENT_NAME_RE = re.compile(r"^[a-z0-9-]{3,40}$")
 BOARD_PORT_RANGE = range(7777, 7877)
 
 # Rough, illustrative monthly cost ranges for LIGHT early-stage usage on real AWS, keyed by
-# aws_service (GH-68). These are commonly-cited free-tier/pricing figures, not a quote -- actual
+# aws_service. These are commonly-cited free-tier/pricing figures, not a quote -- actual
 # cost depends on usage volume, region, and AWS's own pricing changes over time. Only used by
 # describe_environment() to give a developer/agent a rough sense of what "going live" (see
 # go_live_plan.py/whats_needed_to_go_live()) would cost, never surfaced to the founder as a
@@ -103,7 +103,7 @@ APPROX_MONTHLY_COST_USD = {
 
 server = MCPServer(
     name="floci-control-plane",
-    title="Floci Control Plane",
+    title="Service Buddy",
     description=(
         "Turns a plain-language product request into real, verified local infrastructure on "
         "Floci, without ever exposing cloud/infra terminology to the person driving this chat."
@@ -128,20 +128,19 @@ def _save_state(state: dict) -> None:
 def _substitute_placeholders(cli_template: str, resource_name: str) -> str:
     """Single source of truth for substituting a catalog verify.cli's placeholder with the real
     resource_name. _run_verify, get_provisioning_recipe, and the FAIL-path diagnostic field all
-    need this exact substitution -- extracted here after a bug (GH-77) where <scheduleName>, and
-    then <apiId> (found in review), were each missing from a hardcoded per-name replace() chain
-    that had to be updated by hand for every new placeholder a capability introduced.
+    need this exact substitution. A hardcoded per-name replace() chain is what this replaces: it
+    silently missed placeholders (<scheduleName>, <apiId>) whenever a capability introduced a
+    new one.
 
     Every capability's verify.cli uses at most one placeholder, always meaning "the one real
     resource this check is about" -- confirmed by inspecting every entry in
     catalog/capabilities.json (none combine two distinct placeholders in one command). A single
     regex substitution of any <word> token is therefore correct for every existing capability and
     every future one following the same one-placeholder-per-check shape, with no per-name list to
-    keep in sync ever again.
+    keep in sync.
 
-    The identical substitution in harness/verify_gate.py stays a deliberate, separate copy (see
-    _run_verify's docstring) so this server's gate check can never silently diverge from that
-    standalone script without both being edited."""
+    harness/verify_gate.py has its own copy of this substitution (see _run_verify); keep the two
+    in sync."""
     # A plain string replacement arg would let re.sub interpret backslash sequences in
     # resource_name (\1, \g<0>, ...) as backreferences instead of literal text -- a resource_name
     # containing one could crash with re.error or silently corrupt the substituted command. A
@@ -150,10 +149,9 @@ def _substitute_placeholders(cli_template: str, resource_name: str) -> str:
 
 
 def _run_verify(cli_template: str, resource_name: str) -> tuple[bool, str]:
-    """Identical substitution + execution logic to harness/verify_gate.py -- kept as one
-    function there and reused here would be cleaner long-term, but the exact-match duplication
-    is intentional for now so this server's gate check can never silently diverge from the
-    standalone script's behavior without both being edited."""
+    """Run a catalog verify.cli against live Floci. Mirrors verify_gate.run_check, kept as a
+    separate copy so the MCP server has no import-time dependency on the CLI script; keep the
+    two in sync."""
     import os
     cmd = _substitute_placeholders(cli_template, resource_name)
     try:
@@ -192,15 +190,16 @@ def create_environment(name: str, owner: str | None = None) -> dict:
     app_context (never reused, even if `name` is reused after a later destroy_environment call
     within the same second) and a free board port, both recorded in environments.json.
 
-    `owner` is optional, purely descriptive bookkeeping (GH-69, AgDR-0004) -- e.g. a founder or
-    team-member name/identifier, for a human reading list_environments()/describe_environment()
-    to see who created what. It is NOT a permission check: this harness has no authentication or
-    identity system, and any connected MCP client can still act on any app_context it knows,
-    regardless of the recorded owner. Never represent `owner` as an access-control feature.
+    `owner` is optional, purely descriptive bookkeeping -- e.g. a founder or team-member
+    name/identifier, for a human reading list_environments() to see who created what. It is NOT
+    a permission check: this harness has no authentication or identity system, and any connected
+    MCP client can still act on any app_context it knows, regardless of the recorded owner. Never
+    represent `owner` as an access-control feature.
 
     NOT founder-facing -- the returned app_context and board_port are for the developer/agent
-    driving this session. Never relay either value to the founder; see AgDR-0001 and the
-    technical design's jargon-boundary contract update for why."""
+    driving this session. Never relay either value to the founder."""
+    # Why owner is metadata, not enforcement: research/agdr/AgDR-0004. Why environments share one
+    # backend isolated by naming scope: research/agdr/AgDR-0001.
     if not ENVIRONMENT_NAME_RE.match(name):
         return {
             "error": "Environment name must be lowercase alphanumeric with hyphens, "
@@ -222,8 +221,7 @@ def create_environment(name: str, owner: str | None = None) -> dict:
 
         # Nanosecond timestamp + random suffix, not a plain per-second timestamp -- a same-second
         # destroy_environment(name) followed by create_environment(name) must never mint the same
-        # app_context, or the new environment would inherit the destroyed one's namespace. See
-        # AgDR-0001 and the technical design's Data Model section.
+        # app_context, or the new environment would inherit the destroyed one's namespace.
         app_context = f"{name}-{time.time_ns()}-{secrets.token_hex(2)}"
         envs[name] = {
             "app_context": app_context,
@@ -241,12 +239,12 @@ def destroy_environment(name: str) -> dict:
     """Release an environment's board port and remove its entries from environments.json and
     stack-state.json. Does NOT delete any real backend resources those entries pointed to --
     capabilities.json defines no teardown step for any capability, so the underlying Floci
-    resources become permanently unreachable (the resource-name binding, GH-29, ties them to
-    this environment's now-removed app_context) but are never actually deleted. This is a known,
-    accepted limitation, not a bug -- see AgDR-0001.
+    resources become unreachable (their resource names are bound to this environment's
+    now-removed app_context) but are never actually deleted. This is a known limitation.
 
     NOT founder-facing -- the returned name/port are for the developer/agent driving this
     session, never to be relayed to the founder."""
+    # Rationale for accepting orphaned resources: research/agdr/AgDR-0001.
     with environments_lock():
         envs = load_environments()
         entry = envs.pop(name, None)
@@ -264,13 +262,12 @@ def destroy_environment(name: str) -> dict:
 
 @server.tool()
 def list_environments() -> list[dict]:
-    """List every currently registered environment: name, app_context, board_port, and when it
-    was created. A plain read, not locked -- matches how get_app_state() reads stack-state.json
-    without a lock elsewhere in this file; only the check-then-write sequences in
-    create_environment/destroy_environment need one.
+    """List every registered environment: name, app_context, board_port, created timestamp, and
+    optional owner.
 
-    NOT founder-facing -- app_context and board_port are for the developer/agent, never for the
-    founder."""
+    NOT founder-facing -- never relay app_context or board_port to the founder."""
+    # A plain read, not locked -- only the check-then-write sequences in
+    # create_environment/destroy_environment need the lock.
     envs = load_environments()
     return [{"name": name, **info} for name, info in envs.items()]
 
@@ -283,13 +280,13 @@ def get_verification_history(
     until: str | None = None,
 ) -> list[dict]:
     """Query the durable event log for what changed and when, without needing the live board open
-    at the time it happened (GH-71). Filters are all optional and combine with AND: app_context
+    at the time it happened. Filters are all optional and combine with AND: app_context
     narrows to one environment/product, capability_id to one capability, since/until (ISO-8601
     timestamps, e.g. "2026-09-25T00:00:00Z") to a time range. With no filters, returns the entire
     history.
 
     NOT founder-facing -- each event's `dev` field carries real service names, commands, and exit
-    codes (the interface's "Details for a developer" panel data). Never relay a raw event to the
+    codes. Never relay a raw event to the
     founder; each event's `founder` field is the plain-language version if you need to summarize
     one for them."""
     return events_log.query(
@@ -300,13 +297,13 @@ def get_verification_history(
 @server.tool()
 def snapshot_environment(name: str) -> dict:
     """Save a durable, point-in-time copy of an environment's currently-recorded provisioned
-    capabilities (GH-67, AgDR-0003). This snapshots RECORDED STATE, not real infrastructure --
-    Floci is one shared backend (AgDR-0001), so nothing about the actual resources changes.
-    Restore it later with restore_environment(); a snapshot only ever exists to let you undo a
-    later change back to this point.
+    capabilities. This snapshots RECORDED STATE, not real infrastructure -- nothing about the
+    actual resources changes. Restore it later with restore_environment() to undo later changes
+    back to this point.
 
     NOT founder-facing -- the returned snapshot_id and capability list are for the
     developer/agent, never for the founder."""
+    # Why snapshot/restore instead of clone: research/agdr/AgDR-0003.
     envs = load_environments()
     env = envs.get(name)
     if env is None:
@@ -333,17 +330,18 @@ def snapshot_environment(name: str) -> dict:
 @server.tool()
 def restore_environment(name: str, snapshot_id: str) -> dict:
     """Restore capabilities from a snapshot_environment() snapshot back into an environment's
-    recorded state (GH-67, AgDR-0003). Every capability in the snapshot is FRESHLY RE-VERIFIED
+    recorded state. Every capability in the snapshot is FRESHLY RE-VERIFIED
     against live Floci before being written back -- this never blindly copies old state. A
     capability that no longer verifies (its real resource was deleted, or Floci was reset) is
     skipped, not restored, and reported as such.
 
     Only restores into the SAME environment the snapshot was taken from -- a snapshot's
-    capabilities carry resource_name values prefixed with the snapshot's own app_context (GH-29's
-    binding), so restoring into a different environment would violate that binding. If `name`'s
-    current app_context doesn't match the snapshot's, this returns an error instead of restoring.
+    capabilities carry resource_name values prefixed with the snapshot's own app_context, so
+    restoring into a different environment would break that binding. If `name`'s current
+    app_context doesn't match the snapshot's, this returns an error instead of restoring.
 
-    NOT founder-facing."""
+    Returns {restored, skipped}. NOT founder-facing -- never relay capability ids or snapshot
+    ids to the founder."""
     envs = load_environments()
     env = envs.get(name)
     if env is None:
@@ -398,9 +396,8 @@ def restore_environment(name: str, snapshot_id: str) -> dict:
 @server.tool()
 def describe_environment(name: str) -> dict:
     """Report each of an environment's currently-provisioned capabilities alongside an estimate
-    of what it would cost per month on real AWS (GH-68, GH-95) -- built from the same
-    aws_service/cloud_equivalent_note fields go_live_plan.py and whats_needed_to_go_live()
-    already use, just with a cost figure attached. For six capabilities (DynamoDB, SQS, SNS, Step
+    of what it would cost per month on real AWS, using the same service mapping as
+    whats_needed_to_go_live(). For six capabilities (DynamoDB, SQS, SNS, Step
     Functions, S3, Lambda) this is computed live from AWS's own public Price List data against a
     documented light-usage assumption; every other capability falls back to a rough, hand-written
     estimate. Either way this is an ESTIMATE for light, early-stage usage, not a quote -- actual
@@ -476,7 +473,11 @@ def list_capabilities() -> list[dict]:
 def get_app_state(app_context: str) -> dict:
     """Look up what has already been built and verified for a given app. Call this before
     assuming a request needs new infrastructure -- a follow-up request should extend or reuse
-    what's here, not duplicate it."""
+    what's here, not duplicate it.
+
+    `app_context` is the stable identifier for the founder's app: the value create_environment
+    returned, or any consistent slug you chose for this app. Every tool that takes it expects the
+    same value for the same app."""
     state = _load_state()
     app = state.get(app_context)
     if app is None:
@@ -500,16 +501,16 @@ def _registered_app_contexts() -> set[str]:
 
 
 def _resource_name_binding_error(app_context: str | None, resource_name: str) -> dict | None:
-    """Enforce GH-29: when `app_context` belongs to a registered environment, `resource_name`
+    """Resource-name binding: when `app_context` belongs to a registered environment, `resource_name`
     must split on the first `::` into a segment EXACTLY equal to that `app_context` -- not
     merely a prefix. A naive `resource_name.startswith(app_context)` check is defeatable: an
     environment can be named after another environment's full app_context, making a prefix
     check pass across environments. Exact equality on the pre-`::` segment closes that hole
-    (see AgDR-0001 and the technical design's Data Flow step 6).
+    (see research/agdr/AgDR-0001).
 
-    An app_context with no matching registered environment (today's default, single-app usage)
-    is unaffected -- this is an accepted, documented gap for FR-7 backward compatibility, not
-    an oversight. Returns None when the call may proceed, or the error dict to return as-is."""
+    An app_context with no matching registered environment (single-app usage without
+    create_environment) is deliberately unaffected, so that usage keeps working. Returns None
+    when the call may proceed, or the error dict to return as-is."""
     if app_context is None or app_context not in _registered_app_contexts():
         return None
     prefix, sep, _ = resource_name.partition("::")
@@ -527,8 +528,7 @@ def get_provisioning_recipe(capability_id: str, resource_name: str, app_context:
     Pass app_context if you have it (the app/product this is for) so the live board can group
     activity by product -- optional, omit if you don't know it yet.
     Returns technical/infra detail (endpoint, credentials, resource_name) -- it's for YOUR use
-    in executing the work with your own tools, never for repeating to the founder. The other
-    tools returning non-founder-safe values are named in this module's own docstring. If
+    in executing the work with your own tools, never for repeating to the founder. If
     capability_id isn't in list_capabilities(), do not call this -- use
     report_unsupported_request instead."""
     binding_error = _resource_name_binding_error(app_context, resource_name)
@@ -565,10 +565,11 @@ def record_provisioned(
     re-verifies for real against live Floci -- your own belief that it worked is not sufficient
     and is not trusted. State is only ever updated on a genuine, freshly-checked PASS. Returns a
     founder-safe message either way; relay it as-is or in your own words, but do not add
-    technical detail that isn't in it. On FAIL only, the response also carries
-    `_diagnostic_for_you_the_calling_agent`: the raw verify command and its real output, for your
-    own debugging. That field can contain AWS/Floci jargon (an ARN, a bucket or table name, raw
-    CLI output) -- it is not founder-safe and must never be relayed to the founder.
+    technical detail that isn't in it. On FAIL, and on dry_run=True previews, the response also
+    carries `_diagnostic_for_you_the_calling_agent`: the raw verify command (and on FAIL its real
+    output), for your own debugging. That field can contain AWS/Floci jargon (an ARN, a bucket or
+    table name, raw CLI output) -- it is not founder-safe and must never be relayed to the
+    founder.
 
     Pass dry_run=True to preview the exact command this call would run and what it would check,
     WITHOUT executing anything against live Floci and WITHOUT touching stack-state.json or the
@@ -661,9 +662,12 @@ def record_provisioned(
 
 @server.tool()
 def report_unsupported_request(app_context: str, request_text: str, closest_capability_id: str | None = None) -> dict:
-    """Call this instead of inventing anything when a request doesn't match list_capabilities().
-    Logs the gap durably (so it can become a future capability) and returns a safe response you
-    can relay -- never provision anything outside the catalog, no matter how confident you are."""
+    """Call this instead of inventing anything when a request doesn't match list_capabilities()
+    -- never provision anything outside the catalog, however confident you are. `request_text`
+    is the founder's request verbatim; pass `closest_capability_id` if one catalog entry is a
+    reasonable substitute, and the reply will offer it as a yes/no question. Appends the request
+    to a local log (/tmp/floci-mcp-fallback-log.jsonl) and returns a founder_message you can
+    relay as-is."""
     FALLBACK_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with FALLBACK_LOG_PATH.open("a") as f:
         f.write(json.dumps({
@@ -730,8 +734,13 @@ def check_app_readiness(app_context: str) -> dict:
 @server.tool()
 def wire_app_config(app_context: str, app_directory: str) -> dict:
     """Write the real connection details for this app's verified infrastructure directly into
-    its config file (.env) at app_directory -- no manual copy-paste step for the founder.
-    Preserves anything already in that file. Only wires capabilities already recorded as PASS."""
+    its config file (.env) at app_directory. Preserves anything already in that file. Only wires
+    capabilities already recorded as PASS.
+
+    Not every value can be derived: user sign-in (pool/client IDs) and email (sender address)
+    are left unset and must be filled from provisioning output. On failure the response also
+    carries `_diagnostic_for_you_the_calling_agent` (raw stderr) -- not founder-safe, never relay
+    it to the founder."""
     result = subprocess.run(
         [sys.executable, str(REPO_ROOT / "harness" / "auto_wire.py"),
          "/dev/stdin", app_directory],
@@ -739,7 +748,10 @@ def wire_app_config(app_context: str, app_directory: str) -> dict:
         capture_output=True, text=True,
     )
     if result.returncode != 0:
-        return {"founder_message": "I couldn't update the app's configuration.", "detail": result.stderr[:300]}
+        return {
+            "founder_message": "I couldn't update the app's configuration.",
+            "_diagnostic_for_you_the_calling_agent": result.stderr[:300],
+        }
     return {"founder_message": "Your app's settings are updated -- no setup needed on your end."}
 
 
@@ -760,11 +772,11 @@ def _plan_from_state(app_context: str) -> dict:
 
 @server.tool()
 def whats_needed_to_go_live(app_context: str) -> str:
-    """TECHNICAL REPORT -- the one tool in this server that names real cloud services. Use only
-    when explicitly asked something like 'what happens after we launch for real' or 'what would
-    it take to go live' -- this is meant for a technical audience (an engineer joining later, an
-    investor), not routine conversation. Reads straight from what's already verified; performs
-    no migration."""
+    """Technical report for a non-founder audience (an engineer joining later, an investor):
+    names the real cloud service behind each verified capability and what changes to run it in
+    production. Use only when explicitly asked something like 'what would it take to go live'.
+    Reads from what is already verified; performs no migration. Do not relay it to the founder
+    in routine conversation."""
     plan_path = Path("/tmp/floci-mcp-go-live-plan.json")
     plan_path.write_text(json.dumps(_plan_from_state(app_context)))
     result = subprocess.run(

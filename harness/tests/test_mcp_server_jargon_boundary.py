@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Regression test for GH-30: the module docstring's founder-safe exception list must name
-every tool that actually returns non-founder-safe output. This exact claim already went stale
-once (get_provisioning_recipe was already returning infra detail before the module docstring
-said so) -- this test exists so the next new non-founder-safe tool doesn't repeat that."""
+"""The module docstring's founder-safe exception list must name every tool that returns
+non-founder-safe output. This claim already went stale once (get_provisioning_recipe returned
+infra detail before the module docstring said so) -- this test exists so the next new
+non-founder-safe tool doesn't repeat that."""
 import sys
 import unittest
 from pathlib import Path
@@ -24,10 +24,15 @@ NON_FOUNDER_SAFE_TOOLS = [
     "describe_environment",
 ]
 
-# whats_needed_to_go_live predates GH-30 and documents its non-founder audience without the
-# literal word "founder" ("technical audience", "not routine conversation") -- already adequate,
-# left alone rather than reworded just to satisfy this test's string match.
+# Tools whose failure path carries a `_diagnostic_for_you_the_calling_agent` field -- a narrower,
+# field-level exception the module docstring must also name.
+FIELD_LEVEL_EXCEPTION_TOOLS = [
+    "record_provisioned",
+    "wire_app_config",
+]
+
 TOOLS_REQUIRING_EXPLICIT_FOUNDER_WORDING = [
+    "whats_needed_to_go_live",
     "get_provisioning_recipe",
     "create_environment",
     "destroy_environment",
@@ -48,6 +53,15 @@ class JargonBoundaryDocstringTests(unittest.TestCase):
                 module_doc,
                 f"module docstring's founder-safe exception list is missing {tool_name}()",
             )
+
+    def test_module_docstring_names_every_field_level_exception(self):
+        module_doc = mcp_server.__doc__
+        self.assertIn("_diagnostic_for_you_the_calling_agent", module_doc)
+        for tool_name in FIELD_LEVEL_EXCEPTION_TOOLS:
+            self.assertIn(tool_name, module_doc)
+            doc = getattr(mcp_server, tool_name).__doc__ or ""
+            self.assertIn("_diagnostic_for_you_the_calling_agent", doc)
+            self.assertIn("not founder-safe", doc.lower())
 
     def test_each_non_founder_safe_tool_documents_it_in_its_own_docstring(self):
         for tool_name in TOOLS_REQUIRING_EXPLICIT_FOUNDER_WORDING:

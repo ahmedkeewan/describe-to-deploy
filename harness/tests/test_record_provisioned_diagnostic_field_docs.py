@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Regression test for GH-46: record_provisioned()'s FAIL-path diagnostic field carries real
-AWS/Floci-jargon-capable content (an ARN, a bucket/table name, raw CLI output). It already has
-an inline "Not for the founder" label at runtime, but GH-46 decided that isn't enough on its
-own -- the tool's own docstring, and the module's jargon-boundary docstring, must also say so
-explicitly, matching the rigor GH-30 already applies to the five whole-tool exceptions. This
-test pins that decision so it can't quietly regress."""
+"""record_provisioned()'s FAIL-path diagnostic field carries real AWS/Floci-jargon-capable content
+(an ARN, a bucket/table name, raw CLI output). It has an inline "Not for the founder" label at
+runtime, but that isn't enough on its own -- the tool's own docstring, and the module's
+jargon-boundary docstring, must also say so explicitly, matching the rigor applied to the
+whole-tool exceptions. This test pins that so it can't quietly regress."""
 import sys
 import unittest
 from pathlib import Path

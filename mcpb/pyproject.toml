@@ -1,8 +1,8 @@
 [project]
-name = "floci-control-plane-mcpb"
-version = "1.0.0"
-description = "MCPB-bundled server half of describe-to-deploy's Floci control-plane harness."
+name = "service-buddy-mcpb"
+version = "0.1.0"
+description = "Service Buddy's MCP server, packaged as a Claude Desktop extension (.mcpb)."
 requires-python = ">=3.10"
 dependencies = [
-    "mcp>=1.0",
+    "mcp>=2.1.1,<3",
 ]

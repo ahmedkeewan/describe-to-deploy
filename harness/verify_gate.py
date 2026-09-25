@@ -2,10 +2,8 @@
 """
 The verification gate: deterministic, no LLM in the loop.
 
-The planner/executor split's executor was TOLD to verify its own work before claiming done -- that instruction did
-real work (VOCAB.md 6d's t6 result), but it's still inferential: an LLM choosing to comply. This
-gate is the computational counterpart (VOCAB.md sec 3: "prefer computational over inferential
-wherever a deterministic check exists") -- a plain script that independently re-runs each
+Asking an agent to verify its own work helps, but it is still the model choosing to comply. This
+gate is the deterministic counterpart: a plain script that independently re-runs each
 capability's real verify check against live Floci state, with no LLM in the loop and no way for
 an executor's self-report to override it. It reads only stack-plan.json + catalog/capabilities.json
 and prints a structured verdict; a founder-facing "ready" message should never be shown unless
@@ -46,7 +44,7 @@ def run_check(cli_template: str, resource_name: str) -> tuple[bool, str]:
     Every capability's verify.cli uses at most one placeholder (confirmed by inspecting every
     entry in catalog/capabilities.json), always meaning the one real resource this check is
     about -- so a single regex substitution of any <word> token is correct here, and needs no
-    per-placeholder-name list to keep in sync as new capabilities are added (GH-77/GH-66)."""
+    per-placeholder-name list to keep in sync as new capabilities are added."""
     # A plain string replacement arg would let re.sub interpret backslash sequences in
     # resource_name (\1, \g<0>, ...) as backreferences instead of literal text -- a replacement
     # function's return value is always used literally, with no such interpretation.

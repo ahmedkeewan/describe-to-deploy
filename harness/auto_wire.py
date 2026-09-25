@@ -31,19 +31,16 @@ def derive_env_values(capability_id: str, resource_name: str, env_var_names: lis
     values = {"AWS_ENDPOINT_URL": "http://localhost:4566"}
     if capability_id == "user-accounts":
         pass  # COGNITO_USER_POOL_ID / COGNITO_CLIENT_ID come from provisioning output,
-              # not derivable from resource_name alone -- left for the executor to fill in
-              # via a richer plan in a future iteration; noted, not silently guessed here.
+              # not derivable from resource_name alone -- left unset rather than guessed.
     elif capability_id == "file-storage":
         values["S3_BUCKET_NAME"] = resource_name
     elif capability_id == "structured-data":
         values["DYNAMODB_TABLE_NAME"] = resource_name
     elif capability_id == "send-email":
         pass  # SES_SENDER_ADDRESS is the identity the executor actually verified (e.g.
-              # "confirmations@local.test"), NOT derivable from resource_name -- an earlier
-              # version of this function guessed `<resource_name>@local.test` here and it was
-              # genuinely wrong (caught 2026-09-05: real identity was "confirmations@local.test",
-              # resource_name was "photo-confirm-email-notify", an unrelated label). Left unfilled
-              # rather than guessed, same as user-accounts above.
+              # "confirmations@local.test"), NOT derivable from resource_name, which is an
+              # internal label (e.g. "photo-confirm-email-notify"). Guessing
+              # `<resource_name>@local.test` produces a wrong address, so it's left unset.
     elif capability_id == "background-queue":
         values["SQS_QUEUE_URL"] = resource_name
     elif capability_id == "push-notifications":
