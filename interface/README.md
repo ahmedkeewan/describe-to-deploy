@@ -4,6 +4,35 @@ The founder-facing surface of the infra-invisible agent. This document covers th
 layer only — see [harness/README.md](../harness/README.md) for the harness architecture it sits
 on top of.
 
+## Status: a designed surface, not a shipped one
+
+Read this before the rest of the document, so you don't mistake it for a description of what
+exists today.
+
+**What founders actually use right now is chat** — Claude Desktop, Claude Code, or Cursor, talking
+to the MCP server in [`harness/`](../harness/). No dedicated app, no dashboard required. That is
+the shipped product, and [the founder site](https://ahmedkeewan.github.io/service-buddy/) is
+written around it.
+
+**What this folder describes is a 16-screen web app** that has never been built. It's a design
+exploration — a spec, a copy deck, and a canvas-regeneration prompt — kept because the thinking in
+it is good, not because it's on a roadmap with a date.
+
+The two are **not competing visions**; they're two surfaces over the same backend, at very
+different stages:
+
+- **Entry point**: none exists for the web app. There is no URL, no link from chat, nothing to
+  reach. It is design-canvas files only.
+- **State model**: undecided, deliberately. How a persistent multi-screen app would share
+  session and environment state with a turn-by-turn chat interface is a real question, but not one
+  worth answering until the app is actually scheduled for planning. Whoever picks this up decides
+  it then.
+- **Founder-facing visibility**: the README and the Pages site will **not** mention or link to the
+  web app while it stays unbuilt. Revisit that the moment someone plans the work, not before.
+
+Everything below is written in the present tense because it's a design spec. Read it as "this is
+how it would work", not "this is how it works".
+
 ---
 
 ## In one sentence
