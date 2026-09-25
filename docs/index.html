@@ -7,31 +7,34 @@
 <style>
   :root {
     color-scheme: light dark;
+    /* Design tokens -- Service Buddy brand: red, black, white. One accent color
+       (red) does double duty for brand emphasis, primary actions, and "verified"
+       state -- there is no separate green/yellow in this palette by design. */
     --bg: #ffffff;
-    --fg: #1a1a1a;
+    --fg: #0a0a0a;
     --muted: #666666;
-    --card-bg: #f7f7f8;
-    --border: #e2e2e5;
-    --accent: #2563eb;
+    --card-bg: #f7f7f7;
+    --border: #e2e2e2;
+    --accent: #dc2626;
     --accent-fg: #ffffff;
-    --pass-bg: #ecfdf3;
-    --pass-fg: #067647;
-    --working-bg: #fff8e6;
-    --working-fg: #92660b;
-    --window-chrome: #ececee;
+    --pass-bg: #fef2f2;
+    --pass-fg: #b91c1c;
+    --working-bg: #f0f0f0;
+    --working-fg: #525252;
+    --window-chrome: #f0f0f0;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0e0e10;
-      --fg: #eaeaea;
-      --muted: #9a9a9a;
-      --card-bg: #17171a;
-      --border: #2a2a2e;
-      --pass-bg: #0e2a1c;
-      --pass-fg: #4ade80;
-      --working-bg: #2a2410;
-      --working-fg: #facc15;
-      --window-chrome: #1c1c1f;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --muted: #999999;
+      --card-bg: #161616;
+      --border: #2a2a2a;
+      --pass-bg: #2a1414;
+      --pass-fg: #f87171;
+      --working-bg: #1c1c1c;
+      --working-fg: #a3a3a3;
+      --window-chrome: #161616;
     }
   }
   * { box-sizing: border-box; }
