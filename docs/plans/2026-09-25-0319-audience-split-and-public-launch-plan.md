@@ -147,5 +147,5 @@ independent of the rest of this plan.
   pin down).
 - Whether the demo GIF is hand-recorded against live Floci or produced from a scripted/staged run
   — an implementation detail for whichever ticket builds it.
-- Whether `docs/agdr/` and `docs/history/` need any Jekyll front-matter adjustments to render
+- Whether `research/agdr/` and `research/history/` need any Jekyll front-matter adjustments to render
   cleanly once Pages is enabled — worth a quick spike before ticket 3's build starts.
