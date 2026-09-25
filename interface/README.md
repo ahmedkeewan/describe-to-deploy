@@ -139,7 +139,7 @@ Every decision below follows from that sentence.
 | | |
 |---|---|
 | [README.md](README.md) — this file | The design: language rule, platform, coupling, the journey, trust vocabulary, disclosure, event contract |
-| [founder-copy.md](founder-copy.md) | Every word the founder can read, in one place — status words, proof sentences for all 12 capabilities, screen text, translation reference |
+| [founder-copy.md](founder-copy.md) | Every word the founder can read, in one place — status words, proof sentences for all 13 capabilities, screen text, translation reference |
 | [design-brief.md](design-brief.md) | The visual brief: tone, hard constraints, and the screen inventory a designer draws from |
 | [regenerate-prompt.md](regenerate-prompt.md) | A self-contained prompt that rebuilds the whole 16-screen canvas, with exact tokens and copy |
 | [founder-interface.html](founder-interface.html) | The 16-screen canvas, exported. Open it in a browser to pan through every screen |
@@ -581,14 +581,14 @@ plan.approved      escalate.stop       provision.ok/fail
 ```
 
 **Where the strings live.** Every founder-facing string is drafted in
-[founder-copy.md](founder-copy.md) — status words, proof sentences for all 12 capabilities, and
+[founder-copy.md](founder-copy.md) — status words, proof sentences for all 13 capabilities, and
 all screen text. They are kept together because the language rule is only checkable when the
 whole vocabulary sits side by side.
 
 **Catalog dependency.** For the founder pane to render, `capabilities.json` needs a founder-safe
 proof sentence per verify check — `verify.founder_proof`, alongside the existing `verify.cli`.
 The sentences are already written in [founder-copy.md](founder-copy.md); adopting them is
-roughly a 15-minute change across the 12 entries, owned by whoever owns the catalog.
+roughly a 15-minute change across the 13 entries, owned by whoever owns the catalog.
 
 ## Optional: an existing project
 
@@ -706,7 +706,7 @@ only what's still actually true.
   not claim zero. In a real product this is a downloadable app; the browser UI is unchanged.
   Running `source harness/.venv/bin/activate && python3 harness/web_server.py` (per that module's
   own docstring) is that one step today.
-- **Verification strength is mixed across the catalog, not uniform.** 5 of 12 capabilities
+- **Verification strength is mixed across the catalog, not uniform.** 5 of 13 capabilities
   (`user-accounts`, `file-storage`, `structured-data`, `background-job`, `send-email` — the ones
   carrying the 2026-09-05 `hardened_note` upgrade) run a stronger check than the rest, but not
   uniformly the same check: `user-accounts`, `file-storage`, and `structured-data` do a full

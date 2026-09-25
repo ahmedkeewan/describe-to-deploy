@@ -53,6 +53,7 @@ control that makes this safe despite resources never being physically separated.
 
 ## Artifacts
 
-- Technical design: `projects/harness-engineering-research/technical-designs/isolated-per-agent-environments.md` (ops-fork/portfolio repo)
-- PRD: `projects/harness-engineering-research/prds/isolated-per-agent-environments.md`
-- Design review (Tariq, doc-only, CHANGES REQUESTED — finding B1 required this record)
+- Implemented in: `harness/mcp_server.py` (`_resource_name_binding_error`),
+  `harness/environments_store.py`
+- Raised by: a design review of the isolated-per-agent-environments work, which required this
+  decision be recorded before implementation started

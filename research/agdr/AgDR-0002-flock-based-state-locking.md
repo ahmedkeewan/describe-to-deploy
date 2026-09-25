@@ -63,5 +63,7 @@ generator layer).
 
 ## Artifacts
 
-- Technical design: `projects/harness-engineering-research/technical-designs/isolated-per-agent-environments.md` (ops-fork/portfolio repo)
-- Design review (Tariq, doc-only, CHANGES REQUESTED — finding B1 required this record)
+- Implemented in: `harness/state_lock.py`, used by `harness/events.py`,
+  `harness/environments_store.py`, and `harness/snapshots_store.py`
+- Raised by: a design review of the isolated-per-agent-environments work, which required this
+  decision be recorded before implementation started
