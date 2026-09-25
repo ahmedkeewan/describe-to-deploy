@@ -1,0 +1,35 @@
+# Harness Engineering Research
+
+> An MCP server that turns a non-technical founder's plain-language product request into real,
+> verified local infrastructure on Floci, plus a research reference on harness engineering as a
+> discipline (Agent = Model + Harness).
+
+This repo has two parts. The first is a working demo harness: an MCP server (`harness/`) that
+matches a plain-language request against a capability catalog (`catalog/`), executes real
+provisioning steps, and independently re-verifies the result against live infrastructure before
+ever claiming success — no LLM self-report is trusted. The second is a curated research
+reference on harness engineering (system prompts, tools/skills/MCP, sandboxing, orchestration,
+memory) as a discipline distinct from model choice.
+
+## Docs
+
+- [README.md](README.md): entry point, split into founder / engineer / AI-agent sections.
+- [harness/README.md](harness/README.md): the MCP server's architecture, tools, and how to run it.
+- [AGENTS.md](AGENTS.md): how an AI coding agent connects to and calls this MCP server.
+- [tasks/README.md](tasks/README.md): benchmark results (before/after numbers, including honest
+  negative findings) from measuring the harness against a fixed scoring task set.
+- [docs/research-links.md](docs/research-links.md): curated harness-engineering research link pack.
+- [VOCAB.md](VOCAB.md): shared harness-engineering vocabulary.
+
+## Design decisions
+
+- [docs/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md](docs/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md):
+  isolating multiple agents on one shared backend via naming scope, not per-agent infrastructure.
+- [docs/agdr/AgDR-0002-flock-based-state-locking.md](docs/agdr/AgDR-0002-flock-based-state-locking.md):
+  cross-process state locking for an MCP server where every client spawns its own subprocess.
+
+## Optional
+
+- [docs/history/GAME_PLAN.md](docs/history/GAME_PLAN.md): archived design rationale from the
+  project's original build.
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to set up, test, and contribute to this repo.
