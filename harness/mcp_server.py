@@ -56,6 +56,7 @@ import events as events_log
 from environments_store import environments_lock, load_environments, save_environments
 from snapshots_store import snapshots_lock, load_snapshots, save_snapshots
 from state_lock import locked
+import pricing
 
 from mcp.server.mcpserver import MCPServer
 
@@ -396,12 +397,15 @@ def restore_environment(name: str, snapshot_id: str) -> dict:
 
 @server.tool()
 def describe_environment(name: str) -> dict:
-    """Report each of an environment's currently-provisioned capabilities alongside a rough,
-    illustrative estimate of what it would cost per month on real AWS (GH-68) -- built from the
-    same aws_service/cloud_equivalent_note fields go_live_plan.py and whats_needed_to_go_live()
-    already use, just with a cost figure attached. These are ROUGH ESTIMATES for light,
-    early-stage usage, not a quote -- actual cost depends on real usage volume, region, and AWS's
-    own pricing over time. Always relay them with that caveat, never as a guaranteed number.
+    """Report each of an environment's currently-provisioned capabilities alongside an estimate
+    of what it would cost per month on real AWS (GH-68, GH-95) -- built from the same
+    aws_service/cloud_equivalent_note fields go_live_plan.py and whats_needed_to_go_live()
+    already use, just with a cost figure attached. For six capabilities (DynamoDB, SQS, SNS, Step
+    Functions, S3, Lambda) this is computed live from AWS's own public Price List data against a
+    documented light-usage assumption; every other capability falls back to a rough, hand-written
+    estimate. Either way this is an ESTIMATE for light, early-stage usage, not a quote -- actual
+    cost depends on real usage volume, region, and AWS's own pricing over time. Always relay it
+    with that caveat, never as a guaranteed number.
 
     NOT founder-facing -- service names, cost figures, and cloud_equivalent_note text are all
     developer/agent-facing detail."""
@@ -420,13 +424,24 @@ def describe_environment(name: str) -> dict:
         cap = catalog.get(capability_id)
         if cap is None:
             continue
+        real = pricing.real_monthly_estimate(cap["aws_service"])
+        if real is not None:
+            cost_line = {
+                "approx_monthly_cost_usd": f"~${real['monthly_usd']} for {real['assumption']}",
+                "cost_source": real["source"],
+            }
+        else:
+            cost_line = {
+                "approx_monthly_cost_usd": APPROX_MONTHLY_COST_USD.get(
+                    cap["aws_service"], "no estimate available for this service"
+                ),
+                "cost_source": "hand-written estimate (no live AWS pricing match for this service)",
+            }
         line_items.append({
             "capability_id": capability_id,
             "aws_service": cap["aws_service"],
-            "approx_monthly_cost_usd": APPROX_MONTHLY_COST_USD.get(
-                cap["aws_service"], "no estimate available for this service"
-            ),
             "cloud_equivalent_note": cap["cloud_equivalent_note"],
+            **cost_line,
         })
 
     return {
