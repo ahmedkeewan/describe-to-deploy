@@ -180,7 +180,7 @@ interview" near the end of this document.
 | 1 | Repo visibility prerequisite | **Shipped** — GH-72 |
 | 2 | README three-audience rewrite | **Shipped** — GH-73; now needs a parity follow-up (below) |
 | 3 | GitHub Pages founder site | **Shipped** — GH-74, substantially expanded by GH-97 |
-| 4 | AGENTS.md + llms.txt | **Shipped** — GH-75; llms.txt spec-conformance never checked (below) |
+| 4 | AGENTS.md + llms.txt | **Shipped** — GH-75; spec-conformance since checked and the file published (ticket 9 below) |
 | 5 | [Spike] One-click macOS installer | **Shipped as spike** — GH-76, promoted to GH-92 (narrower scope than originally envisioned; accepted) |
 
 ## Follow-up interview (2026-09-25) — new decisions
@@ -345,10 +345,22 @@ In addition to the original five (all shipped or superseded per the status table
    do this first among the new tickets — 7, 10, and 11 depend on it (8 and 9 are independent).
 7. **README parity with the Pages site** — bring the founder section up to date with GH-97's
    content (benchmark numbers, live-verification demo, `.mcpb` install path). Sequence after 6.
-8. **Dependency-chain demo GIF** — record a real multi-capability run against live Floci, produce
-   a GIF for README + Product Hunt/social use. Independent of 6/7; can proceed in parallel.
-9. **llms.txt spec-conformance check** — verify against llmstxt.org's current conventions, fix if
-   needed. Small; independent of the others.
+8. **Dependency-chain demo GIF** — **Shipped** (PR #116), though not the way this plan
+   anticipated. Screen-recording the browser proved unreliable: the board's per-event animation
+   outran the screenshot round-trip, so the capture only ever caught the first and last states.
+   The GIF is instead rendered by [`docs/assets/render-demo-gif.py`](../assets/render-demo-gif.py)
+   from `docs/assets/demo-events.json` — the same captured events from a real run against live
+   Floci that the site's board replays — using the design tokens copied from `docs/index.html`.
+   The underlying run is still real; only the rendering is synthetic, and the trade is worth
+   naming: the asset is now reproducible after a palette change instead of needing a re-record.
+   This supersedes the resolved open question below, which committed to hand-recording.
+9. **llms.txt spec-conformance check** — **Shipped**. Checked against llmstxt.org: the file is
+   conformant (H1 present, blockquote summary, heading-free prose section, H2 file lists with
+   `- [name](url): notes` items, `Optional` last). One real gap found and fixed — the file sat at
+   the repo root and was never actually served, so a copy now lives at `docs/llms.txt` and is
+   published at `https://ahmedkeewan.github.io/service-buddy/llms.txt`. A test
+   (`harness/tests/test_llms_txt_published_copy.py`) fails if the two copies drift. Note for the
+   record: `llms-full.txt` is a vendor convention, not part of the spec, so none is needed.
 10. **OSS launch essentials** — `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/ISSUE_TEMPLATE/`,
     `.github/PULL_REQUEST_TEMPLATE.md`, a license badge on README. Sequence after 6 (so these are
     authored with the correct product name).
@@ -359,10 +371,13 @@ In addition to the original five (all shipped or superseded per the status table
 
 ## Open questions (status of the original list, plus one new item from this follow-up)
 
-- ~~Exact wording/length limits for `llms.txt`~~ — carried forward as ticket 9 above, not
-  resolved here.
+- ~~Exact wording/length limits for `llms.txt`~~ — resolved by ticket 9 above: the spec sets no
+  length limit, and the file is conformant as written.
 - ~~Whether the demo GIF is hand-recorded against live Floci or produced from a scripted/staged
-  run~~ — resolved: hand-recorded against live Floci, same discipline as `demo-events.json`.
+  run~~ — **superseded**. This was resolved as "hand-recorded against live Floci," and that is
+  not what shipped; see ticket 8 above for why and what replaced it. The underlying run is still
+  a real one against live Floci, so the honesty commitment behind the original decision holds —
+  but the recording step does not, and this plan should not be read as if it does.
 - Whether `research/agdr/` and `research/history/` need any Jekyll front-matter adjustments —
   **moot**: these no longer live under `docs/`, and `docs/.nojekyll` disables Jekyll for the
   Pages site entirely (see the corrected paragraph above).

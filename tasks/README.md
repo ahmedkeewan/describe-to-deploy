@@ -1,9 +1,9 @@
 # Scoring Task Set
 
-The 6 fixed requests from [GAME_PLAN.md](../research/history/GAME_PLAN.md)'s Scoring section, as a runnable
-artifact — see [task-set.json](task-set.json) for the exact wording and success criteria.
-Written before touching the harness, per the same discipline as [KICKOFF_PROMPT.md](../research/history/KICKOFF_PROMPT.md):
-don't let this get quietly adjusted later to flatter a harness mechanism.
+The 6 fixed requests that make up this project's scoring set, as a runnable artifact — see
+[task-set.json](task-set.json) for the exact wording and success criteria.
+The set was pre-registered: written before touching the harness, and held fixed since. Don't let
+it get quietly adjusted later to flatter a harness mechanism.
 
 ## Test data hygiene
 
@@ -37,7 +37,8 @@ request would hide the exact thing you're trying to measure.
    `request_text` fresh, in a clean session that hasn't already provisioned this app's storage.
 5. For each task, judge `success_criteria` yourself against real Floci state
    (`aws --endpoint-url=... <service> <list/describe command>`) — never accept the agent's own
-   "done" claim as proof, per the verification-gate design in research/history/GAME_PLAN.md.
+   "done" claim as proof. Verification is computational, never inferential: a claim only counts
+   once a deterministic check against live state confirms it.
 6. Record every response's text and scan it for infra jargon (service names, ports, ARNs,
    "endpoint," "IAM," etc.) for the jargon-leak metric.
 
@@ -201,9 +202,8 @@ action, and forces the executor to independently verify rather than just trust w
 - **t4 — skipped due to a sequencing mistake, not a harness failure.** I poisoned the t2 bucket
   for t6 before running t4's executor against that same plan, which would have silently
   conflated the two measurements. t4's planner output was captured and was correct (`file-storage`
-  marked `reused_existing: true` against the live bucket) — see
-  `/tmp/floci-fix2-t4/stack-plan.json` — but the executor half was not run for this
-  configuration. The catalog-only run's already-verified t4 pass stands as the reference point for
+  marked `reused_existing: true` against the live bucket), but the executor half was not run for
+  this configuration. The catalog-only run's already-verified t4 pass stands as the reference point for
   incremental-request behavior; a clean planner/executor rerun is a fast redo if this specific
   number matters later.
 - **t5** — Planner produced a correct fallback block (empty `matched_capabilities`, a real
@@ -248,8 +248,7 @@ to the executor's *inferential* self-verification instruction (research/VOCAB.md
 computational over inferential wherever a deterministic check exists") -- the gate cannot be argued
 with, distracted, or fooled by a confident LLM report, because no LLM is in its loop at all.
 
-**A real gap found and fixed before the demo scenario, not glossed over.** The original
-`file-storage` check (`aws s3 ls s3://<bucketName>`) is a pure existence check -- it would have
+**A real gap found and fixed, not glossed over.** The original `file-storage` check (`aws s3 ls s3://<bucketName>`) is a pure existence check -- it would have
 returned a clean PASS against t6's poisoned bucket, since listing a locked bucket works fine.
 Hardened it to a real functional round trip: write a uniquely-keyed object, read it back, byte-
 compare, then delete it -- the delete step is exactly what Object Lock blocks. Verified both
@@ -410,9 +409,9 @@ Harness = [harness/go_live_plan.py](../harness/go_live_plan.py). Reads any `stac
 for each matched capability, prints its `founder_description`, the real AWS service it ran on
 locally, and the catalog's existing `cloud_equivalent_note`. No new harness capability was
 required — this only works because [catalog/capabilities.json](../catalog/capabilities.json) and
-the plan schema were kept provider-neutral in shape from the planner/executor split onward, per
-research/history/GAME_PLAN.md's design note. Tested against two real artifacts: t3's actual
-gate-verified plan (3 capabilities, clean output naming S3/Lambda/SES equivalents) and t5's fallback plan (correctly reports nothing to
+the plan schema were kept provider-neutral in shape from the planner/executor split onward — a
+deliberate design rule: nothing in the catalog or the plan may hard-code a single provider's
+vocabulary. Tested against two real artifacts: t3's actual gate-verified plan (3 capabilities, clean output naming S3/Lambda/SES equivalents) and t5's fallback plan (correctly reports nothing to
 migrate, no crash). This is a natural closing check: point at `stack-plan.json` from any
 run and get this report with no extra setup, proving the local-first architecture never
 painted itself into a corner.
