@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "floci-control-plane",
   "display_name": "Service Buddy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Turns a founder's plain-language product request into a verified, running local infra environment on Floci.",
   "long_description": "The Floci control-plane harness, exposed as an MCP server. Give it a plain-language request (\"users should be able to upload a photo\") and it matches it against a capability catalog, runs the provisioning recipe, and independently re-verifies the result before ever reporting it as done -- the calling agent's own claim of success is never trusted. Requires Floci (https://floci.io/) running locally via Docker -- see the project README for the one-time ./setup.sh step that installs it. This bundle only wires the MCP server itself into Claude Desktop; it does not install Docker or Floci.",
   "author": {

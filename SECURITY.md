@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Service Buddy is pre-release (0.1.0). Only the latest `main` is supported. If
+Service Buddy is pre-release (0.1.x). Only the latest `main` is supported. If
 you're running something older, update before reporting.
 
 ## What this project actually touches
