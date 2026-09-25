@@ -11,6 +11,7 @@ measured against, including the honest negative findings, not just the wins.
 | `build_prompt.py` | Generates harness system prompts from `catalog/capabilities.json`. `--mode single-agent` produces one prompt for a single planning-and-acting agent; `--mode planner-executor --role planner\|executor` produces the split-role prompt pair the harness actually runs on (see "Architecture" below). Never hand-edit the catalog content into a prompt; regenerate instead. |
 | `state_lock.py` | Shared `fcntl.flock`-based cross-process locking helper. Every MCP client (each agent) runs its own `mcp_server.py` subprocess, so the plain-file state below needs a real OS-level lock, not just an in-process one — see AgDR-0002. |
 | `environments_store.py` | Load/save helpers and the shared lock for `environments.json`, the sidecar file backing `create_environment`/`destroy_environment`/`list_environments` (see "Tools exposed" below). |
+| `snapshots_store.py` | Load/save helpers and the shared lock for `environment-snapshots.json`, backing `snapshot_environment`/`restore_environment` (see AgDR-0003). |
 | `verify_gate.py` | Computational verification gate. Zero LLM calls — reads a `stack-plan.json`, re-runs each capability's real `verify.cli` against live Floci, exits 0 only on a genuine pass. |
 | `auto_wire.py` | Writes real config values into a founder's app `.env`, idempotently, only for capabilities safely derivable from the plan (never guessed). |
 | `go_live_plan.py` | Reads a plan and names the real AWS equivalent per capability, using the catalog's existing `cloud_equivalent_note` — no migration performed. |
@@ -151,6 +152,8 @@ worktrees, not the founder):
 | `destroy_environment(name)` | Releases the board port and removes the environment's entries. Does not delete real backend resources — `capabilities.json` defines no teardown step for any capability (see AgDR-0001). |
 | `list_environments()` | Lists every currently registered environment: name, `app_context`, board port, creation time. |
 | `get_verification_history(app_context, capability_id, since, until)` | Filterable read over the durable event log — debug or audit past runs without needing the live board open at the time. All filters optional and combine with AND; `since`/`until` are ISO-8601 timestamps. Not founder-facing — each event's `dev` field carries real service names, commands, and exit codes. |
+| `snapshot_environment(name)` | Saves a durable, point-in-time copy of an environment's recorded capabilities. Snapshots RECORDED STATE, not real infrastructure — see AgDR-0003. Returns `{snapshot_id, capabilities_snapshotted}`. |
+| `restore_environment(name, snapshot_id)` | Restores a snapshot's capabilities back into state — but only after freshly re-verifying each one live; a capability that no longer verifies is skipped, not restored. Only restores into the same environment the snapshot came from (AgDR-0003's binding). Returns `{restored, skipped}`. |
 
 Calling `get_provisioning_recipe`/`record_provisioned` with an `app_context` from
 `create_environment` enforces an extra check: `resource_name` must have the exact form

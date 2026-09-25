@@ -20,7 +20,7 @@ two separate agent prompts:
     agent could accidentally skip.
 
 Jargon boundary: every string this server returns is built to be founder-safe (plain language,
-no AWS/Floci service names, no ARNs, no ports), EXCEPT the seven tools below. Each documents why
+no AWS/Floci service names, no ARNs, no ports), EXCEPT the nine tools below. Each documents why
 in its own docstring:
   - whats_needed_to_go_live() -- the one technical/graduation report in this whole harness.
   - get_provisioning_recipe() -- returns steps, an endpoint, and credentials for the calling
@@ -29,6 +29,8 @@ in its own docstring:
     and/or a board port for the developer/agent managing environments, not the founder.
   - get_verification_history() -- returns raw event-log entries whose `dev` field carries real
     service names, commands, and exit codes; never relay one to the founder as-is.
+  - snapshot_environment(), restore_environment() -- return a snapshot_id, capability_id list,
+    and app_context-scoped resource state for the developer/agent, not the founder.
 One narrower, field-level exception: record_provisioned()'s FAIL path and its dry_run=True
 preview path both also return `_diagnostic_for_you_the_calling_agent`, an explicitly-labeled,
 non-founder-safe field carrying the raw verify command (and, on FAIL, its real output). Unlike
@@ -50,6 +52,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import events as events_log
 from environments_store import environments_lock, load_environments, save_environments
+from snapshots_store import snapshots_lock, load_snapshots, save_snapshots
 from state_lock import locked
 
 from mcp.server.mcpserver import MCPServer
@@ -260,6 +263,104 @@ def get_verification_history(
     return events_log.query(
         app_context=app_context, capability=capability_id, since=since, until=until
     )
+
+
+@server.tool()
+def snapshot_environment(name: str) -> dict:
+    """Save a durable, point-in-time copy of an environment's currently-recorded provisioned
+    capabilities (GH-67, AgDR-0003). This snapshots RECORDED STATE, not real infrastructure --
+    Floci is one shared backend (AgDR-0001), so nothing about the actual resources changes.
+    Restore it later with restore_environment(); a snapshot only ever exists to let you undo a
+    later change back to this point.
+
+    NOT founder-facing -- the returned snapshot_id and capability list are for the
+    developer/agent, never for the founder."""
+    envs = load_environments()
+    env = envs.get(name)
+    if env is None:
+        return {"error": f"No environment named '{name}'."}
+    app_context = env["app_context"]
+
+    state = _load_state()
+    capabilities = state.get(app_context, {}).get("capabilities", {})
+
+    snapshot_id = f"{app_context}::{time.time_ns()}-{secrets.token_hex(2)}"
+    with snapshots_lock():
+        snapshots = load_snapshots()
+        snapshots[snapshot_id] = {
+            "app_context": app_context,
+            "environment_name": name,
+            "created": datetime.now(timezone.utc).isoformat(),
+            "capabilities": capabilities,
+        }
+        save_snapshots(snapshots)
+
+    return {"snapshot_id": snapshot_id, "capabilities_snapshotted": list(capabilities.keys())}
+
+
+@server.tool()
+def restore_environment(name: str, snapshot_id: str) -> dict:
+    """Restore capabilities from a snapshot_environment() snapshot back into an environment's
+    recorded state (GH-67, AgDR-0003). Every capability in the snapshot is FRESHLY RE-VERIFIED
+    against live Floci before being written back -- this never blindly copies old state. A
+    capability that no longer verifies (its real resource was deleted, or Floci was reset) is
+    skipped, not restored, and reported as such.
+
+    Only restores into the SAME environment the snapshot was taken from -- a snapshot's
+    capabilities carry resource_name values prefixed with the snapshot's own app_context (GH-29's
+    binding), so restoring into a different environment would violate that binding. If `name`'s
+    current app_context doesn't match the snapshot's, this returns an error instead of restoring.
+
+    NOT founder-facing."""
+    envs = load_environments()
+    env = envs.get(name)
+    if env is None:
+        return {"error": f"No environment named '{name}'."}
+    app_context = env["app_context"]
+
+    snapshots = load_snapshots()
+    snapshot = snapshots.get(snapshot_id)
+    if snapshot is None:
+        return {"error": f"No snapshot with id '{snapshot_id}'."}
+    if snapshot["app_context"] != app_context:
+        return {
+            "error": "This snapshot belongs to a different environment's app_context -- "
+            "restoring it here would violate the resource-name-to-environment binding."
+        }
+
+    catalog = _load_catalog()
+    restored = []
+    skipped = []
+    for capability_id, entry in snapshot["capabilities"].items():
+        cap = catalog.get(capability_id)
+        if cap is None:
+            skipped.append({"capability_id": capability_id, "reason": "no longer in the catalog"})
+            continue
+        resource_name = entry["resource_name"]
+        passed, detail = _run_verify(cap["verify"]["cli"], resource_name)
+        if not passed:
+            skipped.append({
+                "capability_id": capability_id,
+                "reason": "no longer verifies live",
+            })
+            continue
+        restored.append(capability_id)
+
+    if restored:
+        now = datetime.now(timezone.utc).isoformat()
+        with locked(STATE_LOCK_PATH):
+            state = _load_state()
+            state.setdefault(app_context, {"created": now, "capabilities": {}})
+            for capability_id in restored:
+                entry = snapshot["capabilities"][capability_id]
+                state[app_context]["capabilities"][capability_id] = {
+                    "resource_name": entry["resource_name"],
+                    "last_verified": now,
+                    "last_gate_result": "PASS",
+                }
+            _save_state(state)
+
+    return {"restored": restored, "skipped": skipped}
 
 
 @server.tool()
