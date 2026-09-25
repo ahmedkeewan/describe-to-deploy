@@ -1,12 +1,13 @@
 # Product-Capability Catalog
 
-The "guide" layer from [GAME_PLAN.md](../research/history/GAME_PLAN.md)'s architecture table: maps a
-non-technical founder's plain-language product description to a Floci AWS service, a
-provisioning recipe, and a real verification check — without the founder ever needing to name
-a cloud service themselves.
+The harness's "guide" layer: maps a non-technical founder's plain-language product description
+to a Floci AWS service, a provisioning recipe, and a real verification check — without the
+founder ever needing to name a cloud service themselves. The harness reads this catalog rather
+than letting a model invent infrastructure from scratch, which is what keeps requests inside a
+known, verifiable set.
 
 Currently AWS-only (Floci's `az`/`gcp`/`oci` emulators are separate containers not started for
-this catalog — extend later if a request needs them). All 12 entries were spot-verified
+this catalog — extend later if a request needs them). All 13 entries were spot-verified
 against a running `floci/floci` server v2.0.1: every `verify.cli` command in
 [capabilities.json](capabilities.json) was run for real against
 `aws --endpoint-url=http://localhost:4566` with dummy `test`/`test` credentials and returned a
@@ -38,9 +39,10 @@ If a request doesn't clearly match a capability's `phrases`/meaning:
    (not silently dropped) so it becomes the next entry added to this catalog.
 
 See `explicitly_not_covered` in [capabilities.json](capabilities.json) for known gaps —
-these are exactly what request #5 in research/history/GAME_PLAN.md's task set is designed to trigger.
+these are exactly what request #5 in the [scoring task set](../tasks/README.md) is designed to
+trigger.
 
-## Coverage vs. the research/history/GAME_PLAN.md task set
+## Coverage vs. the scoring task set
 
 | Task set request | Capabilities exercised |
 |---|---|

@@ -3,6 +3,11 @@
 Paste everything between the rules into Claude Design (claude.ai/design) to rebuild the 16-screen
 canvas from scratch. Self-contained — it does not depend on any other file in this repo.
 
+> **Status:** this describes a designed surface that has not been built. What founders use
+> today is chat (Claude Desktop, Claude Code, Cursor) talking to the MCP server in
+> [`harness/`](../harness/). See [README.md](README.md#status-a-designed-surface-not-a-shipped-one)
+> for why this folder is kept and what would need deciding before any of it gets built.
+
 ---
 
 Build a 16-artboard design canvas for a desktop web app called **Service Buddy**. Lay the
