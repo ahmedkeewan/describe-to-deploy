@@ -11,7 +11,8 @@ checked before it ever says "done."**
 [![Runs locally on Floci](https://img.shields.io/badge/runs%20on-Floci%20(local%20AWS)-dc2626)](https://floci.io/)
 
 [Website](https://ahmedkeewan.github.io/service-buddy/) · [Quickstart](#quickstart) ·
-[What it can build](catalog/README.md) · [Benchmarks](tasks/README.md) · [For AI agents](AGENTS.md)
+[What it can build](catalog/README.md) · [Benchmarks](tasks/README.md) · [For AI agents](AGENTS.md) ·
+[Discussions](https://github.com/ahmedkeewan/service-buddy/discussions)
 
 ![One request, three services, each one re-checked before it reports back](docs/assets/demo-dependency-chain.gif)
 
@@ -189,7 +190,13 @@ If you're an AI coding agent connecting to or calling this MCP server, see [AGEN
 for the tool list and connection details. If you're answering a question about this repo, see
 [llms.txt](llms.txt) for a machine-readable summary.
 
-## Contributing and license
+## Community, roadmap, and contributing
 
-Contributions are welcome, and adding a capability to the catalog is the easiest place to start.
-See [CONTRIBUTING.md](CONTRIBUTING.md). Service Buddy is MIT-licensed; see [LICENSE](LICENSE).
+- **Questions, ideas, or a capability you'd like added:** start a thread in
+  [Discussions](https://github.com/ahmedkeewan/service-buddy/discussions).
+- **What's next:** the [roadmap issue](https://github.com/ahmedkeewan/service-buddy/issues?q=is%3Aissue+is%3Aopen+label%3Aroadmap)
+  lists the known gaps and planned work.
+- **Contributing:** adding a capability to the catalog is the easiest place to start. See
+  [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Service Buddy is MIT-licensed; see [LICENSE](LICENSE).
