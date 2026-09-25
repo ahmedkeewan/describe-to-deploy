@@ -1,12 +1,27 @@
-# `.mcpb` Desktop Extension bundle (GH-92)
+# `.mcpb` Desktop Extension bundle (experimental)
 
-Packages `harness/mcp_server.py` as an Anthropic Desktop Extension (`.mcpb`, formerly `.dxt`) so a
-non-technical founder can install the MCP-server-wiring half of this project into Claude Desktop
-with a double-click and an "Install" button — no terminal, no editing `claude_desktop_config.json`
-by hand. This does **not** replace `./setup.sh`: it only replaces the "wire the MCP config" step.
-Docker + Floci still need to be running first (`./setup.sh`, run once, or `floci start`).
+Packages `harness/mcp_server.py` as an Anthropic Desktop Extension (`.mcpb`, formerly `.dxt`), so
+the server can be added to Claude Desktop with a double-click and an "Install" button instead of
+editing `claude_desktop_config.json` by hand.
+
+**Status, stated plainly:**
+
+- **Build it yourself for now.** There's no prebuilt bundle yet; one will be attached to
+  [GitHub Releases](https://github.com/ahmedkeewan/service-buddy/releases) once it's been tested.
+- **macOS only.**
+- **Not yet verified on a real Claude Desktop install.** The manifest validates and the packaged
+  server runs under `uv`, but the end-to-end install in Claude Desktop hasn't been checked (see
+  below).
+- **It doesn't replace `./setup.sh`.** It only replaces the "wire the MCP config" step. Docker,
+  Floci, and the AWS CLI still need to be set up, so run `./setup.sh` once anyway — and answer
+  **no** when it offers to wire Claude Desktop, or you'll have the server installed twice.
+- **Claude Desktop needs a way to run commands.** The server doesn't provision anything itself:
+  the agent runs each recipe's commands with its own tools, then the server verifies. Claude Code
+  and Cursor have that built in, which is why they're the recommended clients.
 
 ## Building
+
+Requires Node.js/npm.
 
 ```bash
 npm install -g @anthropic-ai/mcpb   # once
@@ -23,6 +38,11 @@ files change.
 
 Double-click the built `.mcpb` file, or drag it onto the Claude Desktop app icon. Claude Desktop
 shows an install dialog naming the server and its tools; click Install.
+
+**Where state lives:** the installed extension keeps its own copy of the server, so its state
+(`stack-state.json`, the event log) is written inside the extension's install folder, not in
+your clone of this repo. `make board` in the clone won't show what the extension has set up, and
+reinstalling or updating the extension may reset that state.
 
 ## Why `server.type: "uv"`, not `"python"`
 
@@ -41,14 +61,14 @@ against the staged bundle resolves and installs `mcp` + `pydantic_core` cleanly.
 This is flagged as **experimental** in `@anthropic-ai/mcpb`'s own docs (introduced in manifest
 schema v0.4). The locally installed `mcpb` CLI (v2.1.2) validates a `manifest_version: "0.4"`,
 `server.type: "uv"` manifest without error, and `uv run` against the staged bundle works end to
-end — but this was not verified against an actual Claude Desktop install (no such app was
-available in this environment). If Claude Desktop's own `.mcpb` loader doesn't yet support the
-`uv` server type, the fallback in `harness/README.md`'s "Connecting to Claude Desktop" section
-(manual `claude_desktop_config.json` editing, or `./setup.sh`) still works unconditionally.
+end — but it hasn't yet been verified against an actual Claude Desktop install. If Claude
+Desktop's own `.mcpb` loader doesn't support the `uv` server type, the fallback in
+[`harness/README.md`](../harness/README.md#connecting-to-claude-desktop) (`./setup.sh`, or manual
+`claude_desktop_config.json` editing) still works.
 
 ## Manifest limits: no "requires Docker/Floci running" precondition
 
-Investigated as part of this ticket's scope: the `.mcpb` manifest schema (v0.1 through v0.4, all
+The `.mcpb` manifest schema (v0.1 through v0.4, all
 inspected directly from the installed `@anthropic-ai/mcpb` package) has no field for declaring an
 external-runtime precondition or a pre-install health check — `compatibility` covers only
 `platforms`/`runtimes`/the Claude Desktop version, and `user_config` only covers user-supplied
@@ -63,6 +83,6 @@ installation itself being blocked.
 ## Platform scope
 
 `compatibility.platforms` is set to `["darwin"]` only. `.mcpb` is a Claude Desktop-specific format
-(macOS and Windows); this project's own `setup.sh` treats native Windows as unsupported (WSL only)
-and this bundle wasn't tested against WSL's or native Windows' Claude Desktop install. Widening
-platform support is left for a follow-up if a Windows/WSL founder actually needs it.
+(Claude Desktop runs on macOS and Windows); this project's own `setup.sh` treats native Windows as
+unsupported (WSL only), and the bundle hasn't been tested with Claude Desktop on Windows. On
+Windows, use `./setup.sh` inside WSL, which wires Claude Desktop's config on the Windows side.

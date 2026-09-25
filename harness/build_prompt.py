@@ -2,8 +2,8 @@
 """
 Builds harness system prompts for a given mode from catalog/capabilities.json.
 
-Generated, not hand-maintained, so the prompt can never drift from the catalog file itself
-(the "derive-from-settings.json" principle in VOCAB.md 6c) -- add a capability to the JSON and
+Generated, not hand-maintained, so the prompt can never drift from the catalog file itself --
+add a capability to the JSON and
 every future harness run picks it up automatically, no separate prompt edit required.
 
 Usage:
@@ -17,8 +17,7 @@ planner-executor: splits that single pass into two agents -- a planner that ONLY
 stack-plan.json (see harness/stack-plan.schema.json) and never touches Floci's write APIs, and an
 executor that reads a plan file and never sees the founder's original request text at all. The
 split forces the plan itself to be an inspectable artifact you can read, gate, or hand to a
-different agent, before anything real happens -- see research/history/GAME_PLAN.md's architecture table, "Planner"
-and "Executor" rows.
+different agent, before anything real happens.
 """
 import argparse
 import json
@@ -28,7 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = REPO_ROOT / "catalog" / "capabilities.json"
 
 
-def build_fix1_prompt() -> str:
+def build_single_agent_prompt() -> str:
     catalog = json.loads(CATALOG_PATH.read_text())
 
     lines = []
@@ -67,7 +66,7 @@ def build_fix1_prompt() -> str:
         "explicit, plain-language question -- e.g. \"I can give you a place to store and look up "
         "messages, but not live chat yet -- want that instead?\"\n"
         "3. If nothing in the catalog is close, say so plainly and stop. Append the exact request "
-        "text as one line to /tmp/floci-fallback-log.jsonl (JSON: {\"request\": "
+        "text as one line to /tmp/floci-mcp-fallback-log.jsonl (JSON: {\"request\": "
         "\"...\", \"timestamp\": \"...\"}) so it can become a future catalog entry -- never drop "
         "it silently."
     )
@@ -106,7 +105,7 @@ def _catalog_for_planning(catalog: dict) -> list:
     ]
 
 
-def build_fix2_planner_prompt() -> str:
+def build_planner_prompt() -> str:
     catalog = json.loads(CATALOG_PATH.read_text())
     schema = json.loads((REPO_ROOT / "harness" / "stack-plan.schema.json").read_text())
 
@@ -161,7 +160,7 @@ def build_fix2_planner_prompt() -> str:
     return "\n".join(lines)
 
 
-def build_fix2_executor_prompt() -> str:
+def build_executor_prompt() -> str:
     catalog = json.loads(CATALOG_PATH.read_text())
 
     lines = []
@@ -223,12 +222,12 @@ def main() -> None:
     parser.add_argument("--role", choices=["planner", "executor"], default=None)
     args = parser.parse_args()
     if args.mode == "single-agent":
-        print(build_fix1_prompt())
+        print(build_single_agent_prompt())
     elif args.mode == "planner-executor":
         if args.role == "planner":
-            print(build_fix2_planner_prompt())
+            print(build_planner_prompt())
         elif args.role == "executor":
-            print(build_fix2_executor_prompt())
+            print(build_executor_prompt())
         else:
             raise SystemExit("--mode planner-executor requires --role planner|executor")
 

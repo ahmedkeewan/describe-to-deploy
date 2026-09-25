@@ -1,8 +1,11 @@
 # Game Plan — Infra-Invisible Agent for Non-Technical Founders
 
-Companion to [README.md](../../README.md) and [VOCAB.md](../VOCAB.md). Originally written for a one-day
-hackathon (built 2026-09-06); kept here as the design record for [`harness/`](../../harness/) — the
-architecture and build order below are still what a new build would follow.
+> **Archived hackathon plan.** Written for the one-day hackathon (2026-09-06) where Service Buddy
+> started. The shipped architecture differs: it's an MCP server with a server-side verification
+> gate, not a planner/executor tool pair, and failure escalation was dropped after testing showed
+> no need for it. See [harness/README.md](../../harness/README.md) for how it works today, and
+> [tasks/README.md](../../tasks/README.md) for what each mechanism measured. Kept for the record;
+> nothing below is current guidance.
 
 Supersedes the earlier TB2.0/mini-swe-agent plan and the first engineer-facing Floci plan (see
 git history) — the project narrowed twice: first from "climb a public leaderboard" to "build a
@@ -42,14 +45,14 @@ a wrong or half-working setup.
 
 | Layer | Component | Harness role |
 |---|---|---|
-| Guide | **Product-capability catalog** — maps plain-language product needs ("store user uploads," "send email," "background job") to a Floci service + a pre-verified template, built from the full Floci service list | Environment bootstrap equivalent (VOCAB §5b), but the lookup key is a capability phrase, not a service name — this is the translation layer a founder needs and an engineer wouldn't |
-| Guide | **Conservative fallback rule** | Outside the catalog: never freelance a floci-cli call. Offer the nearest template plus one plain-language clarifying question. Matches "advisory banner vs. hard gate" (VOCAB §6d) — a founder-facing gap in coverage should always escalate to a question, never a guess |
+| Guide | **Product-capability catalog** — maps plain-language product needs ("store user uploads," "send email," "background job") to a Floci service + a pre-verified template, built from the full Floci service list | Environment bootstrap equivalent (VOCAB §7), but the lookup key is a capability phrase, not a service name — this is the translation layer a founder needs and an engineer wouldn't |
+| Guide | **Conservative fallback rule** | Outside the catalog: never freelance a floci-cli call. Offer the nearest template plus one plain-language clarifying question. Matches "advisory banner vs. hard gate" (VOCAB §12) — a founder-facing gap in coverage should always escalate to a question, never a guess |
 | Tool | **Planner** — plain-language request → structured `stack-plan.json` (services, capabilities, provider-neutral shape) | Explicit, inspectable intermediate artifact; also the thing that stays portable to a real-cloud retarget later |
-| Tool | **Executor** — wraps `floci-cli` / `docker-compose` start/stop, one call per service | Unified runtime boundary (VOCAB §5b): all side effects go through one tool |
-| Sensor | **Verification gate** — hits the *real* endpoint per service before declaring ready, and reports failures in plain language ("the file storage isn't responding yet"), never technical stack traces | Completion gate (VOCAB §5b/§6d) — here it's the founder's only trust signal, so false positives are the worst possible failure mode to demo |
+| Tool | **Executor** — wraps `floci-cli` / `docker-compose` start/stop, one call per service | Unified runtime boundary (VOCAB §7): all side effects go through one tool |
+| Sensor | **Verification gate** — hits the *real* endpoint per service before declaring ready, and reports failures in plain language ("the file storage isn't responding yet"), never technical stack traces | Completion gate (VOCAB §7/§12) — here it's the founder's only trust signal, so false positives are the worst possible failure mode to demo |
 | State | **`stack-state.json`** — durable record of what's running, read on every follow-up so "also let users upload profile pictures" is additive, not a fresh guess that might duplicate or conflict | Progress file pattern (VOCAB §4), and doubles as the artifact a future real-cloud migration path would read |
 | Loop | **Failure escalation** — one retry, then stop and report in plain language, never loop silently | Doom-loop detection (VOCAB §5), scoped tighter than an engineer tool because a founder won't notice a silent retry storm |
-| Guide | **Auto-wiring output** — writes the local endpoint config directly into the founder's app config/env file, no manual paste step | AX (VOCAB §9) taken further: not just legible to an agent, invisible to the human too |
+| Guide | **Auto-wiring output** — writes the local endpoint config directly into the founder's app config/env file, no manual paste step | AX (VOCAB §17) taken further: not just legible to an agent, invisible to the human too |
 
 ## Build order
 
@@ -124,20 +127,10 @@ Cut the multi-capability stretch and request #5 (uncataloged fallback). Ship the
 planner, executor, verification gate, and one incremental request — that's the whole story:
 plain language in → plan → execute → *prove it worked, honestly* → extend.
 
-## Before Saturday (prep, ~1-2 hrs)
+## Prep before the hackathon
 
-- [x] Install `floci-cli` / `floci-ui` locally, confirm `floci start` and one emulator
-      (e.g. S3) come up and respond to a real AWS CLI call against the local endpoint —
-      done 2026-09-05. Note for Saturday: on Colima (not Docker Desktop), floci needs
-      `/var/run/docker.sock` symlinked to Colima's socket (`sudo ln -sf
-      ~/.colima/default/docker.sock /var/run/docker.sock`) before `floci start` works —
-      Colima's own forwarded socket path isn't visible inside its VM for the bind-mount
-      floci needs for its Lambda emulation. `AWS_ENDPOINT_URL` and `~/.aws/config`
-      `s3.addressing_style = path` are now persisted in `~/.zshrc` / `~/.aws/config`.
-- [ ] Pull the full Floci service list (AWS/Azure/GCP/OCI) and draft the plain-language
-      product-capability catalog on top of it — this translation table is the hardest part
-      to get right and shouldn't be built live on Saturday
-- [ ] Draft the 6 plain-language product requests (above) so baseline can be measured in the
-      first hour, same discipline as [KICKOFF_PROMPT.md](KICKOFF_PROMPT.md)
-- [ ] Confirm which agent framework/harness you're building on (Claude Agent SDK, deepagents,
-      or a bare loop) — pick now, not Saturday morning
+Done: Floci installed and confirmed against a real AWS CLI call; the capability catalog
+([catalog/](../../catalog/)) and the 6 plain-language requests ([tasks/](../../tasks/)) drafted
+before any harness code, same discipline as [KICKOFF_PROMPT.md](KICKOFF_PROMPT.md). One setup
+gotcha from that day: on Colima (not Docker Desktop), Floci's Lambda emulation needs
+`/var/run/docker.sock` to point at Colima's socket before `floci start` works.

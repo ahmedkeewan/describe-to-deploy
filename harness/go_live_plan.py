@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """
-Stretch goal: "what would it take to go live?" -- reads a stack-plan.json and names the real
-cloud services it would become, using nothing but information already in catalog/capabilities.json
-(`aws_service`, `cloud_equivalent_note`). No migration is performed -- this only proves the plan
-artifact stayed provider-neutral in shape all along (research/history/GAME_PLAN.md's comparison table), so this
-answer requires zero new harness capability, just reading what's already there.
+Answers "what would it take to go live?": reads a stack-plan.json and names the real cloud
+service behind each capability, using only catalog fields (`aws_service`,
+`cloud_equivalent_note`). Performs no migration. Backs the whats_needed_to_go_live MCP tool.
 
 Usage: python3 harness/go_live_plan.py /path/to/stack-plan.json
 """

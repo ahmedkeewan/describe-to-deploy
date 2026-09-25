@@ -1,13 +1,13 @@
 # Design Brief — Founder Interface
 
-A brief for producing visual designs of the interface specified in [README.md](README.md).
-Self-contained: everything needed to draw the screens is in this file. Copy is verbatim from
-[founder-copy.md](founder-copy.md) and must not be rewritten.
+> **Archived.** Superseded by [interface/regenerate-prompt.md](../../interface/regenerate-prompt.md)
+> and [interface/README.md](../../interface/README.md). This first brief described nine stacked
+> screens with no expandable rows. The design moved to sixteen screens in two panes, with rows
+> that expand into more plain language. Kept for the record; don't design from it.
 
-> **Status:** this describes a designed surface that has not been built. What founders use
-> today is chat (Claude Desktop, Claude Code, Cursor) talking to the MCP server in
-> [`harness/`](../harness/). See [README.md](README.md#status-a-designed-surface-not-a-shipped-one)
-> for why this folder is kept and what would need deciding before any of it gets built.
+A brief for producing visual designs of the interface specified in
+[interface/spec.md](../../interface/spec.md). Copy was taken verbatim from
+[founder-copy.md](../../interface/founder-copy.md).
 
 ---
 

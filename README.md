@@ -1,141 +1,194 @@
+<div align="center">
+
 # Service Buddy
 
+**Tell Claude "let people upload photos." Get real, working infrastructure on your laptop,
+checked before it ever says "done."**
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![MCP server](https://img.shields.io/badge/MCP-server-black)](AGENTS.md)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](harness/requirements.txt)
+[![Runs locally on Floci](https://img.shields.io/badge/runs%20on-Floci%20(local%20AWS)-dc2626)](https://floci.io/)
 
-This repo has two parts: a working demo harness (an MCP server that turns a plain-language
-product request into real, verified infrastructure) and a research reference on harness
-engineering as a discipline.
-
-Jump to the section that's for you:
-
-- [For Founders](#for-founders) — you want to try the demo or use the harness on your own idea
-- [For Engineers](#for-engineers) — you want to understand or extend the harness
-- [For AI Agents](#for-ai-agents) — you're an AI coding agent working with this repo
-
-## For Founders
-
-Describe what you want in plain English — "let people sign up," "store the photos users
-upload," "run something on a schedule" — and the harness sets it up for you, then checks that it
-actually works before ever telling you it's done. If something isn't working yet, it says so
-plainly instead of pretending.
-
-There's no new tool to learn and no form to fill in. You type into the same chat window you
-already have open, the way you'd ask a person, and you get an answer back in the same plain
-language: "Done and verified — people can upload a photo and get it back later." There are 13
-things it knows how to set up today, and if you ask for something outside that list it tells you
-so rather than guessing.
+[Website](https://ahmedkeewan.github.io/service-buddy/) · [Quickstart](#quickstart) ·
+[What it can build](catalog/README.md) · [Benchmarks](tasks/README.md) · [For AI agents](AGENTS.md)
 
 ![One request, three services, each one re-checked before it reports back](docs/assets/demo-dependency-chain.gif)
 
-One request needing three separate services, replayed from a real run against a live machine.
-The events are the captured ones — [`docs/assets/demo-events.json`](docs/assets/demo-events.json)
-— and [`docs/assets/render-demo-gif.py`](docs/assets/render-demo-gif.py) regenerates the image
-from them.
+</div>
 
-### The numbers
+Service Buddy is an MCP server for Claude Code, Cursor, and Claude Desktop. You describe what your
+app needs in plain English. It sets up the matching backend pieces (sign-up, file storage, email,
+scheduled jobs, and 9 more) on [Floci](https://floci.io/), a free AWS emulator that runs in Docker
+on your own machine, so nothing touches a real cloud account or costs money. Then it re-checks each
+one for real before telling you it works.
 
-We put it on a fixed set of six founder requests and measured what changed against the same
-agent with no harness at all:
+- **Verified, not claimed.** Nothing is marked done until an independent check passes: a real
+  file uploaded and read back, a real record written and read, a real email sent.
+- **Plain language in, plain language out.** In our benchmark, 0 of 6 replies leaked tech-speak,
+  down from 5 of 6 for the same agent without it ([results](tasks/README.md)).
+- **Honest about limits.** It knows 13 things it can set up. Ask for something outside that list
+  and it says so instead of improvising.
 
-- Tech-speak in the replies: 0 out of 6 requests leaked it, down from 5 out of 6 without the
-  harness. No server names or acronyms when all you asked for was a straight answer.
-- Speed: about 3.4× faster end to end — roughly 310 seconds total across all six requests,
-  versus roughly 1,040 seconds without the harness.
-- Wasted motion: about 4× less — 21 steps total versus roughly 87. Fewer dead ends, not just
-  less typing.
+The GIF above replays one real run: one request that needed three separate services. The events
+are the captured ones ([`docs/assets/demo-events.json`](docs/assets/demo-events.json)), and
+[`docs/assets/render-demo-gif.py`](docs/assets/render-demo-gif.py) regenerates the image from them.
 
-[`tasks/README.md`](tasks/README.md) has the full writeup, including the honest misses.
+## Quickstart
 
-Benchmarks are one kind of proof. Here's another: the three most common requests were run again
-for real against a live machine, each one set up and then independently re-checked from
-scratch. All 3 passed on the first try, averaging about 0.78 seconds each, with zero internal
-names or tech-speak in any of the replies a founder would see.
+**You need:** macOS, Linux, or Windows via WSL · Docker, installed and running · Python 3.11+ ·
+the [AWS CLI](https://aws.amazon.com/cli/) (used only against your local emulator, no AWS account
+needed) · git
 
-### Getting it running
+```bash
+git clone https://github.com/ahmedkeewan/service-buddy.git
+cd service-buddy
+./setup.sh
+```
 
-Two paths, both a few minutes:
+`./setup.sh` installs Floci if it's missing, creates a Python environment in `harness/.venv`, and
+connects the server to Claude Code, Cursor, and Claude Desktop. It asks before installing any
+system software, and it's safe to run again. The server shows up in your chat app as
+`floci-control-plane`.
 
-- **Claude Desktop, no terminal.** Grab the ready-made bundle from
-  [`mcpb/`](mcpb/README.md), double-click it (or drag it onto Claude Desktop), and click
-  Install.
-- **Claude Code or Cursor.** Clone the repo and run `./setup.sh` from the root. One command
-  checks for and installs everything it needs and wires itself into your chat app — asking your
-  confirmation before anything gets installed.
+**Then open your chat app:**
 
-Either way, `./setup.sh` needs to run once on the machine, so the harness has something real and
-local to set things up on. After that there are no commands to memorize — you just describe what
-you want.
+- **Claude Code (recommended):** run `claude` from inside the `service-buddy` folder and approve
+  the `floci-control-plane` server when it asks. To use it from any folder instead:
 
-### Once you're in
+  ```bash
+  claude mcp add --scope user floci-control-plane -- "$PWD/harness/.venv/bin/python3" "$PWD/harness/mcp_server.py"
+  ```
 
-- **A live dashboard, if you want one.** `make board` opens a board in your browser that updates
-  in real time as things get set up, side by side with the chat. You don't need it to get
-  started.
-- **Real cost answers.** Ask what something will cost and it pulls live numbers from the
-  provider's own published price list rather than guessing. As of 2026-09-25, 5GB of file storage
-  priced out at $0.11/month. 6 of the 13 capabilities get live-fetched pricing; the rest fall back
-  to a clearly labelled estimate, never a silent guess.
-- **Setup that asks first.** `./setup.sh` never installs anything without your yes, is safe to
-  run again any time, and works on macOS, Linux, and Windows via WSL.
+- **Cursor:** open the `service-buddy` folder and turn on `floci-control-plane` under
+  Settings → MCP.
+- **Claude Desktop (experimental):** quit and reopen it. To actually set things up, the assistant
+  has to run commands on your machine, so Claude Code or Cursor is the smoother path today. There's
+  also a one-click Desktop bundle: build it with `./mcpb/build.sh` (macOS only, experimental; see
+  [`mcpb/`](mcpb/README.md)). A prebuilt download will be on the Releases page.
 
-That's the whole idea: you describe what you want, and the harness only ever tells you it's
-ready once it has actually checked.
+### Your first request
 
-There's a fuller walkthrough, with a real recorded conversation and the live verification log,
-at [ahmedkeewan.github.io/service-buddy](https://ahmedkeewan.github.io/service-buddy/).
+Type this into the chat:
 
-## For Engineers
+> My app is called photo-demo. Let people upload a photo and get it back later.
 
-**Working definition (consensus across sources):** `Agent = Model + Harness`. The harness is
-everything around the model: system prompt, tools/skills/MCP, sandbox/filesystem, orchestration
-(subagents, routing), hooks/middleware (compaction, doom-loop detection, verification),
-memory/state across context windows, and permissions. Harness changes alone have moved
-Terminal-Bench 2.0 scores by 10-14 points with the same model.
+You should get back something like: *"Done and verified — people can upload a photo and get it
+back later."*
 
-This repo's demo harness is an MCP server (`harness/`) that turns a non-technical founder's
-plain-language product request ("users should be able to upload a photo") into a verified,
-running local infra environment on [Floci](https://floci.io/), using a capability catalog
-(`catalog/`) and a fixed scoring task set (`tasks/`). [`harness/README.md`](harness/README.md)
-covers the architecture, the MCP tools it exposes, and how to run it.
+### Check it worked
 
-**Design patterns worth stealing**, independent of this specific product:
+- In Claude Code, `claude mcp list` should show `floci-control-plane` as connected.
+- Ask *"What can you set up for me?"* You should get a plain-language list of 13 things.
 
-- [AgDR-0001](research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md) — isolating multiple
-  agents on one shared backend via naming scope, not per-agent infrastructure instances.
-- [AgDR-0002](research/agdr/AgDR-0002-flock-based-state-locking.md) — `fcntl.flock`-based
+### Troubleshooting
+
+| What you see | What to do |
+|---|---|
+| Nothing ever verifies, or "connection refused" | Floci isn't running. Start it with `floci start` and check with `floci status`. |
+| Every check fails with "aws: command not found" | Install the AWS CLI (`brew install awscli` on macOS). |
+| `./setup.sh` fails while installing Python packages | Your Python is older than 3.11. Install a newer one, then `rm -rf harness/.venv && ./setup.sh`. |
+| `./setup.sh` offers to install Colima but you have Docker Desktop | Docker Desktop isn't running. Start it and run `./setup.sh` again. |
+| Claude Code doesn't list the server | Start `claude` from the repo folder, or use the `claude mcp add --scope user` command above. |
+
+### Stopping and uninstalling
+
+- Stop the local engine (keeps your data): `make down`
+- Remove the server from your chat apps: `claude mcp remove floci-control-plane`, and delete the
+  `floci-control-plane` entry from `.mcp.json`, `.cursor/mcp.json`, and Claude Desktop's config
+  (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS)
+- Remove the Python environment: `rm -rf harness/.venv`
+
+## Once you're in
+
+- **A live status page, if you want one.** `make board` opens the live status page at
+  http://localhost:7777. It updates in real time as things get set up, side by side with the chat.
+  You don't need it to get started.
+- **Real cost answers.** Ask what something would cost on real AWS and it pulls live numbers from
+  AWS's published price list rather than guessing. On 2026-09-25, 5 GB of file storage priced out
+  at $0.11/month. 6 of the 13 capabilities get live pricing; the rest fall back to a clearly
+  labelled estimate, never a silent guess.
+- **No commands to memorize.** After setup you just describe what you want, the way you'd ask a
+  person.
+
+## The numbers
+
+We gave a fixed set of six founder requests to the same agent with and without the harness
+(n=6, one run each). The full writeup, including the misses, is in
+[`tasks/README.md`](tasks/README.md).
+
+- **Tech-speak in the replies:** 0 of 6 requests leaked it, down from 5 of 6 without the harness.
+- **Speed:** about 3× faster (catalog-guided agent vs. the same agent with no harness): roughly
+  310 seconds total across all six requests, versus roughly 1,040 seconds.
+- **Wasted motion:** about 4× less, 21 steps total versus roughly 87.
+
+In a recorded run on 2026-09-25, the three most common requests were set up against a local Floci
+engine and each one independently re-checked from scratch. All 3 passed on the first try, averaging
+about 0.6 seconds per check, with no internal names or tech-speak in any reply a founder would see.
+The raw log is [`docs/assets/recorded-run-2026-09-25.json`](docs/assets/recorded-run-2026-09-25.json)
+and [`tasks/rerun_common_requests.py`](tasks/rerun_common_requests.py) reproduces it.
+
+There's a fuller walkthrough, with a recorded conversation and verification log, at
+[ahmedkeewan.github.io/service-buddy](https://ahmedkeewan.github.io/service-buddy/).
+
+## For engineers
+
+The server is `harness/mcp_server.py`. It never provisions anything itself. Your agent (Claude
+Code, Cursor) is the planner and executor: it matches the request to an entry in the capability
+catalog (`catalog/capabilities.json`, the 13 things it can set up, each with a tested recipe),
+runs the steps, then calls `record_provisioned`, which re-runs the capability's check against
+Floci before it updates any state. The agent's own belief that something worked is never enough.
+[`harness/README.md`](harness/README.md) covers the architecture and how to run it, and
+[AGENTS.md](AGENTS.md) lists every tool.
+
+**Design decisions worth stealing**, written up as short agent decision records (AgDRs):
+
+- [AgDR-0001](research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md): isolating
+  multiple agents on one shared backend through naming scope, not per-agent infrastructure.
+- [AgDR-0002](research/agdr/AgDR-0002-flock-based-state-locking.md): `fcntl.flock`-based
   cross-process state locking for an MCP server where every client spawns its own subprocess.
+- [AgDR-0003](research/agdr/AgDR-0003-snapshot-restore-not-clone.md): environment snapshots save
+  and restore recorded state, re-checked live on restore, instead of cloning infrastructure.
+- [AgDR-0004](research/agdr/AgDR-0004-multi-founder-metadata-not-enforcement.md): environment
+  ownership is recorded as metadata now; permission enforcement is deferred.
 
-**The benchmark data is real, including the negative results.** [`tasks/README.md`](tasks/README.md)
-tracks before/after numbers across every harness change — including the one deliberate negative
-finding (a baseline agent asked to build "real-time chat," an uncataloged capability, freelanced
-a full WebSocket stack instead of asking a clarifying question). Jargon leaks alone went from
-5/6 to 0/6 after the capability catalog landed.
-
-**Research reference** ([`research/research-links.md`](research/research-links.md) +
-[`VOCAB.md`](research/VOCAB.md)) — a curated link pack and shared vocabulary on harness engineering as a
-discipline.
+**The benchmark data includes the negative results.** [`tasks/README.md`](tasks/README.md) tracks
+before/after numbers for every harness change, including one deliberate negative finding: asked to
+build "real-time chat", which isn't in the catalog, the baseline agent built a full WebSocket stack
+instead of asking a clarifying question.
 
 ### Project layout
 
 | Path | What it is |
 |---|---|
-| `harness/` | The MCP server and its supporting scripts — the actual runnable project |
-| `catalog/` | Product-capability catalog the harness reads (plain-language need → verified recipe) |
-| `interface/` | Founder-facing UI design spec and canvas mockups |
-| `tasks/` | Fixed scoring task set used to measure harness changes |
-| `mcpb/` | `.mcpb` Desktop Extension bundle for one-click Claude Desktop install (build script + manifest) |
-| `docs/` | GitHub Pages founder site, spike memos, and plans |
-| `research/` | Vocabulary, curated research links, AgDRs, and archived planning history — isolated from the product/harness code |
-| `research/research-links.md` | Curated harness-engineering research link pack (Tier 1-6) and next steps |
-| `research/history/GAME_PLAN.md` | Archived: architecture, build order, and design rationale from the original hackathon-day plan |
-| `research/history/KICKOFF_PROMPT.md` | Archived: historical record of how the baseline was first measured |
-| `research/VOCAB.md` | Shared harness-engineering vocabulary, elaborated from the research in `research/research-links.md` |
+| `harness/` | The MCP server, the live status page, and their tests: the runnable project |
+| `catalog/` | The capability catalog the server reads (plain-language need → tested recipe and check) |
+| `tasks/` | The fixed task set and benchmark results |
+| `mcpb/` | Build script and manifest for the experimental one-click Claude Desktop bundle |
+| `interface/` | The live status page (`live.html`, served by `make board`) plus the design spec and mockups for the founder-facing interface |
+| `docs/` | The GitHub Pages site and its assets |
+| `research/` | Harness-engineering vocabulary, research links, AgDRs, and archived planning history |
 
-See [LICENSE](LICENSE) for terms, and [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
+## Background: harness engineering
 
-## For AI Agents
+This project started as a research exercise in harness engineering: the idea that
+`Agent = Model + Harness`, and that everything around the model (system prompt, tools and MCP
+servers, sandbox, orchestration, verification hooks, memory, permissions) moves results as much as
+the model does. The research that shaped it is kept in [`research/`](research/):
 
-If you're an AI coding agent wiring up or calling this MCP server, see
-[AGENTS.md](AGENTS.md) for the tool list and connection details. If you're an AI
-crawler or answering a question about this repo, see [llms.txt](llms.txt) for a
-machine-readable summary.
+- [`research/research-links.md`](research/research-links.md): a curated link pack on harness
+  engineering, including the benchmark results behind that claim.
+- [`research/VOCAB.md`](research/VOCAB.md): the shared vocabulary those sources use.
+- [`research/history/`](research/history/): the original build plan and baseline prompt, kept for
+  the record. The shipped design differs; `harness/README.md` is current.
+
+## For AI agents
+
+If you're an AI coding agent connecting to or calling this MCP server, see [AGENTS.md](AGENTS.md)
+for the tool list and connection details. If you're answering a question about this repo, see
+[llms.txt](llms.txt) for a machine-readable summary.
+
+## Contributing and license
+
+Contributions are welcome, and adding a capability to the catalog is the easiest place to start.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Service Buddy is MIT-licensed; see [LICENSE](LICENSE).

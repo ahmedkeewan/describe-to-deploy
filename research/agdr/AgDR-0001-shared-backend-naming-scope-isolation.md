@@ -1,7 +1,7 @@
 ---
 id: AgDR-0001
 timestamp: 2026-09-12T00:00:00Z
-agent: Hisham (Tech Lead)
+agent: Claude (build agent)
 model: claude-sonnet-5
 trigger: design-review-finding
 status: executed
@@ -19,27 +19,29 @@ status: executed
 
 - `harness/mcp_server.py` and `harness/verify_gate.py` both hardcode
   `AWS_ENDPOINT_URL=http://localhost:4566`. Every capability, for every app, is provisioned and
-  verified against this one LocalStack/Floci instance.
+  verified against this one Floci instance.
 - `capabilities.json` defines `provision` and `verify` steps per capability. It defines no
   mechanism to stand up a second, independent backend instance.
-- The PRD's own Open Question 1 asked whether Floci supports true per-environment isolation, or
-  only naming-level namespacing. Reading the code answers this directly: naming-level only.
+- An open question going in was whether Floci supports true per-environment isolation, or only
+  naming-level namespacing. Reading the code answers this directly: naming-level only.
 
 ## Options Considered
 
 | Option | Pros | Cons |
 |--------|------|------|
 | Naming-scope isolation on one shared backend (chosen) | No new infrastructure. Matches how `app_context` already works today. Small, reviewable diff. | Resources are never truly separated. A destroyed environment's resources persist forever on the shared backend as inert capacity. |
-| Per-environment LocalStack/Floci container or process | Genuine resource isolation. A destroyed environment leaves nothing behind. | Requires container/process orchestration this harness does not have today. Directly re-introduces the Tilt/Terraform/Docker Compose scope this idea's own validation explicitly rejected as over-scoped (see IDEA-001 validation, Q3). |
+| Per-environment Floci container or process | Genuine resource isolation. A destroyed environment leaves nothing behind. | Requires container/process orchestration this harness does not have today. Directly re-introduces the Tilt/Terraform/Docker Compose orchestration scope that was ruled out early as too heavy for a local, single-user tool. |
 | Do nothing; require agents to coordinate resource names by convention | Zero engineering cost | This is today's status quo, and it is exactly the collision this feature exists to remove |
 
 ## Decision
 
 Chosen: **naming-scope isolation on one shared Floci backend**, because it matches the harness's
-existing architecture, requires no new infrastructure, and was already the direction the
-technical design converged on once the hardcoded endpoint was read in the actual code. The
-resource-name-to-environment binding (see the technical design's Data Flow step 6) is the
-control that makes this safe despite resources never being physically separated.
+existing architecture, requires no new infrastructure, and was already the direction the design
+converged on once the hardcoded endpoint was read in the actual code. The
+resource-name-to-environment binding — for a registered environment, a `resource_name` must be
+`<app_context>::<name>`, with the part before `::` exactly equal to that environment's own
+`app_context` (`_resource_name_binding_error()` in `harness/mcp_server.py`) — is the control that makes this
+safe despite resources never being physically separated.
 
 ## Consequences
 

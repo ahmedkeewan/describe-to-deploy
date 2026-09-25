@@ -3,10 +3,11 @@
 Paste everything between the rules into Claude Design (claude.ai/design) to rebuild the 16-screen
 canvas from scratch. Self-contained — it does not depend on any other file in this repo.
 
-> **Status:** this describes a designed surface that has not been built. What founders use
-> today is chat (Claude Desktop, Claude Code, Cursor) talking to the MCP server in
-> [`harness/`](../harness/). See [README.md](README.md#status-a-designed-surface-not-a-shipped-one)
-> for why this folder is kept and what would need deciding before any of it gets built.
+> **Status:** this rebuilds the full 16-screen design. Part of it ships as the live board
+> (`live.html`, started with `make board`), and the rest is design only. What founders mainly use
+> is chat (Claude Desktop, Claude Code, Cursor) talking to the MCP server in
+> [`harness/`](../harness/). See [README.md](README.md#status-whats-built-and-whats-design) for
+> which parts are built.
 
 ---
 
@@ -92,7 +93,7 @@ agent voice       Newsreader 300, 20-23px, line-height 1.45
 agent secondary   Newsreader 300, 16.5px, line-height 1.5
 proof sentence    Newsreader 300, 14.5px, line-height 1.45, muted
 examples          Newsreader 300 italic, 16.5px, muted
-service name      Karla 600, 14px
+capability name   Karla 600, 14px
 status word       Karla 400, 12px, in its status color
 section label     Karla 600, 11.5-12px, faint — sentence case, never all-caps
 timestamp         Karla 400, 11-11.5px, faint
@@ -114,7 +115,7 @@ Artboard 1200 × 760.
 │                                │                         │
 │                                │  Your product      3 …  │
 │                                │  ─────────────────────  │
-│                                │  service rows,          │
+│                                │  capability rows,       │
 │                                │  hairline between       │
 ├────────────────────────────────┤  ─────────────────────  │
 │ composer · top hairline        │  ↓ Export what you have │
@@ -145,10 +146,10 @@ waiting       outlined circle with a small centered dot, asking
 There is deliberately **no glyph for "started but unverified."** Anything created but unproven
 stays "setting up…". Do not invent an intermediate state.
 
-**Service row** (in the sidebar) — 14px 22px padding, bottom hairline, hover highlight:
+**Capability row** (in the sidebar) — 14px 22px padding, bottom hairline, hover highlight:
 
 ```
-[glyph]  service name ─────────────── status word    ⌄
+[glyph]  capability name ──────────── status word    ⌄
          proof sentence, Newsreader, muted
          last checked N ago, Karla, faint
 ```
