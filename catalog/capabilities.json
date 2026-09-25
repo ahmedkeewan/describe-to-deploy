@@ -12,7 +12,7 @@
         "let people create an account",
         "login and signup"
       ],
-      "founder_description": "Lets people create an account, log in, and reset their password securely.",
+      "founder_description": "Lets people create an account and log in securely.",
       "aws_service": "cognito-idp",
       "floci_services_flag": "cognito-idp",
       "provision": {
