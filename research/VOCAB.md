@@ -197,7 +197,7 @@ From ApexYard's own hook README and rule files. These are lessons about *how to 
 
 ## 13. Evaluating review/judge agents (ApexYard `/eval-agents`)
 
-From `docs/eval-agents/` + `.claude/skills/eval-agents/` — ApexYard's harness for scoring its own LLM-judge review agents (Rex/Hakim/Tariq). Lands directly on **self-evaluation bias** (§7) with a worked failure case and a concrete fix.
+From `docs/eval-agents/` + `.claude/skills/eval-agents/` — ApexYard's harness for scoring its own LLM-judge review agents. Lands directly on **self-evaluation bias** (§7) with a worked failure case and a concrete fix.
 
 | Term | Definition |
 |---|---|
@@ -276,22 +276,6 @@ Re-read of the Fowler/Thoughtworks article (source of §3) turned up concepts th
 | **The human role / load-bearing conventions** | Developers bring implicit harnessing agents lack: absorbed conventions, aesthetic judgment, organizational context, accountability. Effective harnesses should **externalize and codify** this implicit expertise rather than try to eliminate the human — direct pushback on treating full automation as the end goal. Distinguishing which conventions are load-bearing versus merely habitual is itself a human judgment call. |
 | **Open challenges (named explicitly)** | No metric for harness coverage/quality analogous to code coverage; ambiguity of **sensor silence** (does no signal mean high quality, or inadequate detection?); coherence decay as a harness grows (contradictory guides and sensors accumulate); versioning a harness that includes non-deterministic (inferential) controls. Worth stating plainly as known limitations rather than leaving them out of a win narrative. |
 
-## 19. Field-tested patterns from a production migration (workshop notes)
-
-From an internal "Context Engineering & Agentic Coding" workshop built around a real production case study: a large-scale multi-tenancy migration (300+ tables, ~340 models, several waves, one minor incident) done with Claude Code. Unlike Tiers 1-6, this is a field report, not a blog post — the value is that it independently validates several Tier 1 claims and adds mechanisms sharp enough to lift directly.
-
-| Term | Definition |
-|---|---|
-| **AskUserQuestion's three-attempt design history** | Anthropic's own path to a working interview tool: (1) a `questions` array bolted onto the plan-output tool — failed because the model was asked to present a finished plan and interrogate it at the same time; (2) asking the model to emit parseable markdown questions — failed because formatting wasn't reliable; (3) a standalone tool that blocks on a structured, multi-choice answer — worked, and the model readily chose to call it. A concrete case study in *tool* design iteration, not just prompt or harness design. |
-| **Load-bearing component removal, independently confirmed** | Two further examples of dropping a harness component once the model no longer needs it: Claude Code replaced its `TodoWrite` tool (plus periodic reminders, needed because early models forgot their own todos) with a `Task` tool built for cross-agent coordination once models got better at planning and subagents; separately, it dropped a RAG/vector-DB layer for codebase context in favor of just giving the model search tools (Grep/Glob/Read) and letting it build its own context. Corroborates **load-bearing component** (§7, Anthropic) from an independent source. |
-| **"Established Patterns" block** | A spec file section listing decisions already settled, explicitly marked "do not re-interview." Sharper than a generic progress file (§4): it doesn't just log what happened, it fences off questions the agent must not re-ask. |
-| **Interview checklist that hardens with each iteration** | A spec's checklist of things-to-investigate grows as edge cases are discovered mid-session — each new gap gets baked into the checklist for the next unit of work, so the spec itself becomes the accumulated failure log for that class of task. |
-| **Context window fill breakdown** | Rough budget observed in practice: system prompt + memory file ~5-10%, MCP tool schemas (3-4 servers) ~5-15%, with conversation history and tool results accumulating on top and consuming the rest. A concrete allocation to check a harness against, not just "keep it lean." |
-| **Entropy cleanup time cost** | Before automating it, a reported ~20% of a working day spent on manual cleanup of agent-generated drift ("AI slop"). Quantifies **garbage collection / entropy** (§6) with a real cost figure instead of leaving it qualitative. |
-| **Hook design philosophy: escalate vs. run silent** | Safety hooks should escalate (ask for confirmation) and never silently block; productivity hooks (formatting, tracking) should run silently with no prompt. A one-line rule for designing a hook/sensor pack so it doesn't become invisible or annoying in the wrong direction. |
-| **Context engineering vs. harness engineering, one line each** | "Context engineering = what do we show the agent. Harness engineering = what does the system prevent, measure, and fix." Cleaner split than this repo's existing framing — context gets one output right, harness keeps it right over repeated use. |
-| **Default-shipping heuristic** | "If a trick was really useful, AI companies would ship it as a default. If it's not a default, be skeptical." A filter worth applying to the more exotic Tier 4/5 leaderboard tricks in this repo before spending build hours on them. |
-
-## 20. Ten words to say out loud
+## 19. Ten words to say out loud
 
 harness · guide · sensor · computational · inferential · self-verification · doom loop · context injection · handoff · trace

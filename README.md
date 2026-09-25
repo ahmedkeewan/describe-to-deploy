@@ -124,7 +124,9 @@ We gave a fixed set of six founder requests to the same agent with and without t
 
 In a recorded run on 2026-09-25, the three most common requests were set up against a local Floci
 engine and each one independently re-checked from scratch. All 3 passed on the first try, averaging
-about 0.78 seconds per check, with no internal names or tech-speak in any reply a founder would see.
+about 0.6 seconds per check, with no internal names or tech-speak in any reply a founder would see.
+The raw log is [`docs/assets/recorded-run-2026-09-25.json`](docs/assets/recorded-run-2026-09-25.json)
+and [`tasks/rerun_common_requests.py`](tasks/rerun_common_requests.py) reproduces it.
 
 There's a fuller walkthrough, with a recorded conversation and verification log, at
 [ahmedkeewan.github.io/service-buddy](https://ahmedkeewan.github.io/service-buddy/).

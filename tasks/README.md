@@ -402,6 +402,25 @@ concrete instance of exactly the review discipline this whole project has tried 
 throughout -- verify independently, don't trust a plausible-looking value, even (especially) one
 your own code just produced.
 
+## Recorded re-verification run (2026-09-25)
+
+A different measurement from the benchmark above: not "does an agent pick the right thing," but "how
+fast does Service Buddy's own server-side check confirm it." The three most common requests (file
+storage, structured data, email) were each provisioned against local Floci, then passed through
+`record_provisioned()`, which re-runs the capability's verify check before recording anything.
+
+| Capability | Result | Server-side re-check |
+|---|---|---|
+| file-storage | PASS | 0.70s |
+| structured-data | PASS | 0.67s |
+| send-email | PASS | 0.45s |
+
+3 of 3 passed on the first try, averaging 0.61s, and none of the founder-facing replies contained a
+service name, resource name, or endpoint. Raw log:
+[`docs/assets/recorded-run-2026-09-25.json`](../docs/assets/recorded-run-2026-09-25.json).
+Reproduce with [`rerun_common_requests.py`](rerun_common_requests.py). One run on one machine
+(Apple Silicon Mac), so read the timings as an order of magnitude, not a benchmark.
+
 ## Go-live report (`whats_needed_to_go_live`)
 
 Harness = [harness/go_live_plan.py](../harness/go_live_plan.py). Reads any `stack-plan.json` and,
