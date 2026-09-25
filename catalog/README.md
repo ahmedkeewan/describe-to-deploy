@@ -59,3 +59,7 @@ these are exactly what request #5 in docs/history/GAME_PLAN.md's task set is des
   planner tool doesn't handle multi-capability matching well enough on its own.
 - `search` and `app-settings` aren't exercised by any task-set request — kept in for catalog
   breadth, but untested end-to-end.
+- `multi-step-workflow` (Step Functions) is likewise not exercised by the task set — added for
+  catalog breadth (GH-66), and its verify.cli was manually round-trip tested against live Floci
+  (create → execute → poll to SUCCEEDED, and a failure case with a nonexistent state machine
+  ARN), but has no dedicated task-set request of its own yet.
