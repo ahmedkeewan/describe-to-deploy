@@ -11,13 +11,13 @@
 # Desktop, not for building it.
 #
 # Usage: ./mcpb/build.sh [output-path]
-#   output-path   where to write the .mcpb file (default: mcpb/describe-to-deploy.mcpb)
+#   output-path   where to write the .mcpb file (default: mcpb/service-buddy.mcpb)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MCPB_DIR="$REPO_ROOT/mcpb"
 BUILD_DIR="$MCPB_DIR/.build"
-OUTPUT="${1:-$MCPB_DIR/describe-to-deploy.mcpb}"
+OUTPUT="${1:-$MCPB_DIR/service-buddy.mcpb}"
 
 if ! command -v mcpb >/dev/null 2>&1; then
   echo "mcpb CLI not found on PATH. Install it with: npm install -g @anthropic-ai/mcpb" >&2
