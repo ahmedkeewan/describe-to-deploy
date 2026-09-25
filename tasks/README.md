@@ -1,7 +1,9 @@
 # Scoring Task Set
 
-The 6 fixed requests that make up this project's scoring set, as a runnable artifact — see
-[task-set.json](task-set.json) for the exact wording and success criteria.
+The 6 fixed founder requests Service Buddy is measured against, and the full writeup of every
+run — see [task-set.json](task-set.json) for the exact wording and success criteria. Each
+section below measures one harness mechanism in isolation, as it was being built; the shipped
+MCP server ([harness/README.md](../harness/README.md)) combines the ones that earned their place.
 The set was pre-registered: written before touching the harness, and held fixed since. Don't let
 it get quietly adjusted later to flatter a harness mechanism.
 
@@ -9,9 +11,7 @@ it get quietly adjusted later to flatter a harness mechanism.
 
 Never let a trial agent use a real person's email address, phone number, or other real PII as
 test data (e.g. for an SES/email capability trial) — use `test@example.com` or similar, even
-though Floci's emulators are local-only and don't actually deliver anywhere. A trial run on
-2026-09-05 used a real address as sample data; harmless here since nothing left the local
-emulator, but avoid it going forward.
+though Floci's emulators are local-only and don't actually deliver anywhere.
 
 ## Ground rule
 
@@ -45,23 +45,23 @@ request would hide the exact thing you're trying to measure.
 ## Results table template
 
 One row per harness configuration — the bare-agent baseline, then one row per mechanism added on top
-of it, in the order they were built. Fill in `t1`-`t6` as pass/fail/partial; the last three columns
-aggregate across all 6.
+of it, in the order they were built. `t1`-`t6` are pass/fail/partial; the last columns aggregate
+across all 6. Every number is from a single run of each task (n=6), so treat the ratios as
+directional: the catalog-guided agent was about 3× faster and used about 4× fewer tool calls than
+the same agent with no harness.
 
 | Config | t1 | t2 | t3 | t4 | t5 | t6 | Success rate | Avg time | Avg tool calls | Jargon leaks |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 0 — baseline (bare agent) | pass | pass | pass | pass | **overreach** | pass* | 5/6 functional | ~100s median | 2-36 (t3/t5 much higher) | 5/6 (t3,t5 heaviest) |
-| 1 — + capability catalog | pass | pass | pass | pass | **pass (fixed)** | pass | 6/6, correct outcome type on all 6 | ~52s median (~310s total vs. ~1040s baseline) | 1-11 (21 total vs. ~87 baseline) | **0/6** |
-| 2 — + planner + executor tools* | pass | pass | pass | skipped† | pass | **pass (plan corrected)** | 5/6 measured, all correct | combined ~2x the catalog-only configuration (two-agent overhead) | see notes below | **0/6** |
-| 3 — + executor tool | *(merged into row 2 — a planner needs something to execute its plan, so both were built and measured together)* | | | | | | | | | |
-| 4 — + verification gate | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **caught a false PASS in a targeted adversarial test — see notes below** | ~10-15s per gate run | 1 script, 0 LLM calls | n/a |
-| 5 — + state file | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no win on well-named cases; prevented a real duplicate-infra bug on a naming-mismatch case — see notes** | comparable to live discovery when naming is predictable | comparable when naming is predictable, fewer when it isn't | n/a |
-| 6 — + failure escalation | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no doom-loop observed in either adversarial test — see notes** | 5 calls / 55s (fixable case), 5 calls / 94s (genuinely unfixable case) | bounded on its own, no retry-cap needed | n/a |
-| 7 — + auto-wiring | n/a‡ | n/a‡ | **wired + functionally proven** | n/a‡ | n/a‡ | n/a‡ | real app reads only .env, real Floci round trip succeeds | instant (no LLM call) | 1 script, 0 LLM calls | one bad guess caught and fixed before shipping |
+| Baseline (bare agent) | pass | pass | pass | pass | **overreach** | pass* | 5/6 functional | ~100s median | 2-36 (t3/t5 much higher) | 5/6 (t3,t5 heaviest) |
+| + Capability catalog | pass | pass | pass | pass | **pass (fixed)** | pass | 6/6, correct outcome type on all 6 | ~52s median (~310s total vs. ~1040s baseline) | 1-11 (21 total vs. ~87 baseline) | **0/6** |
+| + Planner/executor split* | pass | pass | pass | skipped† | pass | **pass (plan corrected)** | 5/6 measured, all correct | combined ~2x the catalog-only configuration (two-agent overhead) | see notes below | **0/6** |
+| + Verification gate | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **caught a false PASS in a targeted adversarial test — see notes below** | ~10-15s per gate run | 1 script, 0 LLM calls | n/a |
+| + State file | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no win on well-named cases; prevented a real duplicate-infra bug on a naming-mismatch case — see notes** | comparable to live discovery when naming is predictable | comparable when naming is predictable, fewer when it isn't | n/a |
+| + Failure escalation | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | n/a‡ | **no doom-loop observed in either adversarial test — see notes** | 5 calls / 55s (fixable case), 5 calls / 94s (genuinely unfixable case) | bounded on its own, no retry-cap needed | n/a |
+| + Auto-wiring | n/a‡ | n/a‡ | **wired + functionally proven** | n/a‡ | n/a‡ | n/a‡ | real app reads only .env, real Floci round trip succeeds | instant (no LLM call) | 1 script, 0 LLM calls | one bad guess caught and fixed before shipping |
 
-\* The planner/executor row covers both the "planner tool" and "executor tool" steps of the build
-order — a planner needs something to execute its plan, so both were built and measured together;
-see the planner/executor section below. † t4's executor was skipped at that configuration due to a
+\* The planner and the executor were built and measured together, since a planner needs something
+to execute its plan; see the planner/executor section below. † t4's executor was skipped at that configuration due to a
 sequencing mistake (see the same section). ‡ The verification gate is a standalone script with no
 task-specific behavior of its own — it was validated with a targeted adversarial test (a "sloppy
 executor" vs. the gate) rather than a full task-set run; see the verification-gate section below
@@ -134,8 +134,8 @@ is **t5's failure mode**: an ungated agent will confidently build unbounded comp
 can't maintain, rather than staying inside a known-good, verified surface. Secondary value:
 consistent translation away from jargon (5 of 6 responses leaked infra terms) and token/time
 efficiency (t3's 32 tool calls vs. a templated path that shouldn't need to rediscover a Pillow
-architecture mismatch). Frame this around scope discipline and translation, not "the baseline
-is incompetent" — it isn't, and overstating that gap would be its own credibility risk.
+architecture mismatch). The gap is scope discipline and translation, not competence — the
+baseline isn't incompetent, and this writeup doesn't claim it is.
 
 ## Capability-catalog run (catalog plus the conservative fallback rule)
 
@@ -174,7 +174,7 @@ instance before this run (baseline's resources are preserved above, not lost).
   re-verified against live Floci state. **Pass, zero jargon leak.** 5 tool calls / 96.5s.
 
 **What changed vs. baseline, in one line each.** Jargon leaks: 5/6 → 0/6. Tool calls: ~87 total
-→ 21 total (~4x fewer). Wall-clock: ~1040s → ~310s total (~3x faster). Outcome correctness: t5
+→ 21 total (about 4× fewer). Wall-clock: ~1040s → ~310s total (about 3× faster). Outcome correctness: t5
 went from "confident overreach" to "exactly the intended fallback behavior." Nothing regressed —
 every task that passed in baseline still passes, with the same underlying infrastructure quality
 (t6's diagnosis and fix were verified byte-for-byte identical in substance to the baseline run,
@@ -199,8 +199,8 @@ action, and forces the executor to independently verify rather than just trust w
   (`file-storage` → `background-job` → `send-email`) with zero help beyond the catalog's
   `depends_on` field. Executor followed the plan's exact resource names, proved a real resize
   (8.0 KiB → 1.4 KiB) and a real queued confirmation email. **Pass, zero jargon leak.**
-- **t4 — skipped due to a sequencing mistake, not a harness failure.** I poisoned the t2 bucket
-  for t6 before running t4's executor against that same plan, which would have silently
+- **t4 — skipped due to a sequencing mistake, not a harness failure.** The t2 bucket was poisoned
+  for t6 before t4's executor ran against that same plan, which would have silently
   conflated the two measurements. t4's planner output was captured and was correct (`file-storage`
   marked `reused_existing: true` against the live bucket), but the executor half was not run for
   this configuration. The catalog-only run's already-verified t4 pass stands as the reference point for
@@ -244,7 +244,7 @@ Harness = [harness/verify_gate.py](../harness/verify_gate.py) -- a plain Python 
 LLM calls**, that reads a `stack-plan.json`, looks up each matched capability in
 [catalog/capabilities.json](../catalog/capabilities.json), runs its real `verify.cli` against
 live Floci, and exits 0 only if every one actually passes. This is the computational counterpart
-to the executor's *inferential* self-verification instruction (research/VOCAB.md sec 3: "prefer
+to the executor's *inferential* self-verification instruction ([research/VOCAB.md](../research/VOCAB.md), "Computational vs inferential": "prefer
 computational over inferential wherever a deterministic check exists") -- the gate cannot be argued
 with, distracted, or fooled by a confident LLM report, because no LLM is in its loop at all.
 
@@ -276,17 +276,16 @@ not ready, and a plain, ~10-15-second script with no model in the loop is the th
 catches it, every time, regardless of the executor's prompt quality that run. This is the argument
 for keeping the gate as a hard requirement between "executor claims done" and "founder sees ready"
 — not a redundant safety net on top of a good executor, but the thing that keeps working after the
-executor inevitably isn't good on some future run. In production, the gate's raw JSON must never
-reach the founder directly (it's exactly the jargon the capability catalog exists to hide) -- it
-should only ever flip a binary "ready" / "not ready yet, here's what's still broken in plain
-language" decision that the harness's own founder-facing report is built from.
+executor inevitably isn't good on some future run. The shipped MCP server works this way:
+`record_provisioned` re-runs the check server-side, and the founder only ever sees the resulting
+plain-language "ready" / "not ready yet" message, never the raw check output.
 
 ## State-file run
 
-Harness = [harness/stack-state.json](../harness/stack-state.json) (durable, keyed by
-`app_context`) + [harness/stack-state.schema.json](../harness/stack-state.schema.json). The
-planner reads it before falling back to live Floci discovery; the intended design has the
-executor write to it only after a verification-gate PASS.
+Harness = `harness/stack-state.json` (created at runtime, keyed by `app_context`; not committed)
++ [harness/stack-state.schema.json](../harness/stack-state.schema.json). The planner reads it
+before falling back to live Floci discovery. In the shipped MCP server, `record_provisioned()`
+enforces the write rule: state only advances on a server-side verification PASS.
 
 **Honest negative result first.** The originally hypothesized wins -- avoiding cross-app
 misattribution, and saving discovery tool calls -- mostly did **not** materialize against this
@@ -354,17 +353,17 @@ the object is confirmed still `COMPLIANCE`-locked with a real un-editable retent
 
 **What this says about failure escalation.** Same conclusion as the state file, for a different
 reason: this is now the second harness mechanism in a row where the failure mode the research
-literature (research/VOCAB.md sec 5, "doom loop") warns about simply did not appear against this
+literature ([research/VOCAB.md](../research/VOCAB.md), "doom loop") warns about simply did not appear against this
 model, even when the prompt actively invited it. The model already retries a small number of
 genuinely distinct approaches, recognizes when a failure is structural rather than a bug, and
 stops on its own -- including correctly refusing to escalate to an inappropriate bypass under
 social pressure to "not give up." No retry-count instruction was needed to produce that outcome in
 either test. Consistent with
-research/VOCAB.md sec 11's "default-shipping heuristic" and sec 5b's "load-bearing component"
-idea: a harness mechanism earns its place by fixing an observed failure, not by matching a pattern
-from research written against older or weaker models. Recommend keeping failure escalation out of
-the "here's what we built" list -- it would be presenting a fix for a bug this model doesn't have --
-while keeping the *finding* (tested for it, found none) as evidence of measurement discipline.
+the "default-shipping heuristic" and "load-bearing component" ideas in
+[research/VOCAB.md](../research/VOCAB.md): a harness mechanism earns its place by fixing an
+observed failure, not by matching a pattern from research written against older or weaker models.
+Failure escalation is therefore not part of the shipped harness; the finding (tested for it,
+found none) stays here as measurement evidence.
 
 ## Auto-wiring run
 
@@ -380,7 +379,7 @@ plan: the real identity was `confirmations@local.test`, and `resource_name` was
 guess would have silently wired a broken sender address into a founder's app while looking
 completely plausible. Fixed by removing the guess entirely (matching the existing, correct
 caution already applied to `user-accounts`, which was never guessed) -- only `S3_BUCKET_NAME` and
-`AWS_ENDPOINT_URL` are wired for now, both genuinely derivable from the plan; anything not safely
+`AWS_ENDPOINT_URL` are wired, both genuinely derivable from the plan; anything not safely
 derivable is left out rather than guessed. Worth stating plainly: **auto-wiring is a
 sharp tool** -- a wrong value here is worse than no value, since it looks exactly like a right one
 until the app actually runs.
@@ -403,7 +402,26 @@ concrete instance of exactly the review discipline this whole project has tried 
 throughout -- verify independently, don't trust a plausible-looking value, even (especially) one
 your own code just produced.
 
-## Stretch goal: "what would it take to go live?"
+## Recorded re-verification run (2026-09-25)
+
+A different measurement from the benchmark above: not "does an agent pick the right thing," but "how
+fast does Service Buddy's own server-side check confirm it." The three most common requests (file
+storage, structured data, email) were each provisioned against local Floci, then passed through
+`record_provisioned()`, which re-runs the capability's verify check before recording anything.
+
+| Capability | Result | Server-side re-check |
+|---|---|---|
+| file-storage | PASS | 0.70s |
+| structured-data | PASS | 0.67s |
+| send-email | PASS | 0.45s |
+
+3 of 3 passed on the first try, averaging 0.61s, and none of the founder-facing replies contained a
+service name, resource name, or endpoint. Raw log:
+[`docs/assets/recorded-run-2026-09-25.json`](../docs/assets/recorded-run-2026-09-25.json).
+Reproduce with [`rerun_common_requests.py`](rerun_common_requests.py). One run on one machine
+(Apple Silicon Mac), so read the timings as an order of magnitude, not a benchmark.
+
+## Go-live report (`whats_needed_to_go_live`)
 
 Harness = [harness/go_live_plan.py](../harness/go_live_plan.py). Reads any `stack-plan.json` and,
 for each matched capability, prints its `founder_description`, the real AWS service it ran on

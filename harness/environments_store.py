@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
 Load/save helpers for harness/environments.json -- the sidecar file recording each named
-environment's `app_context` and board port (see the technical design and AgDR-0001).
+environment's `app_context` and board port (see research/agdr/AgDR-0001).
 
 `load_environments()` and `save_environments()` are lock-free primitives on purpose. A caller
 that needs a consistent check-then-write cycle -- for example `create_environment`'s uniqueness
-check, port scan, and write, which the technical design requires to be one atomic section
-(Data Flow step 2) -- wraps ALL of those steps in one `with environments_lock():` block, not
+check, port scan, and write, which must be one atomic section so two processes can't both
+claim the same name or port -- wraps ALL of those steps in one `with environments_lock():` block, not
 just the final save. Locking only the save call would still race on the uniqueness check.
 
-Uses the same `state_lock.locked()` helper as `stack-state.json` (GH-24), so concurrent
+Uses the same `state_lock.locked()` helper as `stack-state.json`, so concurrent
 `mcp_server.py` processes (one per connected agent) never race on this file either.
 """
 import json

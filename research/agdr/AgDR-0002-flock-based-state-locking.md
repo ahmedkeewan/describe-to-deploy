@@ -1,7 +1,7 @@
 ---
 id: AgDR-0002
 timestamp: 2026-09-12T00:00:00Z
-agent: Hisham (Tech Lead)
+agent: Claude (build agent)
 model: claude-sonnet-5
 trigger: design-review-finding
 status: executed
@@ -39,27 +39,22 @@ status: executed
 
 Chosen: **`fcntl.flock`-based locking**, because it is the smallest change that actually closes
 the race for both files, requires no new dependency, and fits this harness's plain-file
-architecture. The SQLite alternative is rejected for now for lack of a demonstrated need at this
-scale — this is the same "no dependency without demonstrated need" discipline the technical
-design already applied elsewhere (declining a per-environment backend, declining a Belt-style
-generator layer).
+architecture. The SQLite alternative is rejected for lack of a demonstrated need at this
+scale — the same "no dependency without demonstrated need" discipline applied elsewhere in this
+design (for example, declining a per-environment backend in AgDR-0001).
 
 ## Consequences
 
-- Target state, once every ticket in the epic lands: every state write across
-  `stack-state.json` and `environments.json` goes through one locked read-modify-write helper,
-  and `events.jsonl`'s `emit()` and `_next_seq()` use the same helper.
-- Current state as of GH-24 (this decision's first landing): the shared helper
-  (`harness/state_lock.py`) exists and is applied to `stack-state.json` only. `environments.json`
-  does not exist yet (pending GH-25). `events.py`'s `_next_seq()` still uses only its
-  in-process `threading.Lock`, unchanged, and remains exposed to the cross-process race described
-  in Context until GH-31 lands. Do not read this record as saying that race is already closed.
+- Every state write across `stack-state.json`, `environments.json`,
+  `environment-snapshots.json`, and `events.jsonl` (including `emit()` and `_next_seq()`) goes
+  through the one locked read-modify-write helper, `state_lock.locked()` in
+  `harness/state_lock.py`. The cross-process race described in Context is closed for all of
+  them.
 - Verification (`_run_verify`, up to a 30s subprocess timeout) stays outside the locked section,
   matching today's ordering in `record_provisioned` where verification runs before the state
   write. This is a stated constraint on the helper, not an incidental property.
 - If environment count grows past a handful, or write contention becomes noticeable, this
-  decision should be revisited — flagged as an open question in the technical design, not a
-  silent limitation.
+  decision should be revisited. This is a known, stated limit, not a silent one.
 
 ## Artifacts
 

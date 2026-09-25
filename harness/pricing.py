@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Real AWS pricing data for describe_environment()'s cost estimates (GH-95, promoted from the
-GH-94 spike). Fetches AWS's own public, unauthenticated Price List Bulk API -- confirmed live
-during the spike to require no AWS account or credentials anywhere, unlike every other AWS call
+Real AWS pricing data for describe_environment()'s cost estimates. Fetches AWS's own public,
+unauthenticated Price List Bulk API -- confirmed live to require no AWS account or credentials anywhere, unlike every other AWS call
 this harness makes (which all go through Floci's local test/test-credentialed endpoint).
 
 Products are matched by ATTRIBUTES (productFamily + a set of attribute key/values), not by a
@@ -19,8 +18,8 @@ hand-written APPROX_MONTHLY_COST_USD estimates in mcp_server.py. Six capabilitie
 far: DynamoDB storage, SQS requests, SNS requests, Step Functions state transitions, S3 standard
 storage, and Lambda (requests + GB-second compute, summed). The remaining capabilities
 (Cognito, SES, EventBridge Scheduler, Secrets Manager, SSM, API Gateway, OpenSearch) have more
-multi-dimensional real pricing models that risk a subtly wrong match if rushed, so they stay on
-the hardcoded estimates for now -- a network fetch, a changed file shape, or an ambiguous match
+multi-dimensional real pricing models that risk a subtly wrong match if rushed, so they use
+the hand-written estimates -- a network fetch, a changed file shape, or an ambiguous match
 must NEVER crash describe_environment() over a pricing lookup; real_monthly_estimate() never
 raises, it returns None on any failure and the caller falls back.
 
@@ -49,8 +48,8 @@ REGION = "us-east-1"
 # that service's region-scoped file, an assumed monthly usage volume for "light early-stage
 # usage" (the same framing the hardcoded estimates already use, just multiplied against a real
 # AWS unit price instead of an eyeballed guess), and a human-readable label for that assumption.
-# Every filter here was hand-verified against a live fetch during the GH-94/GH-95 work -- see the
-# spike memo (docs/spike-memos/gh-94-real-cost-estimates.md) for how these were found.
+# Every filter here was hand-verified against a live fetch -- see the
+# spike memo (research/history/spike-memos/gh-94-real-cost-estimates.md) for how these were found.
 REAL_PRICING_CONFIG = {
     "dynamodb": {
         "service_code": "AmazonDynamoDB",

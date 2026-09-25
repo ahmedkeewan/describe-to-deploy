@@ -21,9 +21,8 @@ import mcp_server
 # GH-35's test_record_provisioned_concurrency.py already found this trap: two threads' full
 # round trip can complete too fast to interleave on a fast local filesystem, so a naive version
 # of this test can pass with 0 failures even with the state lock fully disabled -- a false
-# confidence check, not a real regression test. Design review's own PR #53 landed in exactly
-# this trap: confirmed 0/30 failures with the lock disabled and no delay, then 20/20 failures
-# with the lock disabled and this delay in place. Same fix as GH-35: wrap _load_state with a
+# confidence check, not a real regression test (measured: 0/30 failures with the lock disabled
+# and no delay, 20/20 with the lock disabled and this delay in place). So wrap _load_state with a
 # small forced delay to widen the race window deterministically.
 _ORIGINAL_LOAD_STATE = mcp_server._load_state
 

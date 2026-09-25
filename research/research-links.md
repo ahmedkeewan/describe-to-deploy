@@ -1,7 +1,8 @@
 # Harness Engineering Research Links
 
-A curated link pack and shared vocabulary reference on harness engineering as a discipline. See
-[VOCAB.md](VOCAB.md) for the vocabulary itself, elaborated from the sources below.
+A curated link pack on harness engineering as a discipline — the background reading behind
+Service Buddy's design. See [VOCAB.md](VOCAB.md) for the shared vocabulary distilled from these
+sources.
 
 ## Tier 1 — The canon (~2 hrs)
 
@@ -10,11 +11,11 @@ A curated link pack and shared vocabulary reference on harness engineering as a 
 | [Anthropic: Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (Nov 2025) | The initializer-agent + coding-agent pattern. `feature-list.json`, `init.sh`, `claude-progress.txt`, git commits and test gates as cross-session state. Reference design for anything spanning multiple context windows. |
 | [OpenAI: Harness engineering — leveraging Codex in an agent-first world](https://openai.com/index/harness-engineering) (Feb 2026, Ryan Lopopolo) | Coined the term. ~1M LOC, zero human-written lines, 3 engineers. AGENTS.md, repo-local docs as system of record, architectural constraints enforced by linters, browser validation, telemetry the agent can read. |
 | [LangChain: Improving Deep Agents with harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) (Feb 2026) | TB2.0 52.8% → 66.5% (Top 30 → Top 5) with the same model. Three levers: self-verification prompting, environment context injection, middleware that detects doom loops. "Reasoning sandwich" (xhigh-high-xhigh). |
-| [LangChain: The Anatomy of an Agent Harness](https://www.langchain.com/blog/the-anatomy-of-an-agent-harness) (Mar 2026, Sydney Runkle) | The cleanest taxonomy of harness components. Use this as the team's shared vocabulary. |
+| [LangChain: The Anatomy of an Agent Harness](https://www.langchain.com/blog/the-anatomy-of-an-agent-harness) (Mar 2026, Sydney Runkle) | The cleanest taxonomy of harness components, and the basis of this repo's shared vocabulary. |
 | [Martin Fowler / Thoughtworks: Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html) (Birgitta Böckeler) | Guides (feedforward) vs Sensors (feedback), each inferential (LLM-interpreted markdown) or computational (linters, tests, LSP, mutation testing). The "Feedback Flywheel". Best framework for deciding *what to build*. |
 | [Mitchell Hashimoto: My AI Adoption Journey](https://mitchellh.com/writing/my-ai-adoption-journey) (Feb 2026) | Origin of the practice: "every time the agent makes a mistake, engineer the harness so it can never make that mistake again." |
 
-## Tier 1b — The winning edge (added 2026-09-03)
+## Tier 1b — The winning edge
 
 What the current top-of-leaderboard harnesses do that the Tier 1 posts don't cover. All read and distilled into VOCAB.md.
 
@@ -29,10 +30,6 @@ What the current top-of-leaderboard harnesses do that the Tier 1 posts don't cov
 | [ForgeCode](https://forgecode.dev/blog/benchmarks-dont-matter/) | Legit ideas: flattened tool schemas with stable field order (fewer malformed calls), parallel independent tool calls (3-5x faster), recursive subagents. See caveat below. |
 | [DebugML: cheating on agent benchmarks](https://debugml.github.io/cheating-agents/) | Pilot (#1) let the agent read `/tests`; ForgeCode (#2) auto-injected AGENTS.md files containing answer keys. Detected via trace clustering (Meerkat). **Lesson**: judges and reviewers read traces. Keep the sandbox clean, publish trajectories, never let task-specific hints leak into the harness. |
 | [Claude Agent SDK hooks](https://platform.claude.com/docs/en/agent-sdk/hooks) + [hooks reference](https://code.claude.com/docs/en/hooks) | If building on Claude: PreToolUse / PostToolUse / Stop / SubagentStart / PreCompact hooks are the middleware surface. Fastest path to a sensor pack without writing an agent loop. |
-
-Prior harness hackathons (winners not yet published for either):
-- [Harness Engineering Hack, SF, Jun 2026](https://harness-hack.devpost.com/) — judges from Anthropic, Guild.ai, Pioneer, Composio, Nvidia, Stripe. Categories rewarded "most innovative use of agents", observability (Langfuse), and execution quality. Check `/project-gallery` for winners.
-- [TrueForge Agent Harness Hackathon, Aug 2026](https://www.wemakedevs.org/hackathons/trueforge) — judged on real MCP tools, sandboxed execution, human approvals, subagents, persistent sessions. Winners due on the site and @WeMakeDevs.
 
 ## Tier 2 — Anthropic supporting posts (tool + context design)
 
@@ -86,7 +83,7 @@ Sandbox and permissions layer:
 Awesome lists (pick two, skim both):
 - https://github.com/ai-boost/awesome-harness-engineering — most recently updated, broadest.
 - https://github.com/Picrew/awesome-agent-harness — implementation-first, project tables.
-- Also: `walkinglabs/awesome-harness-engineering` (unusually rich — five picks distilled into VOCAB.md §6f: infrastructure noise as a measurement confound, a working evolution-loop plugin, distributed-retry vocabulary, ClawBench's interception-layer eval sandboxing, and OpenHands' trained-critic alternative to LLM-judge scoring), `Jiaaqiliu/Awesome-Harness-Engineering`, `AutoJunjie/awesome-agent-harness`, `mahonzhan/awesome-agent-harness`, `RyanAlberts/best-of-Agent-Harnesses`, `bradagi/awesome-cli-coding-agents`.
+- Also: `walkinglabs/awesome-harness-engineering` (unusually rich — five picks distilled into VOCAB.md §14: infrastructure noise as a measurement confound, a working evolution-loop plugin, distributed-retry vocabulary, ClawBench's interception-layer eval sandboxing, and OpenHands' trained-critic alternative to LLM-judge scoring), `Jiaaqiliu/Awesome-Harness-Engineering`, `AutoJunjie/awesome-agent-harness`, `mahonzhan/awesome-agent-harness`, `RyanAlberts/best-of-Agent-Harnesses`, `bradagi/awesome-cli-coding-agents`.
 
 ## Tier 6 — Secondary explainers (skim if time)
 
@@ -97,11 +94,10 @@ Awesome lists (pick two, skim both):
 - [Winder.ai: Comparison of AI Agent Harnesses 2026](https://winder.ai/ai-agent-harness-comparison/).
 - [Thoughtworks podcast: What is harness engineering?](https://www.thoughtworks.com/en-es/insights/podcasts/technology-podcasts/what-harness-engineering) (May 2026).
 - [ApexYard: AI-Governed Software Development Framework](https://apexyard.ai/) — org-level governance layer on top of a coding agent: mandatory PR gates (no direct push to main), role-based reviewer routing (20 roles / 6 departments), ~51 hooks enforcing secret-scanning and ticket linkage. Useful mainly for the **gate** concept (a sensor that blocks rather than just reports — see VOCAB.md §3); not a technique for improving a single agent loop's benchmark score.
-- [ApexYard `harness-adapters/` + `docs/harnesses/`](https://github.com/me2resh/apexyard/tree/main/harness-adapters) — the framework's own answer to "how do gates survive a switch of coding-agent CLI": bash hooks stay the single source of truth, and pi/opencode/Codex/Cursor each get a thin transport adapter (declarative-generate or live-extension, per `docs/harnesses/README.md`). Live-proven (real credentialed turn blocked) for pi, opencode, and Codex as of 2026-07-09; Cursor only fails closed, not proven. Distilled into VOCAB.md §6c.
-- [ApexYard `.claude/rules/` + `.claude/hooks/`](https://github.com/me2resh/apexyard/tree/main/.claude/hooks) — hook/rule authoring lessons from a framework running 60+ hooks and 19 rule files in production: gate on the command string not ambient `$PWD`, right-size ceremony to blast radius instead of uniform review depth, reconcile tracked state against actual repo state before spawning a build. Distilled into VOCAB.md §6d.
-- [ApexYard `docs/eval-agents/` + `.claude/skills/eval-agents/`](https://github.com/me2resh/apexyard/tree/main/docs/eval-agents) — a worked case of **self-evaluation bias** (VOCAB.md §5b): an LLM judge scoring review-agent *prose* against a rubric was at-chance on telling a fluent wrong review from a correct one, fixed by scoring against a frozen, human-adjudicated ground-truth defect set instead. Distilled into VOCAB.md §6e.
+- [ApexYard `harness-adapters/` + `docs/harnesses/`](https://github.com/me2resh/apexyard/tree/main/harness-adapters) — the framework's own answer to "how do gates survive a switch of coding-agent CLI": bash hooks stay the single source of truth, and pi/opencode/Codex/Cursor each get a thin transport adapter (declarative-generate or live-extension, per `docs/harnesses/README.md`). Live-proven (real credentialed turn blocked) for pi, opencode, and Codex as of 2026-07-09; Cursor only fails closed, not proven. Distilled into VOCAB.md §11.
+- [ApexYard `.claude/rules/` + `.claude/hooks/`](https://github.com/me2resh/apexyard/tree/main/.claude/hooks) — hook/rule authoring lessons from a framework running 60+ hooks and 19 rule files in production: gate on the command string not ambient `$PWD`, right-size ceremony to blast radius instead of uniform review depth, reconcile tracked state against actual repo state before spawning a build. Distilled into VOCAB.md §12.
+- [ApexYard `docs/eval-agents/` + `.claude/skills/eval-agents/`](https://github.com/me2resh/apexyard/tree/main/docs/eval-agents) — a worked case of **self-evaluation bias** (VOCAB.md §7): an LLM judge scoring review-agent *prose* against a rubric was at-chance on telling a fluent wrong review from a correct one, fixed by scoring against a frozen, human-adjudicated ground-truth defect set instead. Distilled into VOCAB.md §13.
 - [Simon Willison on Hashimoto's post](https://simonwillison.net/2026/Feb/5/ai-adoption-journey/).
-- Prior hackathons for idea mining: [Harness Engineering Hack (SF, Jun 2026)](https://harness-hack.devpost.com/), [TrueForge Agent Harness Hackathon (Aug 2026)](https://www.wemakedevs.org/hackathons/trueforge).
 
 ---
 
@@ -129,15 +125,14 @@ Awesome lists (pick two, skim both):
 9. **Trace everything.** LangSmith / Langfuse traces are what let you find the failure to harden against (Hashimoto's loop).
 10. **Measure on a real benchmark.** Harbor + TB2.0 subset, or SWE-bench Lite via mini-swe-agent, so a demo has a number.
 
-## Suggested next steps
+## If you want to build your own harness
 
-- Read Tier 1 and skim Tier 3; agree on vocabulary (Anatomy post + guides/sensors).
+- Read Tier 1 and skim Tier 3 to get the vocabulary (the Anatomy post plus guides/sensors).
 - Pick a base: `deepagents` (fastest to build features) or `mini-swe-agent` (easiest to understand and benchmark).
-- Set up Harbor with a 10-task TB2.0 slice so harness changes can be scored.
-- Candidate project ideas: environment-bootstrap middleware, doom-loop detector, computational sensor pack (lint/type/arch tests as hooks), cross-session progress harness a la Anthropic, or a mini Meta-Harness that mutates a prompt/tool config and re-scores.
+- Fix a small task set before you change anything, and score every harness change against it — a Terminal-Bench 2.0 slice via Harbor, or your own set like [tasks/](../tasks/README.md).
+- Good first mechanisms to try: environment-bootstrap middleware, a doom-loop detector, a computational sensor pack (lint/type/arch tests as hooks), a cross-session progress harness a la Anthropic, or a mini Meta-Harness that mutates a prompt/tool config and re-scores.
 
 ## Caveats
 
 Links were gathered from search results and not every page was fetched to confirm it resolves. Terminal-Bench numbers shift between snapshots, so check the official leaderboard before quoting them.
 
-[medium.com/@victorzion1's "how I built an AI agent that learns from its own mistakes"](https://medium.com/@victorzion1/harness-engineering-how-i-built-an-ai-agent-that-learns-from-its-own-mistakes-32ebdd2df13c) is Cloudflare-blocked from every fetch method tried (WebFetch, direct curl with a browser UA) — unassessed, not confirmed useless.

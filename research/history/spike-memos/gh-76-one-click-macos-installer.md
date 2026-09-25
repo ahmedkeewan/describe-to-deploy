@@ -1,6 +1,10 @@
-# [Spike] One-click macOS installer for the harness (GH-76)
+# [Spike] One-click macOS installer for the harness
 
-**Disposition: PROMOTE, with named blockers before a real build.**
+> **Outcome:** superseded. The one-click path that shipped is the `.mcpb` Claude Desktop bundle
+> ([`mcpb/`](../../../mcpb/README.md)); no `.pkg` installer was built. Kept as a record of the
+> investigation ([issue #76](https://github.com/ahmedkeewan/service-buddy/issues/76)).
+
+**Disposition at the time: PROMOTE, with named blockers before a real build.**
 
 ## Hypothesis
 
@@ -15,11 +19,10 @@ standard macOS install with no extra tooling required. A minimal `.pkg` was buil
 built package with `pkgutil --expand` (read-only, no execution) confirmed the script is embedded
 exactly as authored and would run as part of a standard Installer.app flow.
 
-**Not tested**: actually double-clicking the package and completing a real install. This
-sandbox's own permission policy blocked running `sudo installer` (an admin-privileged install),
-so the full end-to-end GUI flow — the native Continue/License/Install screens, the password
-prompt, and the postinstall script's real execution — was not exercised. This is disclosed as a
-real gap in this spike's verification, not glossed over.
+**Not tested**: actually double-clicking the package and completing a real install. Running
+`sudo installer` (an admin-privileged install) was out of scope for the spike, so the full
+end-to-end GUI flow — the native Continue/License/Install screens, the password prompt, and the
+postinstall script's real execution — was not exercised.
 
 ## Answer to the hypothesis
 
@@ -57,6 +60,6 @@ Promote to a full feature ticket, scoped to:
 
 ## Artifacts
 
-- Ticket: GH-76
+- Issue: [#76](https://github.com/ahmedkeewan/service-buddy/issues/76)
 - This spike's test package and logs were built and inspected locally, then deleted — nothing
   from this spike ships in the repo except this memo.

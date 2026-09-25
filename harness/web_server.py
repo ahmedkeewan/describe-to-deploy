@@ -7,15 +7,16 @@ Serves:
   GET  /state          current stack-state.json, reconciled against live Floci before returning
                         (interface/README.md's "state file is never trusted on startup" rule)
   GET  /events          SSE stream tailing harness/events.jsonl
+  POST /chat            runs a one-shot Claude Code session against the MCP server (see chat())
 
-The UI is a pure renderer (interface/README.md's "Coupling" section) -- this server writes
-nothing new. Provisioning/verification actions happen through harness/mcp_server.py's MCP tools,
-called by whatever agent (Claude Code, Claude Desktop) is driving the conversation; this server
-only tails what those tool calls already write to events.jsonl and stack-state.json.
+The board itself is a pure renderer; state changes happen only through harness/mcp_server.py's
+MCP tools, whether called by an external client (Claude Code, Claude Desktop, Cursor) or by the
+/chat bridge. This server tails what those tool calls write to events.jsonl and
+stack-state.json.
 
 Run: source harness/.venv/bin/activate && python3 harness/web_server.py
 Then open http://localhost:7777 -- or set FLOCI_BOARD_PORT to run more than one board
-side by side (e.g. one per environment from GH-26's create_environment tool).
+side by side (e.g. one per environment from create_environment).
 """
 import asyncio
 import json
@@ -44,10 +45,9 @@ MCP_SERVER_CMD = str(REPO_ROOT / "harness" / ".venv" / "bin" / "python3")
 MCP_SERVER_ARGS = [str(REPO_ROOT / "harness" / "mcp_server.py")]
 
 # A full system-prompt override (not an append) for the spawned /chat session -- Claude Code's
-# own default system prompt (memory, general coding-assistant framing) is exactly what caused
-# the first real bug found in this feature: asked for uncatalogued "real-time chat," the spawned
-# session ignored the harness entirely and talked about "updating memory" instead of calling
-# report_unsupported_request. This replaces that default outright so the spawned session behaves
+# own default system prompt (memory, general coding-assistant framing) makes the spawned session
+# drift: asked for uncatalogued "real-time chat," it ignored the harness and talked about
+# "updating memory" instead of calling report_unsupported_request. This replaces that default outright so the spawned session behaves
 # as the harness, not as a general assistant that happens to have some extra tools.
 CHAT_SYSTEM_PROMPT = """You are a software agent that turns a non-technical founder's plain-language product request into real, working local infrastructure on Floci, through the floci-control-plane MCP server's tools. You have no other job in this session -- ignore any general-purpose skills, memory, or persona you might otherwise have.
 
@@ -73,8 +73,7 @@ async def _check_one(cap: dict, resource_name: str) -> bool:
     """Runs one blocking verify_gate check off the event loop, so N capabilities across M apps
     reconcile concurrently instead of one HTTP request blocking on a serial chain of real AWS CLI
     round trips -- with growing demo data (multiple apps, some checks doing multi-step Cognito
-    sign-up/confirm/login/delete) the serial version measured 11s+ and only gets worse. Caught by
-    actually loading the page in a browser and watching /state hang pending, not by curl alone."""
+    sign-up/confirm/login/delete) the serial version took 11s+ and grows with every app."""
     loop = asyncio.get_event_loop()
     passed, _ = await loop.run_in_executor(None, verify_gate.run_check, cap["verify"]["cli"], resource_name)
     return passed
@@ -151,10 +150,9 @@ async def events_stream(request):
 
 async def chat(request):
     """Bridges the board's chat box to a real Claude Code invocation, so a request typed
-    directly on localhost:7777 can actually plan/execute/verify against Floci -- there's no raw
-    LLM API key in this environment, so this is the only way to make the chat box real: spawn
-    `claude -p` (one-shot, non-interactive) with the floci-control-plane MCP server attached,
-    using the user's own Claude Code login rather than a new credential.
+    directly on localhost:7777 can actually plan/execute/verify against Floci: spawns `claude -p`
+    (one-shot, non-interactive) with the floci-control-plane MCP server attached. Uses the user's
+    existing Claude Code login instead of requiring a separate API key.
 
     Trust boundary, stated plainly: this endpoint lets anything that can reach
     http://127.0.0.1:7777 (this process only binds localhost) trigger a real, tool-using Claude
@@ -233,8 +231,8 @@ app = Starlette(routes=[
 ])
 
 def _resolve_board_port() -> int:
-    """FLOCI_BOARD_PORT lets two developers each run their own board side by side (see
-    create_environment's board_port, GH-26). Defaults to today's 7777 when unset. Pulled out as
+    """FLOCI_BOARD_PORT lets several boards run side by side (one per environment, see
+    create_environment's board_port). Defaults to 7777. Pulled out as
     its own function so it's importable and testable without actually starting the server."""
     return int(os.environ.get("FLOCI_BOARD_PORT", "7777"))
 

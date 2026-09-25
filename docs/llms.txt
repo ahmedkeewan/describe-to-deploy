@@ -1,31 +1,33 @@
 # Service Buddy
 
-> An MCP server that turns a non-technical founder's plain-language product request into real,
-> verified local infrastructure on Floci, plus a research reference on harness engineering as a
-> discipline (Agent = Model + Harness).
+> An MCP server for Claude Code, Cursor, and Claude Desktop that turns a founder's plain-language
+> request ("let people upload a photo") into real, working infrastructure on Floci, a local AWS
+> emulator, and re-checks each piece for real before reporting it done.
 
-This repo has two parts. The first is a working demo harness: an MCP server (`harness/`) that
-matches a plain-language request against a capability catalog (`catalog/`), executes real
-provisioning steps, and independently re-verifies the result against live infrastructure before
-ever claiming success — no LLM self-report is trusted. The second is a curated research
-reference on harness engineering (system prompts, tools/skills/MCP, sandboxing, orchestration,
-memory) as a discipline distinct from model choice.
+The server (`harness/`) matches a request against a catalog of 13 capabilities (`catalog/`). The
+calling agent runs the provisioning steps, and the server independently re-verifies the result
+against live local infrastructure before it records anything: no agent self-report is trusted.
+Replies to the founder stay in plain language. It also includes a research reference on harness
+engineering (Agent = Model + Harness), in `research/`.
 
 ## Docs
 
-- [README](https://github.com/ahmedkeewan/service-buddy/blob/main/README.md): entry point, split into founder / engineer / AI-agent sections.
-- [Harness README](https://github.com/ahmedkeewan/service-buddy/blob/main/harness/README.md): the MCP server's architecture, tools, and how to run it.
-- [AGENTS.md](https://github.com/ahmedkeewan/service-buddy/blob/main/AGENTS.md): how an AI coding agent connects to and calls this MCP server.
-- [Benchmark results](https://github.com/ahmedkeewan/service-buddy/blob/main/tasks/README.md): before/after numbers, including honest negative findings, from measuring the harness against a fixed scoring task set.
-- [Research links](https://github.com/ahmedkeewan/service-buddy/blob/main/research/research-links.md): curated harness-engineering research link pack.
-- [Vocabulary](https://github.com/ahmedkeewan/service-buddy/blob/main/research/VOCAB.md): shared harness-engineering vocabulary.
+- [README](https://github.com/ahmedkeewan/service-buddy/blob/main/README.md): what it is, quickstart, troubleshooting, benchmark numbers, and an engineer overview.
+- [AGENTS.md](https://github.com/ahmedkeewan/service-buddy/blob/main/AGENTS.md): how an AI coding agent connects to the MCP server, every tool, and which outputs are founder-safe.
+- [Harness README](https://github.com/ahmedkeewan/service-buddy/blob/main/harness/README.md): the MCP server's architecture and how to run it.
+- [Capability catalog](https://github.com/ahmedkeewan/service-buddy/blob/main/catalog/README.md): the 13 things it can set up and how each is verified.
+- [Benchmark results](https://github.com/ahmedkeewan/service-buddy/blob/main/tasks/README.md): before/after numbers against a fixed six-task set, including negative findings.
 
 ## Design decisions
 
 - [AgDR-0001: shared backend naming scope isolation](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0001-shared-backend-naming-scope-isolation.md): isolating multiple agents on one shared backend via naming scope, not per-agent infrastructure.
 - [AgDR-0002: flock-based state locking](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0002-flock-based-state-locking.md): cross-process state locking for an MCP server where every client spawns its own subprocess.
+- [AgDR-0003: snapshot/restore, not clone](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0003-snapshot-restore-not-clone.md): environment snapshots save recorded state and re-verify it live on restore.
+- [AgDR-0004: ownership metadata, not enforcement](https://github.com/ahmedkeewan/service-buddy/blob/main/research/agdr/AgDR-0004-multi-founder-metadata-not-enforcement.md): environment owners are recorded, not enforced.
 
 ## Optional
 
-- [Archived game plan](https://github.com/ahmedkeewan/service-buddy/blob/main/research/history/GAME_PLAN.md): archived design rationale from the project's original build.
-- [Contributing guide](https://github.com/ahmedkeewan/service-buddy/blob/main/CONTRIBUTING.md): how to set up, test, and contribute to this repo.
+- [Research links](https://github.com/ahmedkeewan/service-buddy/blob/main/research/research-links.md): curated harness-engineering research link pack.
+- [Vocabulary](https://github.com/ahmedkeewan/service-buddy/blob/main/research/VOCAB.md): shared harness-engineering vocabulary.
+- [Archived build plan](https://github.com/ahmedkeewan/service-buddy/blob/main/research/history/GAME_PLAN.md): the original plan, kept for the record; the shipped design differs.
+- [Contributing guide](https://github.com/ahmedkeewan/service-buddy/blob/main/CONTRIBUTING.md): how to set up, test, and contribute.

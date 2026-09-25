@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Builds the .mcpb Desktop Extension bundle for the floci-control-plane MCP server (GH-92).
+# Builds the .mcpb Desktop Extension bundle for Service Buddy's MCP server (floci-control-plane).
 #
 # harness/*.py stays the single source of truth -- this script stages a COPY of the files the
 # server actually needs (mirroring the harness/ + catalog/ layout mcp_server.py's own REPO_ROOT
 # resolution expects) into a scratch build directory, then packs that with `mcpb pack`. Nothing
-# under mcpb/server/ is committed; it's a build artifact, regenerated on every run.
+# under mcpb/.build/ is committed; it's a build artifact, regenerated on every run.
 #
 # Requires the mcpb CLI (npm install -g @anthropic-ai/mcpb) on PATH. Does NOT require uv locally
 # to build -- uv is a runtime dependency for whoever installs the resulting .mcpb into Claude
@@ -31,9 +31,9 @@ mkdir -p "$BUILD_DIR/server/harness" "$BUILD_DIR/server/catalog"
 cp "$MCPB_DIR/manifest.json" "$BUILD_DIR/manifest.json"
 cp "$MCPB_DIR/pyproject.toml" "$BUILD_DIR/server/pyproject.toml"
 
-# Only the modules mcp_server.py imports directly, or invokes via subprocess -- not the test
-# suite, not the .venv, not runtime state files (stack-state.json, events.jsonl, environments.json,
-# environment-snapshots.json, .*.lock) which are per-machine data, not server code.
+# Server modules plus the harness CLI scripts and schemas they read -- not the test suite, not
+# the .venv, not runtime state files (stack-state.json, events.jsonl, environments.json,
+# environment-snapshots.json, .*.lock), which are per-machine data, not server code.
 HARNESS_FILES=(
   mcp_server.py
   environments_store.py

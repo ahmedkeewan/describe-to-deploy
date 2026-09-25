@@ -1,5 +1,5 @@
 {
-  "$schema_note": "The harness's durable, shared state file: harness/stack-state.json on disk, one entry per app_context ever planned. Written by the executor only after the verification gate actually passes -- never speculatively. Read by the planner before it falls back to live Floci discovery.",
+  "$schema_note": "The harness's durable, shared state file: harness/stack-state.json on disk, one entry per app_context. Written only by the MCP server (record_provisioned, restore_environment) after a server-side verification PASS -- never speculatively. Read by get_app_state, check_app_readiness, and the live board.",
   "why_this_exists": "Live Floci-state inspection (what the planner does on its own) gets ordinary incrementality right when there's exactly one app's resources on the instance -- verified both without a harness and with the capability catalog and planner/executor split in place. It breaks down once MULTIPLE apps share the same Floci instance with plausibly-similar resource names (a realistic scenario on a shared dev machine): live discovery alone has no reliable way to know which existing bucket is 'this app's' photo storage versus a different app's. The state file is keyed by app_context specifically to make that lookup exact instead of a semantic guess.",
   "example": {
     "snapshare": {

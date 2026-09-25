@@ -1,7 +1,7 @@
 # Product-Capability Catalog
 
-The harness's "guide" layer: maps a non-technical founder's plain-language product description
-to a Floci AWS service, a provisioning recipe, and a real verification check — without the
+Service Buddy's "guide" layer: maps a founder's plain-language product description to a Floci
+AWS service, a provisioning recipe, and a real verification check — without the
 founder ever needing to name a cloud service themselves. The harness reads this catalog rather
 than letting a model invent infrastructure from scratch, which is what keeps requests inside a
 known, verifiable set.
@@ -10,33 +10,34 @@ Currently AWS-only (Floci's `az`/`gcp`/`oci` emulators are separate containers n
 this catalog — extend later if a request needs them). All 13 entries were spot-verified
 against a running `floci/floci` server v2.0.1: every `verify.cli` command in
 [capabilities.json](capabilities.json) was run for real against
-`aws --endpoint-url=http://localhost:4566` with dummy `test`/`test` credentials and returned a
-clean, empty result — not just copied from AWS docs.
+`aws --endpoint-url=http://localhost:4566` with dummy `test`/`test` credentials and exited 0 —
+not just copied from AWS docs.
 
 ## Schema (per capability entry)
 
 | Field | Purpose |
 |---|---|
-| `phrases` | Example plain-language ways a founder might ask for this. Not exhaustive — the planner tool should match by meaning, not string-match this list. |
+| `phrases` | Example plain-language ways a founder might ask for this. Not exhaustive — the calling agent should match by meaning, not string-match this list. |
 | `founder_description` | What to say back to the founder. Never mentions the AWS service name — that's the whole point of this catalog. |
-| `aws_service` / `floci_services_flag` | The real service name, for the executor tool only. Never surfaced to the founder. |
-| `depends_on` | Other capability ids this one needs already provisioned (e.g. `background-job` needs `file-storage` for its S3 trigger). The planner must resolve these before provisioning, and the state file must already have them recorded. |
-| `provision.steps` | What the executor actually runs, in order. |
+| `aws_service` / `floci_services_flag` | The real service name, for the calling agent only. Never surfaced to the founder. |
+| `depends_on` | Other capability ids this one needs already provisioned (e.g. `background-job` needs `file-storage` for its S3 trigger). The calling agent must provision these first, and the state file must already have them recorded. |
+| `provision.steps` | What the calling agent actually runs, in order (returned by `get_provisioning_recipe`). |
 | `provision.state_fields` | What gets written into `stack-state.json` for this capability so a later incremental request can find and reuse it. |
-| `verify` | The real check the verification gate runs before claiming "done." This is the trust mechanism — never skip it, never accept the executor's own exit code as sufficient proof. |
+| `verify` | The real check the verification gate runs before claiming "done." This is the trust mechanism — never skip it, never accept the calling agent's own report as sufficient proof. |
 | `wiring.env_vars` | What gets auto-written into the founder's app config. Names only — values come from `provision` output at runtime. |
-| `cloud_equivalent_note` | One-liner for the stretch-goal "what would it take to go live?" answer — confirms the plan artifact stays retargetable to real AWS. |
+| `cloud_equivalent_note` | One-liner used by `whats_needed_to_go_live` to say what changes when this runs on real AWS. |
 
 ## The fallback rule (non-negotiable for this project)
 
 If a request doesn't clearly match a capability's `phrases`/meaning:
 
-1. **Never** invent a floci-cli invocation outside this catalog.
+1. **Never** invent a provisioning command outside this catalog.
 2. Pick the closest existing capability and offer it, in plain language, as a question —
    e.g. "I can give you a place to store and look up messages, but not live chat yet — want
    that instead?"
-3. If nothing here is close, say so plainly and stop. Log the request text somewhere durable
-   (not silently dropped) so it becomes the next entry added to this catalog.
+3. If nothing here is close, say so plainly and stop. `report_unsupported_request` logs the
+   request text to a local temp file (`/tmp/floci-mcp-fallback-log.jsonl`) so it isn't silently
+   dropped and can become the next entry added to this catalog.
 
 See `explicitly_not_covered` in [capabilities.json](capabilities.json) for known gaps —
 these are exactly what request #5 in the [scoring task set](../tasks/README.md) is designed to
@@ -57,11 +58,11 @@ trigger.
 
 - No entry yet for a plain "just give me a working backend with a database and an API" request
   that spans `structured-data` + `backend-api` in one ask — likely how a real founder would
-  actually phrase request #3's shape. Consider adding a composite/starter-stack entry if the
-  planner tool doesn't handle multi-capability matching well enough on its own.
+  actually phrase request #3's shape. Consider adding a composite/starter-stack entry if agents
+  don't handle multi-capability matching well enough on their own.
 - `search` and `app-settings` aren't exercised by any task-set request — kept in for catalog
   breadth, but untested end-to-end.
 - `multi-step-workflow` (Step Functions) is likewise not exercised by the task set — added for
-  catalog breadth (GH-66), and its verify.cli was manually round-trip tested against live Floci
+  catalog breadth, and its verify.cli was manually round-trip tested against live Floci
   (create → execute → poll to SUCCEEDED, and a failure case with a nonexistent state machine
   ARN), but has no dedicated task-set request of its own yet.

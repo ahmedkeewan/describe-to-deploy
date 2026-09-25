@@ -25,8 +25,8 @@ class EventsLockingTests(unittest.TestCase):
             patch.object(events, "EVENTS_LOCK_PATH", self.lock_path),
             # _seq_counter is module-level state, shared across every test in this process --
             # reset it per test so one test's calls don't shift another's expected seq numbers.
-            # This is a pre-existing quirk of the file-missing fallback path, not something
-            # GH-31 changes; only the lock ordering below is this ticket's actual scope.
+            # This is a quirk of the file-missing fallback path, unrelated to the locking under
+            # test here.
             patch.object(events, "_seq_counter", itertools.count(1)),
         ]
         for p in self._patches:

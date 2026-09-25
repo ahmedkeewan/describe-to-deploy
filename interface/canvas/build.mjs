@@ -1,3 +1,5 @@
+// Generates the interface/canvas/*.dc.html design-canvas screens (one per board state) from
+// shared design tokens. Run: node interface/canvas/build.mjs
 import { writeFileSync } from "node:fs";
 
 const C = {

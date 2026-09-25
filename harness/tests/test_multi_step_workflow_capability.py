@@ -38,8 +38,7 @@ class MultiStepWorkflowCapabilityTests(unittest.TestCase):
         cap = self.by_id["multi-step-workflow"]
         # _run_verify's substitution chain is private to mcp_server.py; exercise it the same way
         # every other capability's verify.cli is exercised, through _run_verify itself, rather
-        # than depending on a specific helper function's name (which is refactored separately in
-        # GH-77 / PR #78).
+        # than depending on a specific helper function's name.
         resource_name = "arn:aws:states:us-east-1:000000000000:stateMachine:my-sm"
         with unittest.mock.patch("subprocess.run") as mock_run:
             mock_run.return_value = unittest.mock.Mock(returncode=0, stdout="", stderr="")

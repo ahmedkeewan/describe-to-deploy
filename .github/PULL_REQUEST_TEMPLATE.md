@@ -5,7 +5,7 @@ What changed and why. Link the issue it addresses.
 ## Test plan
 
 ```bash
-cd harness && python3 -m unittest discover -s tests
+make test
 ```
 
 Paste the result. Note anything you checked by hand that the suite doesn't

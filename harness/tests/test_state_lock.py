@@ -38,7 +38,9 @@ class LockedTests(unittest.TestCase):
                 order.append("first-acquired")
                 holder_ready.set()
                 release_holder.wait(timeout=5)
-            order.append("first-released")
+                # Recorded while still holding the lock: appending after the `with` would race
+                # the main thread, which can acquire and append the instant the lock drops.
+                order.append("first-released")
 
         t = threading.Thread(target=hold_first)
         t.start()
