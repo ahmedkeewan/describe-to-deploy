@@ -2,7 +2,7 @@
   {
     "id": "user-accounts",
     "name": "User Accounts",
-    "description": "Lets people create an account, log in, and reset their password securely.",
+    "description": "Lets people create an account and log in securely.",
     "theme": "Auth & Users",
     "icon": "\ud83d\udd10",
     "aws_service": "cognito-idp",

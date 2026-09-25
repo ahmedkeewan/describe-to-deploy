@@ -37,6 +37,18 @@ confirm() {
   read -r -p "$1 [y/N] " reply || true
   [[ "$reply" =~ ^[Yy]$ ]]
 }
+load_brew_env() {
+  # A fresh Homebrew install isn't on PATH until a new shell starts. Load it into this one so
+  # setup can carry on instead of asking the user to open a new terminal and re-run.
+  local b
+  for b in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+    if [ -x "$b" ]; then
+      eval "$("$b" shellenv)"
+      return 0
+    fi
+  done
+  return 1
+}
 
 # --- 1. Platform check --------------------------------------------------------------------
 step "Checking platform"
@@ -78,6 +90,20 @@ elif command -v docker >/dev/null 2>&1; then
   say "    the 'docker' group."
   say "Then re-run ./setup.sh."
   exit 1
+elif [ "$platform" = "Linux" ]; then
+  # Homebrew + Colima is the macOS route. On Linux, Docker comes from the distro or Docker's own
+  # installer, and both need sudo, so point at them rather than running them.
+  say "Docker isn't installed. Floci needs Docker to run its emulators."
+  if [ "$is_wsl" = true ]; then
+    say "  - Easiest under WSL: install Docker Desktop for Windows and turn on WSL integration"
+    say "    for this distro (Docker Desktop -> Settings -> Resources -> WSL integration)."
+    say "  - Or install Docker Engine inside WSL, as below."
+  fi
+  say "  - Docker Engine: https://docs.docker.com/engine/install/"
+  say "    Quick route:  curl -fsSL https://get.docker.com | sudo sh"
+  say "    Then:         sudo usermod -aG docker \"${USER:-$(id -un)}\"   (log out and back in afterwards)"
+  say "Then re-run ./setup.sh."
+  exit 1
 else
   say "Docker isn't installed. Floci needs Docker (or Colima, a lightweight Docker-compatible"
   say "runtime) to run its emulators."
@@ -90,9 +116,9 @@ else
     say ""
     if confirm "Run this now to install Homebrew?"; then
       /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      if ! command -v brew >/dev/null 2>&1; then
-        say "Homebrew install finished but 'brew' isn't on PATH yet."
-        say "Open a new shell (PATH may need to reload) and re-run this script."
+      if ! command -v brew >/dev/null 2>&1 && ! load_brew_env; then
+        say "Homebrew install finished but 'brew' can't be found."
+        say "Open a new terminal and re-run ./setup.sh."
         exit 1
       fi
     else
@@ -223,6 +249,14 @@ if [ ! -x "$VENV_PYTHON" ]; then
     say "Then re-run ./setup.sh."
     exit 1
   fi
+  # Debian/Ubuntu ship venv support as a separate package; without it `python3 -m venv` fails
+  # halfway and leaves a broken harness/.venv behind.
+  if ! python3 -c 'import ensurepip, venv' >/dev/null 2>&1; then
+    say "Python's venv support isn't installed."
+    say "  - Debian/Ubuntu: sudo apt install python3-venv"
+    say "Then re-run ./setup.sh."
+    exit 1
+  fi
   python3 -m venv "$VENV_DIR"
   say "Created venv at $VENV_DIR"
 else
@@ -283,7 +317,11 @@ if [ "$is_wsl" = true ]; then
 else
   case "$platform" in
     Darwin) claude_desktop_config="$HOME/Library/Application Support/Claude/claude_desktop_config.json" ;;
-    Linux)  claude_desktop_config="$HOME/.config/Claude/claude_desktop_config.json" ;;
+    Linux)
+      # There's no Claude Desktop for Linux, so there's nothing to wire. (Under WSL it runs on
+      # the Windows side and is handled above.)
+      say "Claude Desktop isn't available on Linux -- skipping. Claude Code and Cursor are wired below."
+      ;;
   esac
 fi
 desktop_wired=false
