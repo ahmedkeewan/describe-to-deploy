@@ -10,11 +10,11 @@
     /* Design tokens -- Service Buddy brand: red, black, white. One accent color
        (red) does double duty for brand emphasis, primary actions, and "verified"
        state -- there is no separate green/yellow in this palette by design. */
-    --bg: #ffffff;
+    --bg: #fafafa;
     --fg: #0a0a0a;
     --muted: #666666;
-    --card-bg: #f7f7f7;
-    --border: #e2e2e2;
+    --card-bg: #ffffff;
+    --border: #ebebeb;
     --accent: #dc2626;
     --accent-fg: #ffffff;
     --pass-bg: #fef2f2;
@@ -22,14 +22,21 @@
     --working-bg: #f0f0f0;
     --working-fg: #525252;
     --window-chrome: #f0f0f0;
+    /* Card & icon tokens -- soft bento-card surfaces with a hairline border, a
+       generously rounded corner radius, and an "ink-colored" icon badge that
+       inverts with the theme (dark badge + light glyph in light mode, and the
+       reverse in dark mode) instead of a colored fill. */
+    --radius-card: 20px;
+    --icon-btn-bg: var(--fg);
+    --icon-btn-fg: var(--bg);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0a0a0a;
       --fg: #f5f5f5;
       --muted: #999999;
-      --card-bg: #161616;
-      --border: #2a2a2a;
+      --card-bg: #141414;
+      --border: #262626;
       --pass-bg: #2a1414;
       --pass-fg: #f87171;
       --working-bg: #1c1c1c;
@@ -180,7 +187,7 @@
   .app-window {
     margin-top: 24px;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
   }
@@ -336,11 +343,17 @@
   }
   .feature-card {
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
+    border-radius: var(--radius-card);
+    padding: 28px;
     background: var(--card-bg);
   }
-  .feature-icon { font-size: 1.5rem; margin-bottom: 10px; }
+  .feature-icon {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 14px;
+    color: var(--fg);
+  }
+  .feature-icon svg { width: 100%; height: 100%; display: block; }
   .feature-card h3 { margin: 0 0 8px; font-size: 1rem; }
   .feature-card p {
     margin: 0;
@@ -383,8 +396,8 @@
   }
   .cap-card {
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
+    border-radius: var(--radius-card);
+    padding: 20px;
     background: var(--card-bg);
   }
   .cap-card-top {
@@ -393,7 +406,13 @@
     gap: 10px;
     margin-bottom: 8px;
   }
-  .cap-icon { font-size: 1.3rem; line-height: 1; }
+  .cap-icon {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    color: var(--fg);
+  }
+  .cap-icon svg { width: 100%; height: 100%; display: block; }
   .cap-name { font-weight: 600; font-size: 0.98rem; }
   .cap-desc {
     font-size: 0.87rem;
@@ -431,8 +450,8 @@
   }
   .stat-card {
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 20px;
+    border-radius: var(--radius-card);
+    padding: 24px;
     background: var(--card-bg);
   }
   .stat-label {
@@ -466,7 +485,7 @@
   }
   .live-run-note {
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     overflow: hidden;
     background: var(--card-bg);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
@@ -623,7 +642,7 @@
   }
   .cmd-box {
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-card);
     overflow: hidden;
     background: var(--card-bg);
     max-width: 480px;
@@ -939,22 +958,37 @@
     </p>
     <div class="feature-grid">
       <div class="feature-card">
-        <div class="feature-icon">&#128200;</div>
+        <div class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
+            <path d="M7 15l4-5 3 3 5-7"/>
+          </svg>
+        </div>
         <h3>Watch it work, in a browser too</h3>
         <p>Everything you watched above is a replay of the real live board &mdash; the same event
         stream, just captured earlier. Run <code>make board</code> and you get the live version,
         updating in real time in your own browser, side by side with the chat.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">&#128176;</div>
+        <div class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v10M9.5 9.5c0-1.4 1.1-2.5 2.5-2.5s2.5 1 2.5 2c0 2-5 2-5 4.5 0 1 1.1 2 2.5 2s2.5-1.1 2.5-2.5"/>
+          </svg>
+        </div>
         <h3>Ask what it costs. Get a real answer.</h3>
         <p>Ask what something will cost and it pulls live numbers straight from AWS's own public
-        Price List &mdash; not a guess. Right now, today: 5GB of file storage prices out at
-        <strong>$0.11/month</strong>. 6 of the 13 capabilities get this live-fetched pricing; the
-        rest fall back to a clearly-labeled estimate, never a silent guess.</p>
+        Price List &mdash; not a guess. Last verified 2026-09-25: 5GB of file storage priced out
+        at <strong>$0.11/month</strong>. 6 of the 13 capabilities get this live-fetched pricing;
+        the rest fall back to a clearly-labeled estimate, never a silent guess.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">&#9881;&#65039;</div>
+        <div class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3.25"/>
+            <path d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/>
+          </svg>
+        </div>
         <h3>Setup that asks before it touches anything</h3>
         <p><code>./setup.sh</code> checks for Docker, offers to install it for you (with your
         yes, not without it), gets Floci running, and wires the config into Claude Desktop,
@@ -1066,11 +1100,34 @@
   const gridEl = document.getElementById("cap-grid");
   let activeTheme = "All";
 
+  // One line-icon per theme, not per capability -- the icon reinforces the same
+  // grouping the filter pills above already establish, and keeps the set small
+  // enough to stay visually consistent. Same stroke treatment as the feature
+  // cards: 24x24 viewBox, currentColor, 1.75 stroke, round caps.
+  const SVG_OPEN =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" ' +
+    'stroke-linecap="round" stroke-linejoin="round">';
+  const THEME_ICONS = {
+    "Auth & Users":
+      SVG_OPEN + '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>',
+    "Data & Storage":
+      SVG_OPEN + '<ellipse cx="12" cy="6" rx="7.5" ry="3"/>' +
+      '<path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>',
+    "Compute & Workflow":
+      SVG_OPEN + '<path d="M13 2.5L4.5 13.5H11l-1 8 8.5-11H12l1-8z"/></svg>',
+    "Messaging & Events":
+      SVG_OPEN + '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg>',
+    "Config & Secrets":
+      SVG_OPEN + '<circle cx="8" cy="14" r="4"/><path d="M11 11l8-8M16.5 5.5l2 2M14 8l2 2"/></svg>',
+    Search:
+      SVG_OPEN + '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+  };
+
   function cardHtml(cap) {
     return `
       <div class="cap-card" data-theme="${cap.theme}">
         <div class="cap-card-top">
-          <span class="cap-icon">${cap.icon}</span>
+          <span class="cap-icon" aria-hidden="true">${THEME_ICONS[cap.theme] || ""}</span>
           <span class="cap-name">${cap.name}</span>
         </div>
         <p class="cap-desc">${cap.description}</p>
