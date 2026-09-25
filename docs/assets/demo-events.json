@@ -1,0 +1,59 @@
+[
+  {
+    "seq": 1,
+    "kind": "verify.start",
+    "capability": "file-storage",
+    "founder": {
+      "label": "Lets people upload and store files (like photos), and get them back later.",
+      "status": "setting up\u2026"
+    }
+  },
+  {
+    "seq": 2,
+    "kind": "verify.pass",
+    "capability": "file-storage",
+    "founder": {
+      "label": "Lets people upload and store files (like photos), and get them back later.",
+      "status": "working",
+      "proof": "stored a test file, read it back unchanged, then removed it"
+    }
+  },
+  {
+    "seq": 3,
+    "kind": "verify.start",
+    "capability": "background-job",
+    "founder": {
+      "label": "Runs a small piece of work in the background (like resizing a photo) without making the user wait.",
+      "status": "setting up\u2026"
+    }
+  },
+  {
+    "seq": 4,
+    "kind": "verify.pass",
+    "capability": "background-job",
+    "founder": {
+      "label": "Runs a small piece of work in the background (like resizing a photo) without making the user wait.",
+      "status": "working",
+      "proof": "ran it once with test input and it finished successfully"
+    }
+  },
+  {
+    "seq": 5,
+    "kind": "verify.start",
+    "capability": "send-email",
+    "founder": {
+      "label": "Sends an email to a user, like a confirmation or welcome message.",
+      "status": "setting up\u2026"
+    }
+  },
+  {
+    "seq": 6,
+    "kind": "verify.pass",
+    "capability": "send-email",
+    "founder": {
+      "label": "Sends an email to a user, like a confirmation or welcome message.",
+      "status": "working",
+      "proof": "sent a test email and confirmed it went out"
+    }
+  }
+]
